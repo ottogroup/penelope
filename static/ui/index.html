@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="A front-end template that helps you build fast, modern mobile web apps.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <title>Penelope</title>
+
+    <link rel="shortcut icon" href="/static/ui/images/baseline_file_copy_black_18dp.png">
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://unpkg.com/material-components-web@3.2.0/dist/material-components-web.min.css">
+
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+          integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.5/css/bootstrap/tabulator_bootstrap.min.css"
+          integrity="sha256-FKENWZ4q/WMl3tpDKb/Sbd5am6kB0i0zkwu6qBe2Xlo=" crossorigin="anonymous"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/4.1.5/js/tabulator.min.js"
+            integrity="sha256-lik08DwLub3NUYPx9MJ1oRmke/BOhcFa7kTqGEJ7ilw=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"
+            integrity="sha256-oSgtFCCmHWRPQ/JmR4OoZ3Xke1Pw4v50uh6pLcu+fIc=" crossorigin="anonymous"></script>
+</head>
+<body class="">
+<aside class="mdc-drawer mdc-drawer--dismissible">
+    <div class="mdc-drawer__content">
+        <div class="mdc-list">
+            <a class="mdc-list-item mdc-list-item--activated" href="#" aria-selected="true">
+                <i class="material-icons mdc-list-item__graphic" aria-hidden="true">file_copy</i>
+                <span class="mdc-list-item__text">Backups</span>
+            </a>
+        </div>
+    </div>
+</aside>
+
+<div class="mdc-drawer-app-content">
+    <header class="mdc-top-app-bar app-bar" id="app-bar">
+        <div class="mdc-top-app-bar__row">
+            <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+                <a href="#" class="material-icons mdc-top-app-bar__navigation-icon">menu</a>
+                <span class="mdc-top-app-bar__title">Penelope: Backups</span>
+            </section>
+            <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-end">&nbsp;
+                <span class="mdc-list-item__text" id="user_me_email"></span>
+                &nbsp;
+                <i class="material-icons mdc-top-app-bar__navigation-icon">account_box</i>
+            </section>
+        </div>
+    </header>
+
+    <!-- Backup list content -->
+    <main class="main-content" id="main-content">
+        <div class="mdc-layout-grid">
+            <div class="mdc-layout-grid__inner">
+                <div class="mdc-layout-grid__cell">
+                    <button class="mdc-button create_backup">
+                        <i class="material-icons mdc-button__icon" aria-hidden="true">add_box</i>
+                        <span class="mdc-button__label">Create Backup</span>
+                    </button>
+                    <button class="mdc-button refresh_backup">
+                        <i class="material-icons mdc-button__icon" aria-hidden="true">refresh</i>
+                        <span class="mdc-button__label">Refresh</span>
+                    </button>
+                    <button class="mdc-button resume_backup" title="will resume backups" disabled>
+                        <i class="material-icons mdc-button__icon" aria-hidden="true">play_arrow</i>
+                        <span class="mdc-button__label">Resume</span>
+                    </button>
+                    <button class="mdc-button cancel_backup" title="will halt new backups" disabled>
+                        <i class="material-icons mdc-button__icon" aria-hidden="true">pause</i>
+                        <span class="mdc-button__label">Pause</span>
+                    </button>
+                    <button class="mdc-button delete_backup" title="will stop feature backups and delete data" disabled>
+                        <i class="material-icons mdc-button__icon" aria-hidden="true">delete</i>
+                        <span class="mdc-button__label">Delete</span>
+                    </button>
+                </div>
+            </div>
+            <hr>
+            <div class="mdc-layout-grid__inner">
+                <div class="mdc-layout-grid__cell mdc-layout-grid__cell--span-12">
+                    <div id="backup-list"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<!-- Backup details dialog -->
+<div class="mdc-dialog backup"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="backup-title"
+     aria-describedby="backup-content">
+    <div class="mdc-dialog__container">
+        <div class="mdc-dialog__surface">
+            <h2 class="mdc-dialog__title">Backup details</h2>
+            <div class="mdc-dialog__content" id="backup-content">
+                <p>
+                    Created: <span class="created"></span>
+                    <br>
+                    Updated: <span class="updated"></span>
+                </p>
+                <p class="snapshot">
+                </p>
+                <div class="mdc-dialog__content" id="backup-jobs-content"></div>
+            </div>
+            <footer class="mdc-dialog__actions">
+                <div class="mdc-dialog__content" id="backup-jobs-pagination"></div>
+                <button type="button" class="mdc-button mdc-dialog__button close_backup_jobs">
+                    <span class="mdc-button__label">Close</span>
+                </button>
+            </footer>
+        </div>
+    </div>
+    <div class="mdc-dialog__scrim"></div>
+</div>
+<!-- Backup resume dialog -->
+<div class="mdc-dialog resume_backup"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="backup-title"
+     aria-describedby="backup-content">
+    <div class="mdc-dialog__container">
+        <div class="mdc-dialog__surface">
+            <h2 class="mdc-dialog__title">Backup resume</h2>
+            <div class="mdc-dialog__content" id="backup-cancel">
+                Confirm resume action for selected backup.
+            </div>
+            <footer class="mdc-dialog__actions">
+                <button type="button" class="mdc-button resume_backup mdc-dialog__button abort">
+                    <span class="mdc-button__label">Abort</span>
+                </button>
+                <button type="button" class="mdc-button resume_backup mdc-dialog__button confirm">
+                    <span class="mdc-button__label">Confirm</span>
+                </button>
+            </footer>
+        </div>
+    </div>
+    <div class="mdc-dialog__scrim"></div>
+</div>
+<!-- Backup cancel dialog -->
+<div class="mdc-dialog cancel_backup"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="backup-title"
+     aria-describedby="backup-content">
+    <div class="mdc-dialog__container">
+        <div class="mdc-dialog__surface">
+            <h2 class="mdc-dialog__title">Backup pause</h2>
+            <div class="mdc-dialog__content" id="backup-cancel">
+                Confirm pause action for selected backup.
+            </div>
+            <footer class="mdc-dialog__actions">
+                <button type="button" class="mdc-button cancel_backup mdc-dialog__button abort">
+                    <span class="mdc-button__label">Abort</span>
+                </button>
+                <button type="button" class="mdc-button cancel_backup mdc-dialog__button confirm">
+                    <span class="mdc-button__label">Confirm</span>
+                </button>
+            </footer>
+        </div>
+    </div>
+    <div class="mdc-dialog__scrim"></div>
+</div>
+<!-- Backup delete dialog -->
+<div class="mdc-dialog delete_backup"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="backup-title"
+     aria-describedby="backup-content">
+    <div class="mdc-dialog__container">
+        <div class="mdc-dialog__surface">
+            <h2 class="mdc-dialog__title">Backup delete</h2>
+            <div class="mdc-dialog__content" id="backup-delete">
+                Confirm delete action for selected backup.
+            </div>
+            <footer class="mdc-dialog__actions">
+                <button type="button" class="mdc-button delete_backup mdc-dialog__button abort">
+                    <span class="mdc-button__label">Abort</span>
+                </button>
+                <button type="button" class="mdc-button delete_backup mdc-dialog__button confirm">
+                    <span class="mdc-button__label">Confirm</span>
+                </button>
+            </footer>
+        </div>
+    </div>
+    <div class="mdc-dialog__scrim"></div>
+</div>
+
+<!-- loading user data dialog -->
+<div class="mdc-dialog account_login"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="my-dialog-title"
+     aria-describedby="my-dialog-content">
+    <div class="mdc-dialog__container">
+        <div class="mdc-dialog__surface">
+            <h2 class="mdc-dialog__title" id="my-dialog-title">Obtaining user data</h2>
+            <div class="mdc-dialog__content" id="my-dialog-content">
+                Please wait until dialog close.
+            </div>
+            <footer class="mdc-dialog__actions">
+                <button type="button" class="mdc-button mdc-dialog__button" onClick="window.location.reload()">
+                    <span class="mdc-button__label">Refresh</span>
+                </button>
+            </footer>
+        </div>
+    </div>
+    <div class="mdc-dialog__scrim"></div>
+</div>
+<!-- create backup dialog -->
+<div class="mdc-dialog create_backup"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="create-backup-title"
+     aria-describedby="create-backup-content">
+    <div class="mdc-dialog__container">
+        <div class="mdc-dialog__surface">
+            <div class="mdc-dialog__content" id="create-backup-content">
+                <h2 class="mdc-dialog__title" id="create-backup-title">Create backup</h2>
+                <div class="mdc-select create-backup-form-project">
+                    <i class="mdc-select__dropdown-icon"></i>
+                    <select class="mdc-select__native-control create-backup-select-width"
+                            id="create-backup-form-project"
+                            aria-controls="create-backup-form-project-helper-text"
+                            aria-describedby="create-backup-form-project-helper-text">
+                        <option value="" disabled selected></option>
+                    </select>
+                    <label class="mdc-floating-label">Project*</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <p id="create-backup-form-project-text-helper"
+                   class="mdc-select-helper-text mdc-select-helper-text--persistent">
+                    Source project
+                </p>
+                <div class="mdc-select create-backup-form-storage-class">
+                    <i class="mdc-select__dropdown-icon"></i>
+                    <select class="mdc-select__native-control create-backup-select-width"
+                            id="create-backup-form-storage-class">
+                        <option value="" disabled selected></option>
+                        <option value="COLDLINE">Coldline</option>
+                        <option value="NEARLINE">Nearline</option>
+                        <option value="REGIONAL">Regional</option>
+                    </select>
+                    <label class="mdc-floating-label">Storage class*</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <p id="create-backup-form-storage-class-text-helper"
+                   class="mdc-select-helper-text mdc-select-helper-text--persistent">
+                    Bucket storage class for data
+                </p>
+                <div class="mdc-select create-backup-form-storage-region">
+                    <i class="mdc-select__dropdown-icon"></i>
+                    <select class="mdc-select__native-control create-backup-select-width"
+                            id="create-backup-form-storage-region">
+                        <option value="" disabled selected></option>
+                        <option value="europe-west1">europe-west1</option>
+                        <option value="europe-west3">europe-west3</option>
+                        <option value="europe-west4">europe-west4</option>
+                    </select>
+                    <label class="mdc-floating-label">Storage region*</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <p id="create-backup-form-storage-region-text-helper"
+                   class="mdc-select-helper-text mdc-select-helper-text--persistent">
+                    Bucket storage region
+                </p>
+                <!-- CREATE ARCHIVE TTM -->
+                <div class="mdc-text-field create-backup-form-archive-ttm">
+                    <input type="text" id="create-backup-form-archive-ttm"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-archive-ttm">archive TTM</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-form-project">
+                    <div id="create-backup-form-archive-ttm-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        After X days change object storage class to archive. Default is 0.
+                    </div>
+                </div>
+
+                <div class="mdc-select create-backup-form-type">
+                    <i class="mdc-select__dropdown-icon"></i>
+                    <select class="mdc-select__native-control create-backup-select-width"
+                            id="create-backup-form-type">
+                        <option value="" disabled selected></option>
+                        <option value="CloudStorage">Cloud Storage</option>
+                        <option value="BigQuery">Big Query</option>
+                    </select>
+                    <label class="mdc-floating-label">Type*</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <p id="create-backup-form-type-text-helper"
+                   class="mdc-select-helper-text mdc-select-helper-text--persistent">
+                    Backup type
+                </p>
+                <div class="mdc-select create-backup-form-storage-bucket hidden gcs">
+                    <i class="mdc-select__dropdown-icon"></i>
+                    <select class="mdc-select__native-control create-backup-select-width"
+                            id="create-backup-form-storage-bucket">
+                        <option value="" disabled selected></option>
+                    </select>
+                    <label class="mdc-floating-label">Bucket name*</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <p id="create-backup-form-type-text-helper2"
+                   class="mdc-select-helper-text mdc-select-helper-text--persistent  hidden gcs">Cloud Storage Bucket*
+                </p>
+                <div class="mdc-text-field-helper-line create-backup-form-project hidden gcs">
+                    <div id="create-backup-form-storage-bucket-helper-text"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent hidden gcs">
+                        Bucket name. Required.
+                    </div>
+                </div>
+
+                <div class="mdc-text-field create-backup-form-storage-include hidden gcs">
+                    <input type="text" id="create-backup-form-storage-include"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-storage-include">Include path</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-storage-include hidden gcs">
+                    <div id="create-backup-form-bigquery-table-helper-text"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        Comma separated.
+                    </div>
+                </div>
+                <div class="mdc-text-field create-backup-form-storage-exclude hidden gcs">
+                    <input type="text" id="create-backup-form-storage-exclude"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-storage-exclude">Exclude path</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-storage-exclude hidden gcs">
+                    <div id="create-backup-form-bigquery-table-helper-text2"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        Comma separated.
+                    </div>
+                </div>
+
+                <div class="mdc-select create-backup-form-bigquery-dataset hidden bq">
+                    <i class="mdc-select__dropdown-icon"></i>
+                    <select class="mdc-select__native-control create-backup-select-width"
+                            id="create-backup-form-bigquery-dataset">
+                        <option value="" disabled selected></option>
+                    </select>
+                    <label class="mdc-floating-label">Dataset*</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <p id="create-backup-form-type-text-helpe2r"
+                   class="mdc-select-helper-text mdc-select-helper-text--persistent hidden bq"> BigQuery dataset
+                </p>
+                <div class="mdc-text-field-helper-line create-backup-form-project hidden bq">
+                    <div id="create-backup-form-bigquery-dataset-helper-text"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        Dataset name. Required.
+                    </div>
+                </div>
+                <div class="mdc-text-field create-backup-form-bigquery-table hidden bq">
+                    <input type="text" id="create-backup-form-bigquery-table"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-bigquery-table">BigQuery
+                        tables</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-form-project hidden bq">
+                    <div id="create-backup-form-bigquery-excluded_tables-helper-text"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        When empty will take all tables. Comma separated.
+                    </div>
+                </div>
+                <div class="mdc-text-field create-backup-form-bigquery-excluded_tables hidden bq">
+                    <input type="text" id="create-backup-form-bigquery-excluded_tables"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-bigquery-excluded_tables">BigQuery
+                        excluded
+                        tables</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-form-project hidden bq">
+                    <div id="create-backup-form-bigquery-excluded_tables-helper-text2"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        When present will ignore given tables. Comma separated.
+                    </div>
+                </div>
+                <div class="mdc-select create-backup-form-strategy">
+                    <i class="mdc-select__dropdown-icon"></i>
+                    <select class="mdc-select__native-control create-backup-select-width"
+                            id="create-backup-form-strategy">
+                        <option value="" disabled selected></option>
+                        <option value="Snapshot">Snapshot</option>
+                        <option value="Oneshot">Oneshot</option>
+                        <option value="Mirror">Mirror</option>
+                    </select>
+                    <label class="mdc-floating-label">Strategy*</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <p id="create-backup-form-strategy-text-helper"
+                   class="mdc-select-helper-text mdc-select-helper-text--persistent">
+                    Snapshot: one or many shots. Mirror: hourly sync.
+                </p>
+
+                <div class="mdc-text-field create-backup-form-snapshot-ttl hidden snapshot">
+                    <input type="text" id="create-backup-form-snapshot-ttl"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-snapshot-ttl">Snapshot
+                        TTL</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-form-project hidden snapshot">
+                    <div id="create-backup-form-snapshot-ttl-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        After X days data will be deleted. Default is 0.
+                    </div>
+                </div>
+
+                <div class="mdc-text-field create-backup-form-oneshot-ttl hidden oneshot">
+                    <input type="text" id="create-backup-form-oneshot-ttl"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-oneshot-ttl">Oneshot
+                        TTL</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-form-project hidden oneshot">
+                    <div id="create-backup-form-oneshot-ttl-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        After X days data will be deleted. Default is 0.
+                    </div>
+                </div>
+
+                <div class="mdc-text-field create-backup-form-mirror-ttl hidden mirror">
+                    <input type="text" id="create-backup-form-mirror-ttl"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-mirror-ttl">mirror
+                        TTL</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-form-project hidden mirror">
+                    <div id="create-backup-form-mirror-ttl-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        After X days data will be deleted. Default is 0.
+                    </div>
+                </div>
+                <div class="mdc-text-field create-backup-form-snapshot-schedule hidden snapshot">
+                    <input type="text" id="create-backup-form-snapshot-schedule"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-snapshot-schedule">Snapshot
+                        schedule</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-form-snapshot-schedule hidden snapshot">
+                    <div id="create-backup-form-snapshot-schedule-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        Snapshot will be created every X hours at full hour
+                    </div>
+                </div>
+                <div id="calculateChart">
+                </div>
+                <footer class="mdc-dialog__actions">
+                    <button type="button" class="mdc-button mdc-dialog__button">
+                                            <span class="mdc-button__label"
+                                                  id="create-backup-content-cancel">Cancel</span>
+                    </button>
+                    <button type="button" class="mdc-button mdc-dialog__button">
+                                            <span class="mdc-button__label"
+                                                  id="create-backup-content-create">Create</span>
+                    </button>
+                    <button type="button" id="create-backup-content-calculate" class="mdc-button mdc-dialog__button"
+                            disabled>
+                        <span class="mdc-button__label">Calculate</span>
+                    </button>
+                </footer>
+            </div>
+        </div>
+    </div>
+    <div class="mdc-dialog__scrim"></div>
+</div>
+<!-- update backup dialog -->
+<div class="mdc-dialog update_backup"
+     role="alertdialog"
+     aria-modal="true"
+     aria-labelledby="update-backup-title"
+     aria-describedby="update-backup-content">
+    <div class="mdc-dialog__container">
+        <div class="mdc-dialog__surface">
+            <div class="mdc-dialog__content" id="update-backup-content">
+                <h2 class="mdc-dialog__title" id="update-backup-title">Update backup</h2>
+                <input type="hidden" id="update-backup-form-backup-id"
+                       class="mdc-text-field__input update-backup-input-width" readonly="readonly">
+
+                <div class="mdc-text-field update-backup-form-storage-include hidden gcs">
+                    <input type="text" id="update-backup-form-storage-include"
+                           class="mdc-text-field__input update-backup-input-width">
+                    <label class="mdc-floating-label" for="update-backup-form-storage-include">Include path</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line update-backup-storage-include hidden gcs">
+                    <div id="update-backup-storage-include-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        Comma separated.
+                    </div>
+                </div>
+
+                <div class="mdc-text-field update-backup-form-storage-exclude hidden gcs">
+                    <input type="text" id="update-backup-form-storage-exclude"
+                           class="mdc-text-field__input update-backup-input-width">
+                    <label class="mdc-floating-label" for="update-backup-form-storage-exclude">exclude path</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line update-backup-storage-exclude hidden gcs">
+                    <div id="update-backup-storage-exclude-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        Comma separated.
+                    </div>
+                </div>
+                <div class="mdc-text-field update-backup-form-bigquery-table hidden bq">
+                    <input type="text" id="update-backup-form-bigquery-table"
+                           class="mdc-text-field__input update-backup-input-width">
+                    <label class="mdc-floating-label" for="update-backup-form-bigquery-table">BigQuery
+                        tables</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line update-backup-form-project hidden bq">
+                    <div id="update-backup-form-bigquery-table-helper-text"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        When empty will take all tables. Comma separated.
+                    </div>
+                </div>
+                <div class="mdc-text-field update-backup-form-bigquery-excluded_tables hidden bq">
+                    <input type="text" id="update-backup-form-bigquery-excluded_tables"
+                           class="mdc-text-field__input create-backup-input-width">
+                    <label class="mdc-floating-label" for="create-backup-form-bigquery-excluded_tables">BigQuery
+                        excluded
+                        tables</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line create-backup-form-project hidden bq">
+                    <div id="update-backup-form-bigquery-excluded_tables-helper-text2"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        When present will ignore given tables. Comma separated.
+                    </div>
+                </div>
+                <!-- UPDATE MIRROR TTL IF STRATEGY IS MIRROR-->
+                <div class="mdc-text-field update-backup-form-mirror-ttl hidden update-mirror">
+                    <input type="text" id="update-backup-form-mirror-ttl"
+                           class="mdc-text-field__input update-backup-input-width">
+                    <label class="mdc-floating-label" for="update-backup-form-mirror-ttl">Mirror TTL</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line update-backup-form-project hidden update-mirror">
+                    <div id="update-backup-form-mirror-ttl-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        After X days data will be deleted. Default is 0.
+                    </div>
+                </div>
+                <!-- UPDATE SNAPSHOT TTL IF STRATEGY IS SNAPSHOT-->
+                <div class="mdc-text-field update-backup-form-snapshot-ttl hidden update-snapshot">
+                    <input type="text" id="update-backup-form-snapshot-ttl"
+                           class="mdc-text-field__input update-backup-input-width">
+                    <label class="mdc-floating-label" for="update-backup-form-snapshot-ttl">Snapshot TTL</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line update-backup-form-project hidden update-snapshot">
+                    <div id="update-backup-form-snapshot-ttl-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        After X days data will be deleted. Default is 0.
+                    </div>
+                </div>
+                <!-- UPDATE UPDATE ARCHIVE TTM-->
+                <div class="mdc-text-field update-backup-form-archive-ttm">
+                    <input type="text" id="update-backup-form-archive-ttm"
+                           class="mdc-text-field__input update-backup-input-width">
+                    <label class="mdc-floating-label" for="update-backup-form-archive-ttm">Archive TTM</label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <div class="mdc-text-field-helper-line update-backup-form-project">
+                    <div id="update-backup-form-archive-ttm-text-helper"
+                         class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent">
+                        After X days change object storage class to Archive. Default is 0.
+                    </div>
+                </div>
+
+                <footer class="mdc-dialog__actions">
+                    <button type="button" class="mdc-button mdc-dialog__button">
+                                            <span class="mdc-button__label"
+                                                  id="update-backup-content-cancel">Cancel</span>
+                    </button>
+                    <button type="button" class="mdc-button mdc-dialog__button">
+                                            <span class="mdc-button__label"
+                                                  id="update-backup-content-update">Update</span>
+                    </button>
+                </footer>
+            </div>
+        </div>
+    </div>
+    <div class="mdc-dialog__scrim"></div>
+</div>
+
+<!-- Info snackbar -->
+<div class="mdc-snackbar info">
+    <div class="mdc-snackbar__surface">
+        <div class="mdc-snackbar__label" role="status" aria-live="polite">
+            Can't send photo. Retry in 5 seconds.
+        </div>
+        <div class="mdc-snackbar__actions">
+            <button type="button" class="mdc-button mdc-snackbar__action">Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+        crossorigin="anonymous"></script>
+<script src="/static/ui/js/index.js"></script>
+<script src="/static/ui/js/api.js"></script>
+<script src="/static/ui/js/view.js"></script>
+<script src="/static/ui/js/user.js"></script>
+<script src="https://unpkg.com/material-components-web@3.2.0/dist/material-components-web.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+<script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+<script type="application/javascript">
+    var App = new App();
+</script>
+<style type="text/css">
+    #main-content {
+        padding-top: 64px;
+    }
+
+    .app-fab--absolute {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+    }
+
+    .app-fab--absolute .material-icons {
+        /* font-size: 48px;*/
+    }
+
+    .create-backup-select-width {
+        width: 360px;
+    }
+
+    .create-backup-input-width {
+        width: 360px;
+    }
+
+    .mdc-dialog.create_backup {
+        width: 100%;
+    }
+
+    .update-backup-select-width {
+        width: 360px;
+    }
+
+    .update-backup-input-width {
+        width: 360px;
+    }
+
+    .mdc-dialog.update_backup {
+        width: 100%;
+    }
+
+    .mdc-dialog .mdc-dialog__surface {
+        max-width: 1024px;
+    }
+
+    #backup-content .material-icons {
+        font-size: 18px;
+    }
+
+    .tabulator-cell {
+        padding: 4px 0;
+    }
+
+    .tabulator-row {
+        padding: 4px 0;
+    }
+</style>
+</body>
+</html>
