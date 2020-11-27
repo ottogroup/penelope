@@ -69,21 +69,6 @@ create table source_metadata
     audit_deleted_timestamp timestamp
 );
 
-create table source_metadata
-(
-    id serial not null
-        constraint source_metadata_pkey
-            primary key,
-    backup_id text
-        constraint source_metadata_backup_id_fkey
-            references backups,
-    source text,
-    source_checksum text,
-    operation text default 'Add'::text not null,
-    audit_created_timestamp timestamp default now() not null,
-    audit_deleted_timestamp timestamp
-);
-
 create table source_metadata_jobs
 (
     source_metadata_id integer not null
