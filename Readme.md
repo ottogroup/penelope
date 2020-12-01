@@ -76,7 +76,7 @@ flyway migrate -url=jdbc:postgresql://<HOST>:<PORT>/<DB> -user=<USER> -password=
 Because we are going to deploy Penelope to App Engine, it maybe useful to take 
 CloudSQL into consideration. You can use Cloud SQL Proxy to connect with your instance via a
 secure connection. In order to find more about how to set up a connection using the proxy client see the
-[About the Cloud SQL Proxy] (https://cloud.google.com/sql/docs/mysql/sql-proxy) documentation. 
+[About the Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy) documentation. 
 
 #### 2. Step: Configure App Engine
 
