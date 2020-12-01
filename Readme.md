@@ -1,13 +1,16 @@
 ## Penelope - GCP Backup Solution 
 
 ### About
-Penelope is a tool, which allows you to backup data stored in GCP automatically. You can create backups from Bigquery datasets and tables as well as from Cloud Storage buckets within Google Cloud Storage. For authentication against GCP services Penelope uses Google service accounts and for identification it assumes that you bring in your own IDP. 
+Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery datasets and tables as well as from Cloud Storage buckets within Google Cloud Storage. For authentication against GCP services Penelope uses Google service accounts and for identification it assumes that you bring in your own IDP. 
 
 Penelope consists of three main components: 
 * A Docker image for a server written in GO providing an API with different methods to create, start, etc. backups
 * A web frontend allowing users to easily create and manage backup jobs 
 * A PostgreSQL database storing different pieces of information about backup jobs
 
+**Bellow:** Screenshot from Penelope using the backup form to create a backups
+
+![Backup Form](/resources/screenshots/backup_form_screentshot.png?raw=true)
 
 ### Getting Started
 
@@ -24,13 +27,8 @@ specific providers:
 
 #### Database migrations
 
-Penelope uses a PostgresSQL database to store the backup state. The migrations are under `resources/migrations/`. 
-You can use [Flyway](https://flywaydb.org/) to run the migrations against your own pg database:
-
-```shell script
-flyway migrate -url=jdbc:postgresql://<HOST>:<PORT>/<DB> -user=<USER> -password=<PW> -locations=filesystem:./resources/migrations
-```
-
+Penelope uses a PostgreSQL database to store the backup state. You can find the migrations under the folder `resources/migrations/`. 
+You can use [Flyway](https://flywaydb.org/) to run the migrations against your own pg database.
 
 #### Configuration
 
@@ -41,26 +39,50 @@ settings. If you not provide required settings, penelope will not run.
 | Name | Required | Description |
 | ---- | ---- | ---- |
 | `GCP_PROJECT_ID` | required | Set the GCP project. |
-| `APP_JWT_AUDIENCE` | required | |
-| `DEFAULT_BUCKET_STORAGE_CLASS` | required | |
+| `APP_JWT_AUDIENCE` | required | Set the expected audience value of the jwt token. |
+| `COMPANY_DOMAINS` | required | Set the company domains for validating user email. Value can be a comma separated list. |
+| `DEFAULT_BUCKET_STORAGE_CLASS` | required | Set the default storage class for backup sinks. |
+| `POSTGRES_SOCKET` | required | Set socket address to PostgreSQL server.  |
+| `POSTGRES_HOST` | required | Set host address to PostgreSQL server. If PostgreSQL socket is specified, setting this is optional. |
+| `POSTGRES_PORT` | required | Set port of PostgreSQL server default to `5432`. |
+| `POSTGRES_DB` | required | Set name of PostgreSQL database. |
+| `POSTGRES_USER` | required | Set username to connect with PostgreSQL database. |
+| `POSTGRES_PASSWORD` | required | Set password for user to connect with PostgreSQL database. |
+| `TOKEN_HEADER_KEY` | required | Set the key for token header. |
 | `PENELOPE_PORT` | optional | Set port for localhost when running penelope local. |
 | `PENELOPE_TRACING` | optional | Set `true` to export tracing metrics to Stackdriver. Default is `true`. |
 | `PENELOPE_TRACING_METRICS_PREFIX` | optional | Set prefix for tracing metrics when activated. Default is `penelope-server`. |
 | `PENELOPE_USE_DEFAULT_HTTP_CLIENT` | optional | Switch to use default http request for testing by setting `true`. Default is `false`. |
-| `POSTGRES_SOCKET` | required | Socket address to postgres server.  |
-| `POSTGRES_HOST` | optional | Host address to postgres server.  |
-| `POSTGRES_PORT` | required | Optional: Port of postgres server default to `5432`. |
-| `POSTGRES_USER` | required | Username to connect with postgres database. |
-| `POSTGRES_DB` | required | The postgres database name. |
-| `POSTGRES_PASSWORD` | optional | Password for specified user to connect with postgres database. |
-| `TOKEN_HEADER_KEY` | required | Set the key for token header. |
-| `COMPANY_DOMAINS` | required | Set the company domains for validating user email. Value can be a comma separated list. |
 | `CORS_ALLOWED_METHODS` | optional | Set the allowed methods for CORS with a comma separated list. For example, `POST, PATCH, GET` |
 | `CORS_ALLOWED_ORIGIN` | optional | Set the allowed origins for defined cors methods. |
 | `CORS_ALLOWED_HEADERS` | optional | Set the allowed request headers.  |
 | `TASKS_VALIDATION_HTTP_HEADER_NAME` | optional | Adds request validation to tasks triggers. Specifies the expected request head for validation. |
 | `TASKS_VALIDATION_HTTP_HEADER_VALUE` | optional | Expected value for request validation.  |
 | `TASKS_VALIDATION_ALLOWED_IP_ADDRESSES` | optional | Adds ip address validation to tasks triggers. Multiple comma separated ip addresses can be specified. |
+
+### Deploy Basic Setup
+
+This step-by-step guide will walk you through how to set up Penelope in your own Google App Engine instance. Let us start with the database migration.
+
+#### 1. Step: Migration with Flyway
+
+In the following we show, how you can use Flyway for migration. However, feel free to use any other tool which 
+fits best for your use case. The migration files are in the folder `resource/migrations` as already mentioned above.
+
+```shell script
+flyway migrate -url=jdbc:postgresql://<HOST>:<PORT>/<DB> -user=<USER> -password=<PW> -locations=filesystem:./resources/migrations
+```
+
+Because we are going to deploy Penelope to App Engine, it maybe useful to take 
+CloudSQL into consideration. You can use Cloud SQL Proxy to connect with your instance via a
+secure connection. In order to find more about how to set up a connection using the proxy client see the
+[About the Cloud SQL Proxy] (https://cloud.google.com/sql/docs/mysql/sql-proxy) documentation. 
+
+#### 2. Step: Configure App Engine
+
+You are going to need a `app.yaml` (.yml with an a) file to deploy and configure your App Engine service.
+In this file you specify the url handlers and can set the already mentioned environment variables to configure Penelope 
+as well.
 
 ### API 
 
