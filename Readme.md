@@ -110,7 +110,7 @@ env_variables:
   # ...
 ```
 
-### 4. Step: Penelope Deployment
+#### 4. Step: Penelope Deployment
 
 Now that you have specified the configuration for Penelope, you are able to deploy the local application and 
 configuration settings by using Cloud SDK. For more details on how to install or manage your GCP resources and 
