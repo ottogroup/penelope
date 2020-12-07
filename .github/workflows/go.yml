@@ -34,11 +34,6 @@ jobs:
 
     steps:
 
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
-        with:
-          go-version: '^1.13.1'
-
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
         
@@ -48,10 +43,13 @@ jobs:
       - name: DB Migration
         run: flyway migrate -url=jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD -locations=filesystem:./resources/migrations
 
+      - name: Set up Go ^1.13
+        uses: actions/setup-go@v2
+        with:
+          go-version: '^1.13.1'
+
       - name: Get dependencies
-        run: |
-          go version
-          go get -v -t -d ./...
+        run: go get -v -t -d ./...
 
       - name: Test
         run: go test -p 1 ./...
