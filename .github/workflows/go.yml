@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v2
         
       - name: DB Migration
-        run: docker run --rm -v $GITHUB_WORKSPACE/resources/migrations:/flyway/sql flyway/flyway -url=jdbc:postgresql://127.0.0.1:5432/backupdatabase -user=backupuser -password=backupuserpassword migrate
+        run: docker run --rm -v $GITHUB_WORKSPACE/resources/migrations:/flyway/sql flyway/flyway -url=jdbc:postgresql://postgres:5432/backupdatabase -user=backupuser -password=backupuserpassword migrate
 
       - name: Get dependencies
         run: |
