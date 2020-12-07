@@ -43,10 +43,10 @@ jobs:
       - name: DB Migration
         run: flyway migrate -url=jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD -locations=filesystem:./resources/migrations
 
-      - name: Set up Go 1.13
+      - name: Set up Go ^1.14
         uses: actions/setup-go@v2
         with:
-          go-version: '1.14.4'
+          go-version: ^1.14
 
       - name: Get dependencies
         run: go get -v -t -d ./...
