@@ -1,6 +1,6 @@
 ## Penelope - GCP Backup Solution 
 
-- [Penelope - GCP Backup Solution](#penelope---gcp-backup-solution)
+
   * [About](#about)
   * [Getting Started](#getting-started)
     + [Database migrations](#database-migrations)
