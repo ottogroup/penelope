@@ -16,6 +16,7 @@ jobs:
       POSTGRES_USER: backupuser
       POSTGRES_PASSWORD: backupuserpassword
       POSTGRES_PORT: 5432
+      GOOGLE_APPLICATION_CREDENTIALS: key.json
     services:
       postgres:  
         image: postgres
