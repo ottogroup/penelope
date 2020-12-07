@@ -11,6 +11,11 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_DB: backupdatabase
+      POSTGRES_USER: backupuser
+      POSTGRES_PASSWORD: backupuserpassword
+      POSTGRES_PORT: 5432
     services:
       postgres:  
         image: postgres
@@ -42,12 +47,6 @@ jobs:
       
       - name: DB Migration
         run: flyway migrate -url=jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD -locations=filesystem:./resources/migrations
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: backupdatabase
-          POSTGRES_USER: backupuser
-          POSTGRES_PASSWORD: backupuserpassword
 
       - name: Get dependencies
         run: |
@@ -62,9 +61,3 @@ jobs:
 
       - name: Test
         run: go test -p 1 ./...
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: backupdatabase
-          POSTGRES_USER: backupuser
-          POSTGRES_PASSWORD: backupuserpassword
