@@ -1,6 +1,6 @@
 ## Penelope - GCP Backup Solution 
 
-- [Penelope - GCP Backup Solution](#penelope---gcp-backup-solution)
+
   * [About](#about)
   * [Getting Started](#getting-started)
     + [Database migrations](#database-migrations)
@@ -105,8 +105,8 @@ secure connection. In order to find out more about the proxy client see the
 #### 2. Step: Configuration of App Engine
 
 You are going to need a `app.yaml` file to deploy and configure your App Engine service.
-In this file you specify the go runtime version, url handlers and can set all environment variables to configure Penelope 
-as well. This repository provides a configuration template for your own App Engine. Replace the brackets and feel 
+In this file you specify the go runtime version, url handlers and all environment variables to configure Penelope. 
+This repository provides a default configuration template for your own App Engine. Replace the brackets and feel 
 free to change the values, but be carefully with the handlers.
 
 ```yaml
@@ -132,7 +132,7 @@ env_variables:
 #### 4. Step: Penelope Deployment
 
 Now that you have specified the configuration for Penelope, you are able to deploy the local application and 
-configuration settings by using Cloud SDK. For more details on how to install or manage your GCP resources and 
+configuration settings with Cloud SDK. For more details on how to install or manage your GCP resources and 
 applications see [Google Cloud SDK Documentation](https://cloud.google.com/sdk/docs/quickstart). Since we are going to
 deploy the application to app engine, we will use `gcloud app deploy` for deployment.
 
@@ -145,7 +145,7 @@ gcloud app deploy app.yaml
 Congratulations. If you configured your application correctly, you successfully deployed Penelope to
 App Engine. But you're not done yet. There are still tasks, which need to be triggered. These Penelope tasks are responsible for 
 making backups, cleanups of expired sinks and so on. This repository provides a basic cron job configuration as well for all
-tasks. There are no changes required, but feel free to change the scheduling.
+tasks. There are no changes required.
 
 ```yaml
 # cron.yaml
@@ -161,7 +161,7 @@ cron:
 
 #### 4. Step: Cron-Jobs Scheduling
 
-Deploying the `cron.yaml` configuration file to App Engine is straight forward. You just need to run the following command.
+Deploying the `cron.yaml` configuration file to App Engine is straight forward. You just need to run the following command and you are finished.
 
 ```shell script
 gcloud app deploy cron.yaml
@@ -169,11 +169,11 @@ gcloud app deploy cron.yaml
 
 ### Providers
 
-This section is specifically talking about the special Penelope providers. As mentioned before, there are four 
+This section is specifically tell you about the special Penelope providers. As mentioned before, there are four 
 providers which provide Penelope with information like where to store the backup, which role bindings has the user and so on. 
-This repository contains default providers. However, you are able to implement your own provider. In the following, 
+This repository contains default providers. However, you are able to implement your own providers. In the following, 
 you will find out how each default provider works and how you can implement your own provider. To use your own Penelope 
-defined providers use `AppStartArguments` and pass it to the run function of the `cmd` package.
+defined providers use `AppStartArguments` and pass it to the run function of the `github.com/ottogroup/penelope/cmd` package.
 
 ```go
 package main
@@ -202,7 +202,7 @@ func main() {
 Let's have a look at the first provider. The secret provider, specified by the `SecretProvider` interface, provides Penelope with the database
 password. This provider defines only one method. It receives a `context.Context` and `string` argument and returns
 a `string` and `error` type. You can probably guess the meaning of each argument. However, we will go through 
-each parameter to be clear. The first argument expected is a context, which is created for each (http) request. This is 
+each parameter to be clear. The first expected argument is a context, which is created for each (http) request. This is 
 golang specific. If you want to find out more about the Context type, you can read the [Package Context](https://golang.org/pkg/context/)
 documentation. The next argument contains the database user name. All you have to do is to return the 
 password for this user. If you are not able to return the database password, you can return an error value.
@@ -221,15 +221,15 @@ type SecretProvider interface {
 ##### Default
 
 The default provider is actually pretty straight forward. It basically doesn't care about the user argument. It just returns the 
-value you have specified in the `POSTGRES_PASSWORD` environment variable. You think this is bad? Then feel free to 
-define your own implementation.  
+value you have specified in the `POSTGRES_PASSWORD` environment variable. If this default provider is not advance enough for your
+need, then feel free to implement your own secret provider.
 
 #### Backup Provider 
 
 The tasks of the backup sink provider is to provide Penelope with a GCP project where the backup should be stored.
 This provider is defined by the `SinkGCPProjectProvider` interface. The first argument is the same for all provider methods, 
 which is again context. The next argument is the source GCP project id. It is the project of the source data, which should
-be backup on a target project. The target project is actually defined by the return value.
+be backup on a target project. The task of this interface is to return the target project for the received source project.
 
 ```go
 package provider
@@ -243,9 +243,9 @@ type SinkGCPProjectProvider interface {
 
 ##### Default
 
-The default provide is a bit more complex this time. You not only have to define the environment variables 
+The default provide is a bit more complex this time. You will not only have to define the environment variables 
 `DEFAULT_PROVIDER_BUCKET` and `DEFAULT_PROVIDER_SINK_FOR_PROJECT_PATH`, you also have to store a `.yaml` file 
-in the bucket. The content can look like this.
+in the specified bucket. The content of the file should look like this.
 
 ```yaml
 - project: project-one
@@ -255,7 +255,7 @@ in the bucket. The content can look like this.
 ```
 
 For each project you define a backup project (actually not that complex, huh?). But what happens, if a source 
-project is not listed in the file? Then the default implementation returns an error. You think there are better solutions.
+project is not listed in the file? Then the default implementation returns an error. You think there are other solutions?
 Maybe you would like to create a backup projects on-the-fly or just use the source project as the target project. Then 
 feel free to implement your own `SinkGCPProjectProvider`.
 
@@ -344,14 +344,14 @@ The content can look like this.
 
 ```yaml
 - user:
-    email: 'first-user@example.de'
+  email: 'first-user@example.de'
   role_bindings:
     - role: owner
       project: 'project-one'
     - role: viewer
       project: 'project-two'
 - user:
-    email: 'second-user@example.de'
+  email: 'second-user@example.de'
   role_bindings:
     - role: viewer
       project: 'project-one'
