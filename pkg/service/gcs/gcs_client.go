@@ -95,15 +95,20 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
         return nil, err
     }
 
-    options := []option.ClientOption{
+    storageOptions := []option.ClientOption{
         option.WithScopes(cloudPlatformAPIScope, defaultAPIScope, metricAPIScope),
         option.ImpersonateCredentials(target),
     }
 
-    if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
-        options = append(options, option.WithHTTPClient(http.DefaultClient))
+    monitoringOptions := []option.ClientOption{
+        option.ImpersonateCredentials(target),
     }
-    client, err := storage.NewClient(ctx, options...)
+
+    if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
+        storageOptions = append(storageOptions, option.WithHTTPClient(http.DefaultClient))
+        monitoringOptions = append(monitoringOptions, option.WithoutAuthentication())
+    }
+    client, err := storage.NewClient(ctx, storageOptions...)
     if err != nil {
         return &defaultGcsClient{}, fmt.Errorf("failed to create storage.Client: %v", err)
     }
