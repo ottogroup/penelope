@@ -24,7 +24,7 @@ require (
 	google.golang.org/api v0.34.0
 	google.golang.org/appengine v1.6.7
 	google.golang.org/genproto v0.0.0-20201029200359-8ce4113da6f7
-	google.golang.org/grpc v1.33.1 // indirect
+	google.golang.org/grpc v1.33.1
 	gopkg.in/dc0d/tinykv.v4 v4.0.1
 	gopkg.in/yaml.v2 v2.3.0
 )
