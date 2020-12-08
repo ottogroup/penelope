@@ -81,7 +81,7 @@ func createCloudStorageClient(ctxIn context.Context) (CloudStorageClient, error)
 
 	var monitoringOptions []option.ClientOption
 	if config.UseGrpcWithoutAuthentication.GetBoolOrDefault(false) {
-		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.w))
+		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithInsecure()))
 	}
 
 	client, err := storage.NewClient(ctx, storageOptions...)
