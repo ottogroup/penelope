@@ -74,12 +74,22 @@ func createCloudStorageClient(ctxIn context.Context) (CloudStorageClient, error)
 	ctx, span := trace.StartSpan(ctxIn, "createCloudStorageClient")
 	defer span.End()
 
-	client, err := storage.NewClient(ctx)
+	var storageOptions []option.ClientOption
+	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
+		storageOptions = append(storageOptions, option.WithHTTPClient(http.DefaultClient))
+	}
+
+	var monitoringOptions []option.ClientOption
+	if config.UseGrpcWithInsecureTransport.GetBoolOrDefault(false) {
+		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithInsecure()))
+	}
+
+	client, err := storage.NewClient(ctx, storageOptions...)
 	if err != nil {
 		return &defaultGcsClient{}, fmt.Errorf("failed to create storage.Client: %v", err)
 	}
 
-	metricClient, err := monitoring.NewMetricClient(ctx)
+	metricClient, err := monitoring.NewMetricClient(ctx, monitoringOptions...)
 	if err != nil {
 		return &defaultGcsClient{}, fmt.Errorf("failed to create monitoring.MetricClient: %v", err)
 	}
@@ -107,8 +117,12 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
 		storageOptions = append(storageOptions, option.WithHTTPClient(http.DefaultClient))
+	}
+
+	if config.UseGrpcWithInsecureTransport.GetBoolOrDefault(false) {
 		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithInsecure()))
 	}
+
 	client, err := storage.NewClient(ctx, storageOptions...)
 	if err != nil {
 		return &defaultGcsClient{}, fmt.Errorf("failed to create storage.Client: %v", err)
