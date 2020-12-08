@@ -35,7 +35,7 @@ func init() {
 	os.Setenv("CLOUD_SQL_SECRETS_READING_STRATEGY", "ENV")
 
 	os.Setenv("PENELOPE_USE_DEFAULT_HTTP_CLIENT", "true")
-	os.Setenv("PENELOPE_USE_GRPC_WITH_INSECURE_TRANSPORT", "true")
+	os.Setenv("PENELOPE_USE_GRPC_WITHOUT_AUTHENTICATION", "true")
 
 	flag.Lookup("logtostderr").Value.Set("true")
 	flag.Parse()

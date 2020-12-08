@@ -15,7 +15,7 @@ const (
 	EnableTracingEnv                                  EnvKey = "PENELOPE_TRACING"
 	TracingMetricsPrefixEnv                           EnvKey = "PENELOPE_TRACING_METRICS_PREFIX"
 	UseDefaultHttpClient                              EnvKey = "PENELOPE_USE_DEFAULT_HTTP_CLIENT"
-	UseGrpcWithInsecureTransport                      EnvKey = "PENELOPE_USE_GRPC_WITH_INSECURE_TRANSPORT"
+	UseGrpcWithoutAuthentication                      EnvKey = "PENELOPE_USE_GRPC_WITHOUT_AUTHENTICATION"
 	GCPProjectId                                      EnvKey = "GCP_PROJECT_ID"
 	AppJwtAudienceEnv                                 EnvKey = "APP_JWT_AUDIENCE"
 	PgSocket                                          EnvKey = "POSTGRES_SOCKET"
