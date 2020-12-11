@@ -15,7 +15,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"go.opencensus.io/trace"
-	"google.golang.org/appengine"
 	"log"
 	"os"
 )
@@ -130,7 +129,8 @@ func createAndRegisterExporters() {
 }
 
 func newTokenValidator() (auth.TokenValidator, error) {
-	if !appengine.IsAppEngine() {
+	staticFilesPath := config.StaticFilesPath.GetOrDefault("")
+	if len(staticFilesPath) > 0 {
 		return auth.NewEmptyTokenValidator(), nil
 	}
 

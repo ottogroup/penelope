@@ -79,7 +79,7 @@ func createCloudStorageClient(ctxIn context.Context) (CloudStorageClient, error)
 		storageOptions = append(storageOptions, option.WithHTTPClient(http.DefaultClient))
 	}
 
-	var monitoringOptions []option.ClientOption
+	var monitoringOptions = []option.ClientOption{option.WithScopes(metricAPIScope)}
 	if config.UseGrpcWithoutAuthentication.GetBoolOrDefault(false) {
 		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithInsecure()))
 	}
@@ -113,6 +113,7 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 
 	monitoringOptions := []option.ClientOption{
 		option.ImpersonateCredentials(target),
+		option.WithScopes(metricAPIScope),
 	}
 
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
