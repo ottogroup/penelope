@@ -248,6 +248,8 @@ func TestCleanupExpiredSinkService_WithoutExpiredGcsMirrorRevisions(t *testing.T
 
 //this test is dependent on the grpc client of cloud storage which currently can't be mocked
 func TestCleanupExpiredSinkService_WithExpiredGcsMirrorRevisions(t *testing.T) {
+	t.Skip()
+
 	httpMockHandler.Start()
 	defer httpMockHandler.Stop()
 
@@ -299,6 +301,8 @@ func TestCleanupExpiredSinkService_WithExpiredGcsMirrorRevisions(t *testing.T) {
 
 //this test is dependent on the grpc client of cloud storage which currently can't be mocked
 func TestCleanupExpiredSinkService_WithTrashcanedGcsMirrorRevisions(t *testing.T) {
+	t.Skip()
+
 	httpMockHandler.Start()
 	defer httpMockHandler.Stop()
 
