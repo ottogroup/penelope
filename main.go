@@ -20,6 +20,7 @@ func main() {
 
 	gcsClient, err := gcs.NewCloudStorageClient(bgContext, targetPrincipalForProjectProvider, appProjectID)
 	if err != nil {
+		glog.Errorf("could not create CloudStorageClient: %s", err)
 		os.Exit(1)
 	}
 
