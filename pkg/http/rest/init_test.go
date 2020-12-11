@@ -41,6 +41,10 @@ func init() {
 	os.Setenv("PENELOPE_USE_GRPC_WITHOUT_AUTHENTICATION", "true")
 	os.Setenv("TOKEN_HEADER_KEY", tokenHeaderKey)
 
+	os.Setenv("TASKS_VALIDATION_HTTP_HEADER_NAME", "")
+	os.Setenv("TASKS_VALIDATION_HTTP_HEADER_VALUE", "")
+	os.Setenv("TASKS_VALIDATION_ALLOWED_IP_ADDRESSES", "")
+
 	flag.Lookup("logtostderr").Value.Set("true")
 	flag.Parse()
 
