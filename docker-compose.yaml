@@ -1,0 +1,52 @@
+version: '3'
+services:
+  postgres:
+    container_name: penelope-db
+    image: postgres:13.1
+    environment:
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: backupdatabase
+      POSTGRES_USER: backupuser
+      POSTGRES_PASSWORD: backupuserpassword
+    volumes:
+      - ./resources/migrations:/docker-entrypoint-initdb.d
+
+  penelope:
+    container_name: penelepe-go
+    image: golang:1.14
+    depends_on:
+      - postgres
+    ports:
+      - 8080:8080
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /go/src/app/resources/credentials/gsa-key.json
+      GCP_PROJECT_ID: <GCP_PROJECT_ID>
+      PENELOPE_PORT: 8080
+      STATIC_FILES_PATH: /go/src/app/static/ui
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: backupdatabase
+      POSTGRES_USER: backupuser
+      POSTGRES_PASSWORD: backupuserpassword
+      IS_PROVIDER_LOCAL: 'true'
+      DEFAULT_PROVIDER_BUCKET: /go/src/app/resources/provider
+      DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH: backup-provider.yaml
+      DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH: user-provider.yaml
+      SET_TEST_USER: test@example.com
+      DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT: <GOOGLE_SERVICE_ACCOUNT>
+      COMPANY_DOMAINS: 'example.com'
+      DEFAULT_BUCKET_STORAGE_CLASS: REGIONAL
+      APP_JWT_AUDIENCE: <APP_JWT_AUDIENCE>
+      TOKEN_HEADER_KEY: 'X-Goog-IAP-JWT-Assertion'
+      PENELOPE_TRACING: 'false'
+      PENELOPE_TRACING_METRICS_PREFIX: 'penelope'
+      CORS_ALLOWED_METHODS: 'POST, PATCH, GET'
+      CORS_ALLOWED_ORIGIN: '*'
+      CORS_ALLOWED_HEADERS: 'Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization'
+      TASKS_VALIDATION_HTTP_HEADER_NAME: 'X-Appengine-Cron'
+      TASKS_VALIDATION_HTTP_HEADER_VALUE: 'true'
+      TASKS_VALIDATION_ALLOWED_IP_ADDRESSES: '10.0.0.1;0.1.0.1'
+    working_dir: /go/src/app
+    volumes:
+      - .:/go/src/app
+    entrypoint: go run -v main.go

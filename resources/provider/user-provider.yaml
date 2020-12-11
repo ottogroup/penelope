@@ -1,0 +1,7 @@
+- user:
+    email: 'test@example.com'
+  role_bindings:
+    - role: 'owner'
+      project: 'test-penelope'
+    - role: 'viewer'
+      project: 'test-project'
