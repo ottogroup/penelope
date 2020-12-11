@@ -43,14 +43,14 @@ func Run(args AppStartArguments) {
 		createAndRegisterExporters()
 	}
 
+	flag.Parse()
+
 	if err := flag.Lookup("logtostderr").Value.Set("true"); err != nil {
 		glog.Errorf("error on set logtostderr to true: %s", err)
 		os.Exit(1)
 	}
 
 	validateEnvironmentVariables()
-
-	flag.Parse()
 
 	tokenValidator, err := newTokenValidator()
 	if err != nil {
