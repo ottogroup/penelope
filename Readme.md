@@ -59,8 +59,8 @@ settings. If you not provide required settings, penelope will not run.
 | ---- | ---- | ---- |
 | `GCP_PROJECT_ID` | required | Set the GCP project. |
 | `DEFAULT_PROVIDER_BUCKET` | required | Set the bucket for all providers |
-| `DEFAULT_PROVIDER_SINK_FOR_PROJECT_PATH` | required | Set the path to the `.yaml` file which contains the target backup project for `SinkGCPProjectProvider`. |
-| `DEFAULT_PROVIDER_PRINCIPAL_FOR_USER_PATH` | required | Set the path to the `.yaml` file which contains the user principal for `PrincipalProvider`. |
+| `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH` | required | Set the path to the `.yaml` file which contains the target backup project for `SinkGCPProjectProvider`. |
+| `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH` | required | Set the path to the `.yaml` file which contains the user principal for `PrincipalProvider`. |
 | `DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT` | required | Set default impersonated google service account for `TargetPrincipalForProjectProvider`. |
 | `STATIC_FILES_PATH` | required | Set the static files path to run Penelope locally. |
 | `APP_JWT_AUDIENCE` | required | Set the expected audience value of the jwt token. |
@@ -244,7 +244,7 @@ type SinkGCPProjectProvider interface {
 ##### Default
 
 The default provide is a bit more complex this time. You will not only have to define the environment variables 
-`DEFAULT_PROVIDER_BUCKET` and `DEFAULT_PROVIDER_SINK_FOR_PROJECT_PATH`, you also have to store a `.yaml` file 
+`DEFAULT_PROVIDER_BUCKET` and `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`, you also have to store a `.yaml` file 
 in the specified bucket. The content of the file should look like this.
 
 ```yaml
@@ -339,7 +339,7 @@ type ProjectRoleBinding struct {
 ##### Default
 
 Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It 
-also needs the path to a `.yaml` file. Therefore `DEFAULT_PROVIDER_PRINCIPAL_FOR_USER_PATH` needs to be set.
+also needs the path to a `.yaml` file. Therefore `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH` needs to be set.
 The content can look like this. 
 
 ```yaml

@@ -10,7 +10,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opencensus.io/trace"
 	"google.golang.org/genproto/googleapis/cloud/audit"
-	"net/http"
+	"google.golang.org/grpc"
 	"regexp"
 	"time"
 
@@ -47,7 +47,7 @@ func NewLoggingClient(ctxIn context.Context, targetPrincipalProvider impersonate
 	}
 
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
-		options = append(options, option.WithHTTPClient(http.DefaultClient))
+		options = append(options, option.WithGRPCDialOption(grpc.WithInsecure()))
 	}
 
 	client, err := logging.NewClient(ctx, options...)
