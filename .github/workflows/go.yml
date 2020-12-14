@@ -58,4 +58,8 @@ jobs:
       - name: Build
         run: go build -v ./...
 
-
+      - name: Static Folder Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: static-folder
+          path: static
