@@ -21,7 +21,7 @@
   * [Principal Provider](#principal-provider)
       + [Default](#default-3)
     
-## About
+# About
 Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery 
 datasets and tables as well as from Cloud Storage buckets within Google Cloud Storage. For authentication against 
 GCP services Penelope uses Google service accounts for performing backups and it assumes that it is behind an authentication provider like [Google Identity Aware Proxy](https://cloud.google.com/iap). 
@@ -45,7 +45,7 @@ Because Penelope uses the Google Cloud SDK, you first have to set up your local 
 to create a Google service account to authenticate Penelope. See [Creating and managing service accounts](https://cloud.google.com/iam/docs/creating-managing-service-accounts)
 documentation for more details.
 
-## Getting Started
+# Getting Started
 
 This repository provides a starter kit to set up Penelope on your own. Penelope uses providers for different purposes, 
 for example penelope needs a credential to connect with the configured database (see environment variables). You can 
@@ -58,12 +58,12 @@ specific providers:
 * `TargetPrincipalForProjectProvider` - contains the method *GetTargetPrincipalForProject*, which provides a target service account to be impersonated for a given project.
 * `PrincipalProvider` - contains the method *GetPrincipalForEmail*, which provides the users principal (containing the user and role bindings) for a given email address.
 
-### Database migrations
+## Database migrations
 
 Penelope uses a PostgreSQL database to store the backup state. You can find the migrations under the folder `resources/migrations/`. 
 You can use [Flyway](https://flywaydb.org/) to run the migrations against your own PostgreSQL database.
 
-### Configuration
+## Configuration
 
 Penelope uses environment variables for customization. Therefore, you can configure penelope to a certain degree
 by setting specific environment variables (e.g. configure database connection). There are optional and required
@@ -98,11 +98,11 @@ settings. If you not provide required settings, penelope will not run.
 | `TASKS_VALIDATION_HTTP_HEADER_VALUE` | optional | Expected value for request validation.  |
 | `TASKS_VALIDATION_ALLOWED_IP_ADDRESSES` | optional | Adds ip address validation to tasks triggers. Multiple comma separated ip addresses can be specified. |
 
-## Deploy Basic Setup
+# Deploy Basic Setup
 
 This step-by-step guide will walk you through how to set up Penelope in your own Google App Engine instance. Let us start with the database migration.
 
-### 1. Step: Migration with Flyway
+## 1. Step: Migration with Flyway
 
 In the following you will learn, how you can use Flyway for migration. However, feel free to use any other tool which 
 fits best for your use case. The migration files are in the folder `resource/migrations` as already mentioned above.
@@ -116,7 +116,7 @@ CloudSQL into consideration. You can use Cloud SQL Proxy to connect with your in
 secure connection. In order to find out more about the proxy client see the
 [About the Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy) documentation. 
 
-### 2. Step: Configuration of App Engine
+## 2. Step: Configuration of App Engine
 
 You are going to need a `app.yaml` file to deploy and configure your App Engine service.
 In this file you specify the go runtime version, url handlers and all environment variables to configure Penelope. 
@@ -143,7 +143,7 @@ env_variables:
   # ...
 ```
 
-### 4. Step: Penelope Deployment
+## 3. Step: Penelope Deployment
 
 Now that you have specified the configuration for Penelope, you are able to deploy the local application and 
 configuration settings with Cloud SDK. For more details on how to install or manage your GCP resources and 
@@ -154,7 +154,7 @@ deploy the application to app engine, we will use `gcloud app deploy` for deploy
 gcloud app deploy app.yaml
 ```
 
-### 3. Step: Configuration of Cron-Jobs
+## 4. Step: Configuration of Cron-Jobs
 
 Congratulations. If you configured your application correctly, you successfully deployed Penelope to
 App Engine. But you're not done yet. There are still tasks, which need to be triggered. These Penelope tasks are responsible for 
@@ -173,7 +173,7 @@ cron:
     # ...
 ``` 
 
-### 4. Step: Cron-Jobs Scheduling
+## 5. Step: Cron-Jobs Scheduling
 
 Deploying the `cron.yaml` configuration file to App Engine is straight forward. You just need to run the following command and you are finished.
 
@@ -181,7 +181,7 @@ Deploying the `cron.yaml` configuration file to App Engine is straight forward. 
 gcloud app deploy cron.yaml
 ```
 
-## Providers
+# Providers
 
 This section is specifically tell you about the special Penelope providers. As mentioned before, there are four 
 providers which provide Penelope with information like where to store the backup, which role bindings has the user and so on. 
@@ -211,7 +211,7 @@ func main() {
 }
 ```
 
-### The Secret Provider 
+## The Secret Provider 
 
 Let's have a look at the first provider. The secret provider, specified by the `SecretProvider` interface, provides Penelope with the database
 password. This provider defines only one method. It receives a `context.Context` and `string` argument and returns
@@ -232,13 +232,13 @@ type SecretProvider interface {
 }
 ```
 
-##### Default
+### Default
 
 The default provider is actually pretty straight forward. It basically doesn't care about the user argument. It just returns the 
 value you have specified in the `POSTGRES_PASSWORD` environment variable. If this default provider is not advance enough for your
 need, then feel free to implement your own secret provider.
 
-### Backup Provider 
+## Backup Provider 
 
 The tasks of the backup sink provider is to provide Penelope with a GCP project where the backup should be stored.
 This provider is defined by the `SinkGCPProjectProvider` interface. The first argument is the same for all provider methods, 
@@ -255,7 +255,7 @@ type SinkGCPProjectProvider interface {
 }
 ```
 
-##### Default
+### Default
 
 The default provide is a bit more complex this time. You will not only have to define the environment variables 
 `DEFAULT_PROVIDER_BUCKET` and `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`, you also have to store a `.yaml` file 
@@ -273,7 +273,7 @@ project is not listed in the file? Then the default implementation returns an er
 Maybe you would like to create a backup projects on-the-fly or just use the source project as the target project. Then 
 feel free to implement your own `SinkGCPProjectProvider`.
 
-### Target Principal Provider
+## Target Principal Provider
 
 This provider can be more difficult to comprehend than the previous providers. Behind the scenes, Penelope uses 
 impersonation to create all the backup sinks and so on in GCP. And what does it impersonate to do all these tasks? 
@@ -291,12 +291,12 @@ type TargetPrincipalForProjectProvider interface {
 }
 ```
 
-##### Default
+### Default
 
 The default is again pretty straight forward. You only have to define one single google service account, which should
 be impersonated. This is done by setting the `DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT` environment variable.
 
-### Principal Provider
+## Principal Provider
 
 The final provider provides the users principal. What is meant by user principal? Lets find out
 by looking at the `Principal` data type. The Principal consist of the users email (which is a string) and a list 
@@ -350,7 +350,7 @@ type ProjectRoleBinding struct {
 }
 ```
 
-##### Default
+### Default
 
 Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It 
 also needs the path to a `.yaml` file. Therefore `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH` needs to be set.
