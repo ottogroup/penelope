@@ -13,13 +13,9 @@
   * [4. Step: Cron-Jobs Scheduling](#4-step-cron-jobs-scheduling)
 - [Providers](#providers)
   * [The Secret Provider](#the-secret-provider)
-      + [Default](#default)
   * [Backup Provider](#backup-provider)
-      + [Default](#default-1)
   * [Target Principal Provider](#target-principal-provider)
-      + [Default](#default-2)
   * [Principal Provider](#principal-provider)
-      + [Default](#default-3)
     
 # About
 Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery 
