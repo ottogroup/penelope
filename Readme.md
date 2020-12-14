@@ -47,6 +47,16 @@ specific providers:
 * `TargetPrincipalForProjectProvider` - contains the method *GetTargetPrincipalForProject*, which provides a target service account to be impersonated for a given project.
 * `PrincipalProvider` - contains the method *GetPrincipalForEmail*, which provides the users principal (containing the user and role bindings) for a given email address.
 
+### Requirements
+
+* Go >= 1.14
+* PostgreSQL >= 9.6
+* Google Service Account
+
+Because Penelope uses the Google Cloud SDK, you first have to set up your local environment to access GCP. You need
+to create a Google service account to authenticate Penelope. See [Creating and managing service accounts](https://cloud.google.com/iam/docs/creating-managing-service-accounts)
+documentation for more details.
+
 ### Database migrations
 
 Penelope uses a PostgreSQL database to store the backup state. You can find the migrations under the folder `resources/migrations/`. 
@@ -190,10 +200,10 @@ func main() {
     // Create all your providers here ...
 
     appStartArguments := app.AppStartArguments{
-        SecretProvider:                    secretProvider,
-        SinkGCPProjectProvider:            sinkGCPProjectProvider,
-        PrincipalProvider:                 principalProvider,
-        TargetPrincipalForProjectProvider: targetPrincipalForProjectProvider,
+		PrincipalProvider:                 principalProvider,
+		SinkGCPProjectProvider:            sinkGCPProjectProvider,
+		TargetPrincipalForProjectProvider: targetPrincipalForProjectProvider,
+		SecretProvider:                    secretProvider,
     }
 
     cmd.Run(appStartArguments)
