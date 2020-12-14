@@ -3,14 +3,14 @@
 - [About](#about)
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
-  * [Database migrations](#database-migrations)
+  * [Migration](#migration)
   * [Configuration](#configuration)
 - [Deploy Basic Setup](#deploy-basic-setup)
   * [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
   * [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
-  * [4. Step: Penelope Deployment](#4-step-penelope-deployment)
-  * [3. Step: Configuration of Cron-Jobs](#3-step-configuration-of-cron-jobs)
-  * [4. Step: Cron-Jobs Scheduling](#4-step-cron-jobs-scheduling)
+  * [3. Step: Penelope Deployment](#3-step-penelope-deployment)
+  * [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
+  * [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
 - [Providers](#providers)
   * [The Secret Provider](#the-secret-provider)
   * [Backup Provider](#backup-provider)
@@ -54,7 +54,7 @@ specific providers:
 * `TargetPrincipalForProjectProvider` - contains the method *GetTargetPrincipalForProject*, which provides a target service account to be impersonated for a given project.
 * `PrincipalProvider` - contains the method *GetPrincipalForEmail*, which provides the users principal (containing the user and role bindings) for a given email address.
 
-## Database migrations
+## Migration
 
 Penelope uses a PostgreSQL database to store the backup state. You can find the migrations under the folder `resources/migrations/`. 
 You can use [Flyway](https://flywaydb.org/) to run the migrations against your own PostgreSQL database.
