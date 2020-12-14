@@ -2,6 +2,7 @@
 
 - [About](#about)
 - [Getting Started](#getting-started)
+  * [Requirements](#requirements)
   * [Database migrations](#database-migrations)
   * [Configuration](#configuration)
 - [Deploy Basic Setup](#deploy-basic-setup)
