@@ -1,8 +1,8 @@
 # Penelope - GCP Backup Solution 
 
 - [About](#about)
+- [Requirements](#requirements)
 - [Getting Started](#getting-started)
-  * [Requirements](#requirements)
   * [Database migrations](#database-migrations)
   * [Configuration](#configuration)
 - [Deploy Basic Setup](#deploy-basic-setup)
@@ -35,6 +35,16 @@ Penelope consists of three main components:
 
 ![Backup Form](/resources/screenshots/backup_form_screentshot.png?raw=true)
 
+# Requirements
+
+* Go >= 1.14
+* PostgreSQL >= 9.6
+* Google Service Account
+
+Because Penelope uses the Google Cloud SDK, you first have to set up your local environment to access GCP. You need
+to create a Google service account to authenticate Penelope. See [Creating and managing service accounts](https://cloud.google.com/iam/docs/creating-managing-service-accounts)
+documentation for more details.
+
 ## Getting Started
 
 This repository provides a starter kit to set up Penelope on your own. Penelope uses providers for different purposes, 
@@ -47,16 +57,6 @@ specific providers:
 * `SinkGCPProjectProvider` - containing the method *GetSinkGCPProjectID*, which provides for a given GCP project id a specific cloud storage backup sink.
 * `TargetPrincipalForProjectProvider` - contains the method *GetTargetPrincipalForProject*, which provides a target service account to be impersonated for a given project.
 * `PrincipalProvider` - contains the method *GetPrincipalForEmail*, which provides the users principal (containing the user and role bindings) for a given email address.
-
-### Requirements
-
-* Go >= 1.14
-* PostgreSQL >= 9.6
-* Google Service Account
-
-Because Penelope uses the Google Cloud SDK, you first have to set up your local environment to access GCP. You need
-to create a Google service account to authenticate Penelope. See [Creating and managing service accounts](https://cloud.google.com/iam/docs/creating-managing-service-accounts)
-documentation for more details.
 
 ### Database migrations
 
