@@ -1,6 +1,6 @@
 # Penelope - GCP Backup Solution 
 
-- [About](#about)
+- [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
   * [Migration](#migration)
@@ -17,7 +17,7 @@
   * [Target Principal Provider](#target-principal-provider)
   * [Principal Provider](#principal-provider)
     
-# About
+# Introduction
 Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery 
 datasets and tables as well as from Cloud Storage buckets within Google Cloud Storage. For authentication against 
 GCP services Penelope uses Google service accounts for performing backups and it assumes that it is behind an authentication provider like [Google Identity Aware Proxy](https://cloud.google.com/iap). 
@@ -34,7 +34,7 @@ Penelope consists of three main components:
 # Requirements
 
 * Go >= 1.14
-* PostgreSQL >= 9.6
+* PostgreSQL >= 10.15
 * Google Service Account
 
 Because Penelope uses the Google Cloud SDK, you first have to set up your local environment to access GCP. You need
