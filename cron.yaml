@@ -1,0 +1,25 @@
+cron:
+  -   description: "prepare backup jobs"
+      url: /api/tasks/prepare_backup_jobs
+      schedule: every 60 minutes from 00:00 to 23:00
+  -   description: "schedule new jobs"
+      url: /api/tasks/run_new_jobs
+      schedule: every 10 minutes from 00:05 to 23:55
+  -   description: "check jobs status"
+      url: /api/tasks/check_jobs_status
+      schedule: every 10 minutes from 00:08 to 23:58
+  -   description: "check jobs stuck"
+      url: /api/tasks/check_jobs_stuck
+      schedule: every 10 minutes from 00:12 to 23:52
+  -   description: "cleanup expired sinks"
+      url: /api/tasks/cleanup_expired_sinks
+      schedule: every 4 hours from 00:30 to 23:30
+  -   description: "reschedule jobs that failed due to Quota exceed"
+      url: /api/tasks/reschedule_jobs_with_quota_error
+      schedule: every 1 hours from 00:30 to 23:30
+  -   description: "check backup status"
+      url: /api/tasks/check_backups_status
+      schedule: every 15 minutes from 00:08 to 23:58
+  -   description: "check app health status"
+      url: /_ah/health
+      schedule: every 1 minutes

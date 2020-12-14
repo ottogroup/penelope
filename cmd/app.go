@@ -15,7 +15,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"go.opencensus.io/trace"
-	"google.golang.org/appengine"
 	"log"
 	"os"
 )
@@ -43,14 +42,14 @@ func Run(args AppStartArguments) {
 		createAndRegisterExporters()
 	}
 
+	flag.Parse()
+
 	if err := flag.Lookup("logtostderr").Value.Set("true"); err != nil {
 		glog.Errorf("error on set logtostderr to true: %s", err)
 		os.Exit(1)
 	}
 
 	validateEnvironmentVariables()
-
-	flag.Parse()
 
 	tokenValidator, err := newTokenValidator()
 	if err != nil {
@@ -130,7 +129,8 @@ func createAndRegisterExporters() {
 }
 
 func newTokenValidator() (auth.TokenValidator, error) {
-	if !appengine.IsAppEngine() {
+	staticFilesPath := config.StaticFilesPath.GetOrDefault("")
+	if len(staticFilesPath) > 0 {
 		return auth.NewEmptyTokenValidator(), nil
 	}
 
