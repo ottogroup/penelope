@@ -15,7 +15,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/jarcoal/httpmock v1.0.8
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	go.opencensus.io v0.22.6
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/api v0.37.0
