@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/logging v1.4.2
 	cloud.google.com/go/storage v1.16.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.8
-	github.com/aws/aws-sdk-go v1.38.69
+	github.com/aws/aws-sdk-go v1.40.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-pg/pg/v10 v10.10.1
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529
@@ -20,7 +20,6 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.4 // indirect
 	go.opencensus.io v0.23.0
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914 // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	google.golang.org/api v0.49.0
