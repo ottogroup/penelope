@@ -3,12 +3,13 @@ module github.com/ottogroup/penelope
 require (
 	cloud.google.com/go v0.93.3
 	cloud.google.com/go/bigquery v1.21.0
+	cloud.google.com/go/datacatalog v0.1.0 // indirect
 	cloud.google.com/go/logging v1.4.2
 	cloud.google.com/go/monitoring v0.1.0
 	cloud.google.com/go/storage v1.16.0
 	cloud.google.com/go/trace v0.1.0 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.8
-	github.com/aws/aws-sdk-go v1.40.25
+	github.com/aws/aws-sdk-go v1.40.32
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-pg/pg/v10 v10.10.3
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529
@@ -22,7 +23,6 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.4 // indirect
 	go.opencensus.io v0.23.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/mod v0.5.0 // indirect
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/oauth2 v0.0.0-20210817223510-7df4dd6e12ab // indirect
 	golang.org/x/sys v0.0.0-20210819072135-bce67f096156 // indirect
