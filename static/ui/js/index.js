@@ -70,19 +70,19 @@ var App = (function () {
     function requestUpdateBackupFromForm() {
         let backupId = $("#update-backup-form-backup-id").val();
         let requestBackup = {backup_id: backupId};
-        requestBackup.table = "";
+        requestBackup.table = [];
         let tables = $("#update-backup-form-bigquery-table").val();
         if (0 < tables.length) {
             requestBackup.table = tables.split(",")
         }
 
-        requestBackup.excluded_tables = "";
+        requestBackup.excluded_tables = [];
         let excluded_tables = $("#update-backup-form-bigquery-excluded_tables").val();
         if (0 < excluded_tables.length) {
             requestBackup.excluded_tables = excluded_tables.split(",")
         }
-        requestBackup.include_path = "";
-        requestBackup.exclude_path = "";
+        requestBackup.include_path = [];
+        requestBackup.exclude_path = [];
         let storageInclude = $("#update-backup-form-storage-include").val();
         if (0 < storageInclude.length) {
             requestBackup.include_path = storageInclude.split(",");
