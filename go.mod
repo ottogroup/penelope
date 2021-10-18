@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/datacatalog v1.0.0 // indirect
 	cloud.google.com/go/logging v1.4.2
 	cloud.google.com/go/monitoring v1.0.0
-	cloud.google.com/go/storage v1.16.0
+	cloud.google.com/go/storage v1.18.1
 	cloud.google.com/go/trace v1.0.0 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.8
 	github.com/aws/aws-sdk-go v1.41.4
@@ -22,7 +22,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.opencensus.io v0.23.0
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
-	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
 	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/api v0.58.0
