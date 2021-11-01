@@ -22,11 +22,9 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.opencensus.io v0.23.0
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
-	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
-	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/api v0.58.0
-	google.golang.org/genproto v0.0.0-20210924002016-3dee208752a0
+	google.golang.org/api v0.60.0
+	google.golang.org/genproto v0.0.0-20211021150943-2b146023228c
 	google.golang.org/grpc v1.41.0
 	gopkg.in/dc0d/tinykv.v4 v4.0.1
 	gopkg.in/yaml.v2 v2.4.0
