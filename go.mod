@@ -1,11 +1,11 @@
 module github.com/ottogroup/penelope
 
 require (
-	cloud.google.com/go v0.97.0
+	cloud.google.com/go v0.99.0
 	cloud.google.com/go/bigquery v1.24.0
 	cloud.google.com/go/datacatalog v1.0.0 // indirect
 	cloud.google.com/go/logging v1.4.2
-	cloud.google.com/go/monitoring v1.0.0
+	cloud.google.com/go/monitoring v1.2.0
 	cloud.google.com/go/storage v1.18.1
 	cloud.google.com/go/trace v1.0.0 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.8
@@ -22,11 +22,9 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.opencensus.io v0.23.0
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
-	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
-	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/api v0.58.0
-	google.golang.org/genproto v0.0.0-20210924002016-3dee208752a0
+	google.golang.org/api v0.63.0
+	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa
 	google.golang.org/grpc v1.41.0
 	gopkg.in/dc0d/tinykv.v4 v4.0.1
 	gopkg.in/yaml.v2 v2.4.0
