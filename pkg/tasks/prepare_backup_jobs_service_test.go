@@ -4,12 +4,12 @@ import (
     "context"
     "fmt"
     "github.com/go-pg/pg/v10/orm"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
     "github.com/ottogroup/penelope/pkg/http/mock"
     "github.com/ottogroup/penelope/pkg/repository"
     "github.com/ottogroup/penelope/pkg/secret"
     service2 "github.com/ottogroup/penelope/pkg/service"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
     "os"
     "strings"
     "testing"
@@ -168,39 +168,7 @@ func TestPrepareBackupJobsService_SchedulingTimeNotReached(t *testing.T) {
     assert.Containsf(t, strings.TrimSpace(stdErr), logMsg, "Run should write log message %q but it logged\n\t%s", logMsg, stdErr)
 }
 
-func TestPrepareBackupJobsService_WontScheduleAtNotFullHour(t *testing.T) {
-    ctx := context.Background()
-    backup := prepareBackupServiceBigQueryBackup()
-    backup.Status = repository.Prepared
-    backup.SnapshotOptions = repository.SnapshotOptions{
-        FrequencyInHours: 12,
-    }
-
-    bkpGetCurrentTime := getCurrentTime
-    getCurrentTime = func() time.Time {
-        now := time.Now()
-        return time.Date(now.Year(), now.Month(), now.Day(), 23, 23, 0, 0, now.Location())
-    }
-    defer func() { getCurrentTime = bkpGetCurrentTime }()
-
-    backupRepository, err := repository.NewBackupRepository(context.Background(), secret.NewEnvSecretProvider())
-    require.NoError(t, err, "BackupRepository should be instantiate")
-
-    _, err = backupRepository.AddBackup(ctx, backup)
-    require.NoError(t, err, "should be able to add new backup")
-    defer func() { deleteBackup(prepareBackupID) }()
-
-    service, _ := newPrepareBackupJobsService(context.Background(), nil, secret.NewEnvSecretProvider())
-    _, stdErr, err := captureStderr(func() {
-        service.Run(ctx)
-    })
-
-    require.NoError(t, err)
-    logMsg := fmt.Sprintf("Backup with id %s don't need to be scheduled", prepareBackupID)
-    assert.Containsf(t, strings.TrimSpace(stdErr), logMsg, "Run should write log message %q but it logged\n\t%s", logMsg, stdErr)
-}
-
-func TestPrepareBackupJobsService_ScheduleAtFullHour(t *testing.T) {
+func TestPrepareBackupJobsService_Scheduled(t *testing.T) {
     httpMockHandler.Start()
     defer httpMockHandler.Stop()
 

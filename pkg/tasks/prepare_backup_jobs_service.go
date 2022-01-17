@@ -2,13 +2,13 @@ package tasks
 
 import (
     "context"
+    "fmt"
+    "github.com/golang/glog"
     "github.com/ottogroup/penelope/pkg/http/impersonate"
     "github.com/ottogroup/penelope/pkg/processor"
     "github.com/ottogroup/penelope/pkg/repository"
     "github.com/ottogroup/penelope/pkg/secret"
     "github.com/ottogroup/penelope/pkg/service/bigquery"
-    "fmt"
-    "github.com/golang/glog"
     "go.opencensus.io/trace"
     "time"
 )
@@ -121,7 +121,6 @@ func isNextMirrorTime(backup *repository.Backup) bool {
 
 func isNextSnapshotTime(backup *repository.Backup) bool {
     nextScheduledTime := backup.LastScheduledTime.Add(time.Hour * time.Duration(backup.FrequencyInHours))
-    currentTime := getCurrentTime()
     return backup.Strategy == repository.Snapshot && ((backup.FrequencyInHours == 0) || //is one-shot
-        (backup.LastScheduledTime.IsZero() || nextScheduledTime.Before(currentTime)) && currentTime.Minute() == 0) //is scheduled on full-hour
+        (backup.LastScheduledTime.IsZero() || nextScheduledTime.Before(getCurrentTime())))
 }
