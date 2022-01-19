@@ -3,7 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"go.opencensus.io/trace"
 	"io"
 	"net/http"
@@ -124,7 +124,7 @@ func (t *jwtTokenValidator) tokenMethod(token *jwt.Token) (jwt.SigningMethod, bo
 
 // tokenClaims represents parsed JWT Token tokenClaims.
 type tokenClaims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 	publicKeys     map[string]publicKey
 	Email          string `json:"email,omitempty"`
 	appJWTAudience string
@@ -132,13 +132,13 @@ type tokenClaims struct {
 
 // Valid validates the tokenClaims.
 func (c tokenClaims) Valid() error {
-	if err := (c.StandardClaims).Valid(); err != nil {
+	if err := (c.RegisteredClaims).Valid(); err != nil {
 		return err
 	}
 	if c.Issuer != issuerClaim {
 		return fmt.Errorf("invalid issuer: %q", c.Issuer)
 	}
-	if c.Audience != c.appJWTAudience {
+	if c.VerifyAudience(c.appJWTAudience, true) {
 		return fmt.Errorf("unexpected audience: %q", c.Audience)
 	}
 
