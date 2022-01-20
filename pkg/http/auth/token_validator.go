@@ -135,10 +135,10 @@ func (c tokenClaims) Valid() error {
 	if err := (c.RegisteredClaims).Valid(); err != nil {
 		return err
 	}
-	if c.VerifyIssuer(issuerClaim, true) {
+	if !c.VerifyIssuer(issuerClaim, true) {
 		return fmt.Errorf("invalid issuer: %q", c.Issuer)
 	}
-	if c.VerifyAudience(c.appJWTAudience, true) {
+	if !c.VerifyAudience(c.appJWTAudience, true) {
 		return fmt.Errorf("unexpected audience: %q", c.Audience)
 	}
 
