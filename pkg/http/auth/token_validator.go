@@ -135,7 +135,7 @@ func (c tokenClaims) Valid() error {
 	if err := (c.RegisteredClaims).Valid(); err != nil {
 		return err
 	}
-	if c.Issuer != issuerClaim {
+	if c.VerifyIssuer(issuerClaim, true) {
 		return fmt.Errorf("invalid issuer: %q", c.Issuer)
 	}
 	if c.VerifyAudience(c.appJWTAudience, true) {
