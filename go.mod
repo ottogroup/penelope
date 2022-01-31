@@ -28,7 +28,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/api v0.65.0
 	google.golang.org/genproto v0.0.0-20220114231437-d2e6a121cae0
-	google.golang.org/grpc v1.43.0
+	google.golang.org/grpc v1.44.0
 	gopkg.in/dc0d/tinykv.v4 v4.0.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
