@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/pkg/errors"
@@ -15,6 +14,8 @@ import (
 	"google.golang.org/api/option"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -81,7 +82,7 @@ func createCloudStorageClient(ctxIn context.Context) (CloudStorageClient, error)
 
 	var monitoringOptions = []option.ClientOption{option.WithScopes(metricAPIScope)}
 	if config.UseGrpcWithoutAuthentication.GetBoolOrDefault(false) {
-		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithInsecure()))
+		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
 	}
 
 	client, err := storage.NewClient(ctx, storageOptions...)
@@ -121,7 +122,7 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 	}
 
 	if config.UseGrpcWithoutAuthentication.GetBoolOrDefault(false) {
-		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithInsecure()))
+		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
 	}
 
 	client, err := storage.NewClient(ctx, storageOptions...)
@@ -178,10 +179,10 @@ func (c *defaultGcsClient) BucketUsageInBytes(ctxIn context.Context, project str
 		Name:   "projects/" + project,
 		Filter: fmt.Sprintf(`metric.type="storage.googleapis.com/storage/total_bytes" resource.type="gcs_bucket" resource.label.bucket_name="%s"`, bucket),
 		Interval: &monitoringpb.TimeInterval{
-			StartTime: &timestamp.Timestamp{
+			StartTime: &timestamppb.Timestamp{
 				Seconds: startTime.Unix(),
 			},
-			EndTime: &timestamp.Timestamp{
+			EndTime: &timestamppb.Timestamp{
 				Seconds: endTime.Unix(),
 			},
 		},
