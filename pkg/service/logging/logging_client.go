@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opencensus.io/trace"
 	"google.golang.org/genproto/googleapis/cloud/audit"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"regexp"
 	"time"
 
@@ -47,7 +47,7 @@ func NewLoggingClient(ctxIn context.Context, targetPrincipalProvider impersonate
 	}
 
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
-		options = append(options, option.WithGRPCDialOption(grpc.WithInsecure()))
+		options = append(options, option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
 	}
 
 	client, err := logging.NewClient(ctx, options...)
@@ -140,7 +140,7 @@ func (l *DefaultLoggingClient) IterateOverBucketObjectEvents(ctxIn context.Conte
 			return lastTimestamp, errors.Errorf("protoPayload is nil for logEntry")
 		}
 		auditLog := audit.AuditLog{}
-		err = ptypes.UnmarshalAny(logEntryProtoPayload, &auditLog)
+		err = logEntryProtoPayload.UnmarshalTo(&auditLog)
 		if err != nil {
 			return lastTimestamp, errors.Wrapf(err, "could not UnmarshalAny log entry field protoPayload `%v` to ", logEntryProtoPayload.Value)
 		}
