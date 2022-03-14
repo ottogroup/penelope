@@ -42,8 +42,6 @@ func TestCleanupExpiredSinkService_WithValidJobValidBackup(t *testing.T) {
 	httpMockHandler.Start()
 	defer httpMockHandler.Stop()
 
-	httpMockHandler.Register(mock.ImpersonationHTTPMock)
-
 	ctx := context.Background()
 
 	configProvider := &MockImpersonatedTokenConfigProvider{
