@@ -13,10 +13,12 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -107,14 +109,20 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 		return nil, err
 	}
 
+	tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+		TargetPrincipal: target,
+		Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope, metricAPIScope},
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	storageOptions := []option.ClientOption{
-		option.WithScopes(cloudPlatformAPIScope, defaultAPIScope, metricAPIScope),
-		option.ImpersonateCredentials(target),
+		option.WithTokenSource(tokenSource),
 	}
 
 	monitoringOptions := []option.ClientOption{
-		option.ImpersonateCredentials(target),
-		option.WithScopes(metricAPIScope),
+		option.WithTokenSource(tokenSource),
 	}
 
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
