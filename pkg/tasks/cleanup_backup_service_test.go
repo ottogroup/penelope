@@ -42,6 +42,8 @@ func TestCleanupExpiredSinkService_WithValidJobValidBackup(t *testing.T) {
 	httpMockHandler.Start()
 	defer httpMockHandler.Stop()
 
+	httpMockHandler.Register(mock.ImpersonationHTTPMock)
+
 	ctx := context.Background()
 
 	configProvider := &MockImpersonatedTokenConfigProvider{
@@ -61,7 +63,7 @@ func TestCleanupExpiredSinkService_WithValidJobValidBackup(t *testing.T) {
 	_, err = backupRepository.AddBackup(ctx, cleanupBackupServiceBackup(deletedTargetBackupID, repository.BackupDeleted))
 	require.NoError(t, err)
 
-	backup := cleanupBackupServiceBackup(expiredTargetBackupID, repository.Finished)
+	backup := cleanupBackupServiceBackup(expiredTargetBackupID, repository.ToDelete)
 	backup.SnapshotOptions = repository.SnapshotOptions{LifetimeInDays: 1}
 	backup.EntityAudit = repository.EntityAudit{CreatedTimestamp: time.Now().Add(-48 * time.Hour)}
 	_, err = backupRepository.AddBackup(ctx, backup)

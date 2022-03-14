@@ -129,7 +129,10 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 	}
 
 	if config.UseGrpcWithoutAuthentication.GetBoolOrDefault(false) {
-		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
+		monitoringOptions = []option.ClientOption{
+			option.WithoutAuthentication(),
+			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+		}
 	}
 
 	client, err := storage.NewClient(ctx, storageOptions...)
