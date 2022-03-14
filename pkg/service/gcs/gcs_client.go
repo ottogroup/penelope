@@ -108,36 +108,49 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 		return nil, err
 	}
 
-	tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
-		TargetPrincipal: target,
-		Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope, metricAPIScope},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	storageOptions := []option.ClientOption{
-		option.WithTokenSource(tokenSource),
-	}
-
-	monitoringOptions := []option.ClientOption{
-		option.WithTokenSource(tokenSource),
-	}
-
+	var storageOptions []option.ClientOption
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
-		storageOptions = append(storageOptions, option.WithHTTPClient(http.DefaultClient))
+		storageOptions = []option.ClientOption{
+			option.WithHTTPClient(http.DefaultClient),
+			option.ImpersonateCredentials(target),
+			option.WithScopes(cloudPlatformAPIScope, defaultAPIScope, metricAPIScope),
+		}
+	} else {
+		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+			TargetPrincipal: target,
+			Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		storageOptions = []option.ClientOption{
+			option.WithTokenSource(tokenSource),
+		}
+	}
+	client, err := storage.NewClient(ctx, storageOptions...)
+	if err != nil {
+		return &defaultGcsClient{}, fmt.Errorf("failed to create storage.Client: %v", err)
 	}
 
+	var monitoringOptions []option.ClientOption
 	if config.UseGrpcWithoutAuthentication.GetBoolOrDefault(false) {
 		monitoringOptions = []option.ClientOption{
 			option.WithoutAuthentication(),
 			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
 		}
-	}
+	} else {
+		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+			TargetPrincipal: target,
+			Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope, metricAPIScope},
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	client, err := storage.NewClient(ctx, storageOptions...)
-	if err != nil {
-		return &defaultGcsClient{}, fmt.Errorf("failed to create storage.Client: %v", err)
+		monitoringOptions = []option.ClientOption{
+			option.WithTokenSource(tokenSource),
+		}
 	}
 	metricClient, err := monitoring.NewMetricClient(ctx, monitoringOptions...)
 	if err != nil {
