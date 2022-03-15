@@ -2,13 +2,13 @@ package rest
 
 import (
     "context"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
     "github.com/ottogroup/penelope/pkg/http/auth/model"
     "github.com/ottogroup/penelope/pkg/http/mock"
     "github.com/ottogroup/penelope/pkg/repository"
     "github.com/ottogroup/penelope/pkg/requestobjects"
     "github.com/ottogroup/penelope/pkg/secret"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
     "net/http"
     "testing"
     "time"
@@ -38,7 +38,7 @@ func TestDeleting_WithScheduledBackup(t *testing.T) {
 
     ctx := context.Background()
 
-    httpMockHandler.Register(mock.BucketAttrsHTTPMock, mock.PatchBucketAttrsHTTPMock)
+    httpMockHandler.Register(mock.BucketAttrsHTTPMock, mock.PatchBucketAttrsHTTPMock, mock.ImpersonationHTTPMock, mock.RetrieveAccessTokenHTTPMock)
 
     backupRepository, err := repository.NewBackupRepository(ctx, secret.NewEnvSecretProvider())
     require.NoError(t, err, "BackupRepository should be instantiate")
