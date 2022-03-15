@@ -38,7 +38,7 @@ func TestDeleting_WithScheduledBackup(t *testing.T) {
 
     ctx := context.Background()
 
-    httpMockHandler.Register(mock.BucketAttrsHTTPMock, mock.PatchBucketAttrsHTTPMock, mock.ImpersonationHTTPMock, mock.RetrieveAccessTokenHTTPMock, mock.OauthHTTPMock)
+    httpMockHandler.Register(mock.BucketAttrsHTTPMock, mock.PatchBucketAttrsHTTPMock)
 
     backupRepository, err := repository.NewBackupRepository(ctx, secret.NewEnvSecretProvider())
     require.NoError(t, err, "BackupRepository should be instantiate")
