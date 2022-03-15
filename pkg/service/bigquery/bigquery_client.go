@@ -5,10 +5,11 @@ import (
 	"cloud.google.com/go/civil"
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
+	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"net/http"
@@ -53,13 +54,25 @@ func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonat
 		return nil, err
 	}
 
-	options := []option.ClientOption{
-		option.WithScopes(cloudPlatformAPIScope, defaultAPIScope),
-		option.ImpersonateCredentials(target),
-	}
-
+	var options []option.ClientOption
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
-		options = append(options, option.WithHTTPClient(http.DefaultClient))
+		options = []option.ClientOption{
+			option.WithHTTPClient(http.DefaultClient),
+			option.ImpersonateCredentials(target),
+			option.WithScopes(cloudPlatformAPIScope, defaultAPIScope),
+		}
+	} else {
+		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+			TargetPrincipal: target,
+			Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		options = []option.ClientOption{
+			option.WithTokenSource(tokenSource),
+		}
 	}
 	client, err := bq.NewClient(ctx, targetProjectID, options...)
 	if err != nil {
