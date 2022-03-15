@@ -58,8 +58,6 @@ func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonat
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
 		options = []option.ClientOption{
 			option.WithHTTPClient(http.DefaultClient),
-			option.ImpersonateCredentials(target),
-			option.WithScopes(cloudPlatformAPIScope, defaultAPIScope),
 		}
 	} else {
 		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{

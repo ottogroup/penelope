@@ -112,8 +112,6 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
 		storageOptions = []option.ClientOption{
 			option.WithHTTPClient(http.DefaultClient),
-			option.ImpersonateCredentials(target),
-			option.WithScopes(cloudPlatformAPIScope, defaultAPIScope, metricAPIScope),
 		}
 	} else {
 		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{

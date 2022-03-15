@@ -2,13 +2,13 @@ package rest
 
 import (
     "context"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
     "github.com/ottogroup/penelope/pkg/http/auth/model"
     "github.com/ottogroup/penelope/pkg/http/mock"
     "github.com/ottogroup/penelope/pkg/repository"
     "github.com/ottogroup/penelope/pkg/requestobjects"
     "github.com/ottogroup/penelope/pkg/secret"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
     "net/http"
     "testing"
     "time"
