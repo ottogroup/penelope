@@ -54,25 +54,20 @@ func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonat
 		return nil, err
 	}
 
-	var options []option.ClientOption
-	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
-		options = []option.ClientOption{
-			option.WithHTTPClient(http.DefaultClient),
-			option.ImpersonateCredentials(target),
-			option.WithScopes(cloudPlatformAPIScope, defaultAPIScope),
-		}
-	} else {
-		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
-			TargetPrincipal: target,
-			Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope},
-		})
-		if err != nil {
-			return nil, err
-		}
+	tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+		TargetPrincipal: target,
+		Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope},
+	})
+	if err != nil {
+		return nil, err
+	}
 
-		options = []option.ClientOption{
-			option.WithTokenSource(tokenSource),
-		}
+	options := []option.ClientOption{
+		option.WithTokenSource(tokenSource),
+	}
+
+	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
+		options = append(options, option.WithHTTPClient(http.DefaultClient))
 	}
 	client, err := bq.NewClient(ctx, targetProjectID, options...)
 	if err != nil {
