@@ -9,8 +9,26 @@ passed=$(cat tmp-test-output.txt | grep -c "\-\-\- PASS:")
 failed=$(cat tmp-test-output.txt | grep -c "\-\-\- FAIL:")
 skipped=$(cat tmp-test-output.txt | grep -c "\-\-\- SKIP:")
 
-echo "" > $GITHUB_STEP_SUMMARY
+echo "# Summary" > $GITHUB_STEP_SUMMARY
+
+
+echo "## Overview" > $GITHUB_STEP_SUMMARY
 echo "| ✅ PASSED      | 🚫 FAILED    | ⏭ SKIPPED    |" >> $GITHUB_STEP_SUMMARY
 echo "| -----------: | ---------: | ---------:  |" >> $GITHUB_STEP_SUMMARY
 echo "| $passed     | $failed   | $skipped   |" >> $GITHUB_STEP_SUMMARY
+
+echo "## FAILED" >> $GITHUB_STEP_SUMMARY
+skipped=$(cat tmp-test-output.txt | grep "\-\-\- SKIP:")
+while read -r line ; do
+    echo "* $(echo "$line" | cut -d " " -f 3)" >> $GITHUB_STEP_SUMMARY
+done <<< "$skipped"
+
+echo "## SKIPPED" >> $GITHUB_STEP_SUMMARY
+skipped=$(cat tmp-test-output.txt | grep "\-\-\- SKIP:")
+while read -r line ; do
+    echo "* $(echo "$line" | cut -d " " -f 3)" >> $GITHUB_STEP_SUMMARY
+done <<< "$skipped"
+
+
+
 
