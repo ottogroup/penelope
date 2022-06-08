@@ -9,10 +9,7 @@ passed=$(cat tmp-test-output.txt | grep -c "\-\-\- PASS:")
 failed=$(cat tmp-test-output.txt | grep -c "\-\-\- FAIL:")
 skipped=$(cat tmp-test-output.txt | grep -c "\-\-\- SKIP:")
 
-GITHUB_STEP_SUMMARY="Summary.md"
-
 echo "# Summary" > $GITHUB_STEP_SUMMARY
-
 
 echo "## Overview" > $GITHUB_STEP_SUMMARY
 echo "| ✅ PASSED      | 🚫 FAILED    | ⏭ SKIPPED    |" >> $GITHUB_STEP_SUMMARY
