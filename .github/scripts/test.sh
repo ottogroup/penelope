@@ -9,6 +9,8 @@ passed=$(cat tmp-test-output.txt | grep -c "\-\-\- PASS:")
 failed=$(cat tmp-test-output.txt | grep -c "\-\-\- FAIL:")
 skipped=$(cat tmp-test-output.txt | grep -c "\-\-\- SKIP:")
 
+GITHUB_STEP_SUMMARY="Summary.md"
+
 echo "# Summary" > $GITHUB_STEP_SUMMARY
 
 
@@ -18,22 +20,21 @@ echo "| -----------: | ---------: | ---------:  |" >> $GITHUB_STEP_SUMMARY
 echo "| $passed     | $failed   | $skipped   |" >> $GITHUB_STEP_SUMMARY
 
 AddListSection () {
-  SectionName=$0;
-  SectionLines=$1;
+  SectionName=$1;
+  SectionLines=$2;
 
   echo "## $SectionName" >> $GITHUB_STEP_SUMMARY
-  failed=$(cat tmp-test-output.txt | grep "\-\-\- FAILED:")
   while read -r line ; do
-    if [[ "$line" -eq 0 ]]; then
-      echo "*none*"
+    if [[ -z "$line" ]]; then
+      echo "*none*" >> $GITHUB_STEP_SUMMARY
       break
     fi
-    echo "* $(echo "$line" | cut -d " " -f 3)" >> $GITHUB_STEP_SUMMARY
+    echo "* $line" >> $GITHUB_STEP_SUMMARY
   done <<< "$SectionLines"
 }
 
-AddListSection "FAILED" "$(cat tmp-test-output.txt | grep "\-\-\- FAILED:")"
-AddListSection "SKIPPED" "$(cat tmp-test-output.txt | grep "\-\-\- SKIPPED:")"
+AddListSection "FAILED" "$(cat tmp-test-output.txt | grep "\-\-\- FAIL:" | cut -d " " -f 3)"
+AddListSection "SKIPPED" "$(cat tmp-test-output.txt | grep "\-\-\- SKIP:" | cut -d " " -f 3)"
 
 
 
