@@ -20,13 +20,15 @@ echo "| $passed     | $failed   | $skipped   |" >> $GITHUB_STEP_SUMMARY
 echo "## FAILED" >> $GITHUB_STEP_SUMMARY
 failed=$(cat tmp-test-output.txt | grep "\-\-\- FAILED:")
 while read -r line ; do
-    echo "* $(echo "$line" | cut -d " " -f 3)" >> $GITHUB_STEP_SUMMARY
+  [[ "$line" -eq 0 ]] && continue
+  echo "* $(echo "$line" | cut -d " " -f 3)" >> $GITHUB_STEP_SUMMARY
 done <<< "$failed"
 
 echo "## SKIPPED" >> $GITHUB_STEP_SUMMARY
 skipped=$(cat tmp-test-output.txt | grep "\-\-\- SKIP:")
 while read -r line ; do
-    echo "* $(echo "$line" | cut -d " " -f 3)" >> $GITHUB_STEP_SUMMARY
+  [[ "$line" -eq 0 ]] && continue
+  echo "* $(echo "$line" | cut -d " " -f 3)" >> $GITHUB_STEP_SUMMARY
 done <<< "$skipped"
 
 
