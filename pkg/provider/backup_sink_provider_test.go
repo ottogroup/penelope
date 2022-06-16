@@ -43,5 +43,5 @@ func TestDefaultGCSBackupProvider_GetSinkGCPProjectID_NotFound(t *testing.T) {
 
     projectID, err := backupProvider.GetSinkGCPProjectID(context.Background(), "local-account")
     assert.Error(t, err)
-    assert.Equal(t, "oghub-backup-project", projectID)
+    assert.Equal(t, "backup-project", projectID)
 }
