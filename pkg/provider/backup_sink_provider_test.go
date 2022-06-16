@@ -2,9 +2,9 @@ package provider
 
 import (
     "context"
-    "github.com/stretchr/testify/assert"
     "github.com/ottogroup/penelope/pkg/config"
     "github.com/ottogroup/penelope/pkg/service/gcs"
+    "github.com/stretchr/testify/assert"
     "os"
     "testing"
 )
@@ -43,5 +43,5 @@ func TestDefaultGCSBackupProvider_GetSinkGCPProjectID_NotFound(t *testing.T) {
 
     projectID, err := backupProvider.GetSinkGCPProjectID(context.Background(), "local-account")
     assert.Error(t, err)
-    assert.Equal(t, "", projectID)
+    assert.Equal(t, "oghub-backup-project", projectID)
 }
