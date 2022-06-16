@@ -58,6 +58,7 @@ jobs:
           go test -v -p 1 ./... | tee output/tmp-test-output.txt
 
       - name: Testing Report
+        if: always()
         run: ./.github/scripts/report.sh output/tmp-test-output.txt
 
       - name: Build
