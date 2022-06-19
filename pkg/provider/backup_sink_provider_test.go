@@ -2,9 +2,9 @@ package provider
 
 import (
     "context"
-    "github.com/stretchr/testify/assert"
     "github.com/ottogroup/penelope/pkg/config"
     "github.com/ottogroup/penelope/pkg/service/gcs"
+    "github.com/stretchr/testify/assert"
     "os"
     "testing"
 )

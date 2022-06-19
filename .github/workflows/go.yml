@@ -53,7 +53,14 @@ jobs:
         run: go get -v -t -d ./...
 
       - name: Test
-        run: go test -v -p 1 ./...
+        run: |
+          set -o pipefail
+          mkdir output
+          go test -v -p 1 ./... | tee output/tmp-test-output.txt
+
+      - name: Testing Report
+        if: always()
+        run: ./.github/scripts/report.sh output/tmp-test-output.txt
 
       - name: Build
         run: go build -v ./...
