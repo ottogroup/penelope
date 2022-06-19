@@ -55,6 +55,7 @@ jobs:
       - name: Test
         run: |
           set -o pipefail
+          mkdir output
           go test -v -p 1 ./... | tee output/tmp-test-output.txt
 
       - name: Testing Report
