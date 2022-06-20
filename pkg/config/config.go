@@ -40,6 +40,7 @@ const (
 	TasksValidationHTTPHeaderName                     EnvKey = "TASKS_VALIDATION_HTTP_HEADER_NAME"
 	TasksValidationHTTPHeaderValue                    EnvKey = "TASKS_VALIDATION_HTTP_HEADER_VALUE"
 	TasksValidationAllowedIPAddresses                 EnvKey = "TASKS_VALIDATION_ALLOWED_IP_ADDRESSES"
+	UniformBucketLevelAccess                          EnvKey = "UNIFORM_BUCKET_LEVEL_ACCESS"
 )
 
 func (e EnvKey) String() string {

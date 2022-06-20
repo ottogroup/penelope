@@ -327,6 +327,9 @@ func (c *defaultGcsClient) CreateBucket(ctxIn context.Context, project, bucket, 
 		StorageClass:     storageClass,
 		BucketPolicyOnly: storage.BucketPolicyOnly{Enabled: true},
 		Labels:           map[string]string{"purpose": "backup"},
+		UniformBucketLevelAccess: storage.UniformBucketLevelAccess{
+			Enabled: config.UniformBucketLevelAccess.GetBoolOrDefault(false),
+		},
 	}
 	bucketAttrs.Lifecycle = storage.Lifecycle{}
 

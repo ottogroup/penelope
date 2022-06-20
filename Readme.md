@@ -93,6 +93,7 @@ settings. If you not provide required settings, penelope will not run.
 | `TASKS_VALIDATION_HTTP_HEADER_NAME` | optional | Adds request validation to tasks triggers. Specifies the expected request head for validation. |
 | `TASKS_VALIDATION_HTTP_HEADER_VALUE` | optional | Expected value for request validation.  |
 | `TASKS_VALIDATION_ALLOWED_IP_ADDRESSES` | optional | Adds ip address validation to tasks triggers. Multiple comma separated ip addresses can be specified. |
+| `UNIFORM_BUCKET_LEVEL_ACCESS` | optional | Set uniform bucket level access for created backups (see [more](https://cloud.google.com/storage/docs/uniform-bucket-level-access)) |
 
 # Deploy Basic Setup
 
