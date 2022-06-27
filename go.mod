@@ -17,7 +17,7 @@ require (
 	github.com/jarcoal/httpmock v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/prometheus v0.36.0 // indirect
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.5
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	go.opencensus.io v0.23.0
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
