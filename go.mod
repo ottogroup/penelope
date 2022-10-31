@@ -2,8 +2,7 @@ module github.com/ottogroup/penelope
 
 require (
 	cloud.google.com/go v0.104.0
-	cloud.google.com/go/bigquery v1.39.0
-	cloud.google.com/go/compute v1.9.0 // indirect
+	cloud.google.com/go/bigquery v1.42.0
 	cloud.google.com/go/logging v1.5.0
 	cloud.google.com/go/monitoring v1.6.0
 	cloud.google.com/go/storage v1.26.0
@@ -22,12 +21,10 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	go.opencensus.io v0.23.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90 // indirect
-	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b // indirect
-	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde // indirect
 	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
-	google.golang.org/api v0.94.0
-	google.golang.org/genproto v0.0.0-20220829175752-36a9c930ecbf
-	google.golang.org/grpc v1.49.0
+	google.golang.org/api v0.101.0
+	google.golang.org/genproto v0.0.0-20221018160656-63c7b68cfc55
+	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/dc0d/tinykv.v4 v4.0.1
 	gopkg.in/yaml.v2 v2.4.0
