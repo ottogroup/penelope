@@ -16,6 +16,7 @@ import (
 
 	"cloud.google.com/go/logging/apiv2"
 	"github.com/pkg/errors"
+	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	loggingpb "google.golang.org/genproto/googleapis/logging/v2"
@@ -36,15 +37,21 @@ func NewLoggingClient(ctxIn context.Context, targetPrincipalProvider impersonate
 	ctx, span := trace.StartSpan(ctxIn, "NewLoggingClient")
 	defer span.End()
 
+	var options []option.ClientOption
+
 	target, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
 	if err != nil {
 		return nil, err
 	}
 
-	options := []option.ClientOption{
-		option.WithScopes(defaultAPIScope),
-		option.ImpersonateCredentials(target),
+	ts, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+		TargetPrincipal: target,
+		Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+	})
+	if err != nil {
+		return nil, err
 	}
+	options = append(options, option.WithTokenSource(ts))
 
 	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
 		options = append(options, option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
