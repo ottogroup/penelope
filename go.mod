@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/monitoring v1.9.0
 	cloud.google.com/go/storage v1.28.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
-	github.com/aws/aws-sdk-go v1.44.149
+	github.com/aws/aws-sdk-go v1.44.204
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/go-pg/pg/v10 v10.10.6
 	github.com/golang-jwt/jwt/v4 v4.4.3
