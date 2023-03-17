@@ -103,7 +103,7 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 	ctx, span := trace.StartSpan(ctxIn, "createImpersonatedCloudStorageClient")
 	defer span.End()
 
-	target, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
+	target, delegates, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +117,7 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
 			TargetPrincipal: target,
 			Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope},
+			Delegates:       delegates,
 		})
 		if err != nil {
 			return nil, err

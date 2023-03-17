@@ -1,24 +1,24 @@
 package rest
 
 import (
-    "context"
+	"context"
 )
 
 type mockBackupProvider struct {
-    Backup string
-    Error  error
+	Backup string
+	Error  error
 }
 
 func (mb *mockBackupProvider) GetSinkGCPProjectID(_ context.Context, _ string) (string, error) {
-    return mb.Backup, mb.Error
+	return mb.Backup, mb.Error
 }
 
 type MockImpersonatedTokenConfigProvider struct {
-    TargetPrincipal string
-    Error           error
+	TargetPrincipal string
+	Delegates       []string
+	Error           error
 }
 
-func (mi *MockImpersonatedTokenConfigProvider) GetTargetPrincipalForProject(_ context.Context, _ string) (string, error) {
-    return mi.TargetPrincipal, mi.Error
+func (mi *MockImpersonatedTokenConfigProvider) GetTargetPrincipalForProject(ctxIn context.Context, projectID string) (string, []string, error) {
+	return mi.TargetPrincipal, mi.Delegates, mi.Error
 }
-

@@ -49,7 +49,7 @@ func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonat
 	ctx, span := trace.StartSpan(ctxIn, "NewBigQueryClient")
 	defer span.End()
 
-	target, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
+	target, delegates, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +63,7 @@ func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonat
 		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
 			TargetPrincipal: target,
 			Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope},
+			Delegates:       delegates,
 		})
 		if err != nil {
 			return nil, err

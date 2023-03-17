@@ -13,7 +13,7 @@ func TestDefaultImpersonatedTokenConfigProvider_GetTargetPrincipalForProject_Pro
 	defer os.Setenv(config.DefaultProviderImpersonateGoogleServiceAccountEnv.String(), "")
 
 	provider := NewDefaultImpersonatedTokenConfigProvider()
-	target, err := provider.GetTargetPrincipalForProject(context.Background(), "")
+	target, _, err := provider.GetTargetPrincipalForProject(context.Background(), "")
 
 	assert.NoError(t, err)
 	assert.Equal(t, "principal@gsa.google.de", target)
@@ -21,6 +21,6 @@ func TestDefaultImpersonatedTokenConfigProvider_GetTargetPrincipalForProject_Pro
 
 func TestDefaultImpersonatedTokenConfigProvider_GetTargetPrincipalForProject_MissingEnv(t *testing.T) {
 	provider := NewDefaultImpersonatedTokenConfigProvider()
-	_, err := provider.GetTargetPrincipalForProject(context.Background(), "")
+	_, _, err := provider.GetTargetPrincipalForProject(context.Background(), "")
 	assert.Error(t, err)
 }

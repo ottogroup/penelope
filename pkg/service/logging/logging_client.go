@@ -39,7 +39,7 @@ func NewLoggingClient(ctxIn context.Context, targetPrincipalProvider impersonate
 
 	var options []option.ClientOption
 
-	target, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
+	target, delegates, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +47,7 @@ func NewLoggingClient(ctxIn context.Context, targetPrincipalProvider impersonate
 	ts, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
 		TargetPrincipal: target,
 		Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+		Delegates:       delegates,
 	})
 	if err != nil {
 		return nil, err

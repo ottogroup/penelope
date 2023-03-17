@@ -14,9 +14,9 @@ func NewDefaultImpersonatedTokenConfigProvider() impersonate.TargetPrincipalForP
 	return &defaultImpersonatedTokenConfigProvider{}
 }
 
-func (ip *defaultImpersonatedTokenConfigProvider) GetTargetPrincipalForProject(context.Context, string) (string, error) {
+func (ip *defaultImpersonatedTokenConfigProvider) GetTargetPrincipalForProject(context.Context, string) (target string, delegate []string, err error) {
 	if config.DefaultProviderImpersonateGoogleServiceAccountEnv.Exist() {
-		return config.DefaultProviderImpersonateGoogleServiceAccountEnv.MustGet(), nil
+		return config.DefaultProviderImpersonateGoogleServiceAccountEnv.MustGet(), delegate, nil
 	}
-	return "", fmt.Errorf("no default target principal provided")
+	return target, delegate, fmt.Errorf("no default target principal provided")
 }
