@@ -45,7 +45,7 @@ func (t *TransferJobHandler) createClient(ctxIn context.Context, targetProjectID
 
 	var options []option.ClientOption
 
-	target, err := t.targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
+	target, delegates, err := t.targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +53,7 @@ func (t *TransferJobHandler) createClient(ctxIn context.Context, targetProjectID
 	ts, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
 		TargetPrincipal: target,
 		Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+		Delegates:       delegates,
 	})
 	if err != nil {
 		return nil, err

@@ -62,9 +62,10 @@ func init() {
 
 type MockImpersonatedTokenConfigProvider struct {
 	TargetPrincipal string
+	Delegates       []string
 	Error           error
 }
 
-func (mi *MockImpersonatedTokenConfigProvider) GetTargetPrincipalForProject(context.Context, string) (string, error) {
-	return mi.TargetPrincipal, mi.Error
+func (mi *MockImpersonatedTokenConfigProvider) GetTargetPrincipalForProject(context.Context, string) (string, []string, error) {
+	return mi.TargetPrincipal, mi.Delegates, mi.Error
 }
