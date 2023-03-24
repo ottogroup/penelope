@@ -26,7 +26,7 @@ var envKeys = []config.EnvKey{
 	config.DefaultBucketStorageClass,
 }
 
-//AppStartArguments holds the necessary arguments to start the app
+// AppStartArguments holds the necessary arguments to start the app
 type AppStartArguments struct {
 	SinkGCPProjectProvider            provider.SinkGCPProjectProvider
 	TargetPrincipalForProjectProvider impersonate.TargetPrincipalForProjectProvider
@@ -34,7 +34,7 @@ type AppStartArguments struct {
 	PrincipalProvider                 provider.PrincipalProvider
 }
 
-//Run penelope app and starts rest api
+// Run penelope app and starts rest api
 func Run(args AppStartArguments) {
 	glog.Infoln("Starting penelope...")
 

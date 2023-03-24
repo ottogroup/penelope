@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/auth"
-    "github.com/ottogroup/penelope/pkg/http/impersonate"
-    "github.com/ottogroup/penelope/pkg/repository"
+	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-    "github.com/ottogroup/penelope/pkg/secret"
-    "github.com/ottogroup/penelope/pkg/service/bigquery"
+	"github.com/ottogroup/penelope/pkg/secret"
+	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
 )
 
 // UpdatingProcessorFactory factory for operation Updating
 type UpdatingProcessorFactory struct {
-    tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
-    credentialsProvider secret.SecretProvider
+	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
+	credentialsProvider secret.SecretProvider
 }
 
 func NewUpdatingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) *UpdatingProcessorFactory {
-    return &UpdatingProcessorFactory{tokenSourceProvider, credentialsProvider}
+	return &UpdatingProcessorFactory{tokenSourceProvider, credentialsProvider}
 }
 
 // DoMatchRequestType compare request string type to Updating
@@ -64,9 +64,9 @@ func (c UpdatingProcessorFactory) newUpdatingProcessor(ctxIn context.Context) (*
 	}
 
 	return &updatingProcessor{
-	    BackupRepository: backupRepository,
-	    JobRepository: jobRepository,
-	    tokenSourceProvider: c.tokenSourceProvider,
+		BackupRepository:    backupRepository,
+		JobRepository:       jobRepository,
+		tokenSourceProvider: c.tokenSourceProvider,
 	}, nil
 }
 
@@ -144,20 +144,20 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Arguments) (*Res
 		return &Result{backups: []*repository.Backup{backup}}, fmt.Errorf("updatingProcessor.Process NewCloudStorageClient failed: %v", err)
 	}
 
-    // if backup was deleted, create bucket sink again
+	// if backup was deleted, create bucket sink again
 	if repository.BackupDeleted.EqualTo(backup.Status.String()) && repository.NotStarted.EqualTo(request.Status) {
-        exist, err := client.DoesBucketExist(ctx, backup.TargetProject, backup.Sink)
-        if err != nil {
-            return &Result{backups: []*repository.Backup{backup}}, fmt.Errorf("couldn't check if bucket sink exist for backup: %v", backup)
-        }
-        if !exist {
-            glog.Infof("recreating bucket for backup: %v", backup)
-            err := prepareSink(ctx, client, backup)
-            if err != nil {
-                return &Result{backups: []*repository.Backup{backup}}, fmt.Errorf("sink couldn't be prepared: %v", backup)
-            }
-        }
-    }
+		exist, err := client.DoesBucketExist(ctx, backup.TargetProject, backup.Sink)
+		if err != nil {
+			return &Result{backups: []*repository.Backup{backup}}, fmt.Errorf("couldn't check if bucket sink exist for backup: %v", backup)
+		}
+		if !exist {
+			glog.Infof("recreating bucket for backup: %v", backup)
+			err := prepareSink(ctx, client, backup)
+			if err != nil {
+				return &Result{backups: []*repository.Backup{backup}}, fmt.Errorf("sink couldn't be prepared: %v", backup)
+			}
+		}
+	}
 
 	if backup.Strategy == "Mirror" {
 		err = client.UpdateBucket(ctx, backup.Sink, request.MirrorTTL, request.ArchiveTTM)

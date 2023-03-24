@@ -19,9 +19,10 @@ import (
 
 // Table store information for BigQuery table changes
 type Table struct {
-	Name        string
-	Checksum    string
-	SizeInBytes float64
+	Name             string
+	Checksum         string
+	SizeInBytes      float64
+	LastModifiedTime time.Time
 }
 
 // Client define operations for BigQuery
@@ -171,9 +172,13 @@ func (d *defaultBigQueryClient) GetTablesInDataset(ctxIn context.Context, projec
 		if err != nil {
 			return []*Table{}, err
 		}
-
 		if tableMetadata.Type == bq.RegularTable {
-			tables = append(tables, &Table{Name: oTable.TableID, Checksum: tableMetadata.ETag, SizeInBytes: float64(tableMetadata.NumBytes)})
+			tables = append(tables, &Table{
+				Name:             oTable.TableID,
+				Checksum:         tableMetadata.ETag,
+				SizeInBytes:      float64(tableMetadata.NumBytes),
+				LastModifiedTime: tableMetadata.LastModifiedTime,
+			})
 		}
 	}
 	return tables, nil

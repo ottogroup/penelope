@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/auth"
-    "github.com/ottogroup/penelope/pkg/http/impersonate"
-    "github.com/ottogroup/penelope/pkg/repository"
+	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-    "github.com/ottogroup/penelope/pkg/secret"
-    "go.opencensus.io/trace"
+	"github.com/ottogroup/penelope/pkg/secret"
+	"go.opencensus.io/trace"
 )
 
 // ListingProcessorFactory create Process for Listing
 type ListingProcessorFactory struct {
-    tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
-    credentialsProvider secret.SecretProvider
+	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
+	credentialsProvider secret.SecretProvider
 }
 
 func NewListingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) *ListingProcessorFactory {
-    return &ListingProcessorFactory{tokenSourceProvider, credentialsProvider}
+	return &ListingProcessorFactory{tokenSourceProvider, credentialsProvider}
 }
 
 // DoMatchRequestType does request type match Listing

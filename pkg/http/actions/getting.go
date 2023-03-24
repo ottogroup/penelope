@@ -1,15 +1,15 @@
 package actions
 
 import (
-    "encoding/json"
-    "fmt"
-    "github.com/golang/glog"
-    "github.com/gorilla/mux"
-    "github.com/ottogroup/penelope/pkg/builder"
-    "github.com/ottogroup/penelope/pkg/requestobjects"
-    "go.opencensus.io/trace"
-    "net/http"
-    "strconv"
+	"encoding/json"
+	"fmt"
+	"github.com/golang/glog"
+	"github.com/gorilla/mux"
+	"github.com/ottogroup/penelope/pkg/builder"
+	"github.com/ottogroup/penelope/pkg/requestobjects"
+	"go.opencensus.io/trace"
+	"net/http"
+	"strconv"
 )
 
 type GettingBackupHandler struct {
@@ -27,8 +27,8 @@ func (dl *GettingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	backupID, ok := mux.Vars(r)["backup_id"]
 	if !ok {
-        msg := "Bad request missing parameter: backup_id"
-        prepareResponse(w, msg, msg, http.StatusBadRequest)
+		msg := "Bad request missing parameter: backup_id"
+		prepareResponse(w, msg, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -47,15 +47,15 @@ func (dl *GettingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		i, err := strconv.Atoi(q.Get("page"))
 		if err != nil {
 			BadRequestResponse(w, r)
-            return
+			return
 		}
 		request.Page.Number = i
 	}
 
-    principal, isValid := getPrincipalOrElsePrepareFailedResponse(w, r)
-    if !isValid {
-        return
-    }
+	principal, isValid := getPrincipalOrElsePrepareFailedResponse(w, r)
+	if !isValid {
+		return
+	}
 
 	// business logic
 	processor, err := dl.processorBuilder.ProcessorForRequestType(ctx, requestobjects.Getting)
