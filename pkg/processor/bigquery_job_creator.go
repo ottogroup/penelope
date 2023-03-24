@@ -214,7 +214,7 @@ func (b *BigQueryJobCreator) collateState(ctxIn context.Context, backupID string
 				Source:           table.Name,
 				SourceChecksum:   table.Checksum,
 				Operation:        repository.Add.String(),
-				LastModifiedTime: meta.LastModifiedTime,
+				LastModifiedTime: table.LastModifiedTime,
 			})
 			descriptors = append(descriptors, &jobDescriptor{backupID: backupID, table: table.Name})
 		} else if meta.SourceChecksum != table.Checksum || // schema changed
@@ -225,7 +225,7 @@ func (b *BigQueryJobCreator) collateState(ctxIn context.Context, backupID string
 					Source:           table.Name,
 					SourceChecksum:   table.Checksum,
 					Operation:        repository.Update.String(),
-					LastModifiedTime: meta.LastModifiedTime,
+					LastModifiedTime: table.LastModifiedTime,
 				},
 			)
 			descriptors = append(descriptors, &jobDescriptor{backupID: backupID, table: table.Name})
