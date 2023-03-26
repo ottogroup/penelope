@@ -65,35 +65,35 @@ Penelope uses environment variables for customization. Therefore, you can config
 by setting specific environment variables (e.g. configure database connection). There are optional and required
 settings. If you not provide required settings, penelope will not run.
 
-| Name | Required | Description |
-| ---- | ---- | ---- |
-| `GCP_PROJECT_ID` | required | Set the GCP project. |
-| `DEFAULT_PROVIDER_BUCKET` | required | Set the bucket for all providers |
-| `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH` | required | Set the path to the `.yaml` file which contains the target backup project for `SinkGCPProjectProvider`. |
-| `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH` | required | Set the path to the `.yaml` file which contains the user principal for `PrincipalProvider`. |
-| `DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT` | required | Set default impersonated google service account for `TargetPrincipalForProjectProvider`. |
-| `STATIC_FILES_PATH` | required | Set the static files path to run Penelope locally. |
-| `APP_JWT_AUDIENCE` | required | Set the expected audience value of the jwt token. |
-| `COMPANY_DOMAINS` | required | Set the company domains for validating user email. Value can be a comma separated list. |
-| `DEFAULT_BUCKET_STORAGE_CLASS` | required | Set the default storage class for backup sinks. |
-| `POSTGRES_SOCKET` | required | Set socket address to PostgreSQL server.  |
-| `POSTGRES_HOST` | required | Set host address to PostgreSQL server. If PostgreSQL socket is specified, setting this is optional. |
-| `POSTGRES_PORT` | required | Set port of PostgreSQL server default to `5432`. |
-| `POSTGRES_DB` | required | Set name of PostgreSQL database. |
-| `POSTGRES_USER` | required | Set username to connect with PostgreSQL database. |
-| `POSTGRES_PASSWORD` | required | Set password for user to connect with PostgreSQL database. |
-| `TOKEN_HEADER_KEY` | required | Set the key for token header. |
-| `PENELOPE_PORT` | optional | Set port for localhost when running Penelope local. |
-| `PENELOPE_TRACING` | optional | Set `true` to export tracing metrics to Stackdriver. Default is `true`. |
-| `PENELOPE_TRACING_METRICS_PREFIX` | optional | Set prefix for tracing metrics when activated. Default is `penelope-server`. |
-| `PENELOPE_USE_DEFAULT_HTTP_CLIENT` | optional | Switch to use default http request for testing by setting `true`. Default is `false`. |
-| `CORS_ALLOWED_METHODS` | optional | Set the allowed methods for CORS with a comma separated list. For example, `POST, PATCH, GET` |
-| `CORS_ALLOWED_ORIGIN` | optional | Set the allowed origins for defined cors methods. |
-| `CORS_ALLOWED_HEADERS` | optional | Set the allowed request headers.  |
-| `TASKS_VALIDATION_HTTP_HEADER_NAME` | optional | Adds request validation to tasks triggers. Specifies the expected request head for validation. |
-| `TASKS_VALIDATION_HTTP_HEADER_VALUE` | optional | Expected value for request validation.  |
-| `TASKS_VALIDATION_ALLOWED_IP_ADDRESSES` | optional | Adds ip address validation to tasks triggers. Multiple comma separated ip addresses can be specified. |
-| `UNIFORM_BUCKET_LEVEL_ACCESS` | optional | Set uniform bucket level access for created backups (see [more](https://cloud.google.com/storage/docs/uniform-bucket-level-access)) |
+| Name                                                  | Required | Description                                                                                                                         |
+|-------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------|
+| `GCP_PROJECT_ID`                                      | required | Set the GCP project.                                                                                                                |
+| `DEFAULT_PROVIDER_BUCKET`                             | required | Set the bucket for all providers                                                                                                    |
+| `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`  | required | Set the path to the `.yaml` file which contains the target backup project for `SinkGCPProjectProvider`.                             |
+| `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH`           | required | Set the path to the `.yaml` file which contains the user principal for `PrincipalProvider`.                                         |
+| `DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT` | required | Set default impersonated google service account for `TargetPrincipalForProjectProvider`.                                            |
+| `STATIC_FILES_PATH`                                   | required | Set the static files path to run Penelope locally.                                                                                  |
+| `APP_JWT_AUDIENCE`                                    | required | Set the expected audience value of the jwt token.                                                                                   |
+| `COMPANY_DOMAINS`                                     | required | Set the company domains for validating user email. Value can be a comma separated list.                                             |
+| `DEFAULT_BUCKET_STORAGE_CLASS`                        | required | Set the default storage class for backup sinks.                                                                                     |
+| `POSTGRES_SOCKET`                                     | required | Set socket address to PostgreSQL server.                                                                                            |
+| `POSTGRES_HOST`                                       | required | Set host address to PostgreSQL server. If PostgreSQL socket is specified, setting this is optional.                                 |
+| `POSTGRES_PORT`                                       | required | Set port of PostgreSQL server default to `5432`.                                                                                    |
+| `POSTGRES_DB`                                         | required | Set name of PostgreSQL database.                                                                                                    |
+| `POSTGRES_USER`                                       | required | Set username to connect with PostgreSQL database.                                                                                   |
+| `POSTGRES_PASSWORD`                                   | required | Set password for user to connect with PostgreSQL database.                                                                          |
+| `TOKEN_HEADER_KEY`                                    | required | Set the key for token header.                                                                                                       |
+| `PENELOPE_PORT`                                       | optional | Set port for localhost when running Penelope local.                                                                                 |
+| `PENELOPE_TRACING`                                    | optional | Set `true` to export tracing metrics to Stackdriver. Default is `true`.                                                             |
+| `PENELOPE_TRACING_METRICS_PREFIX`                     | optional | Set prefix for tracing metrics when activated. Default is `penelope-server`.                                                        |
+| `PENELOPE_USE_DEFAULT_HTTP_CLIENT`                    | optional | Switch to use default http request for testing by setting `true`. Default is `false`.                                               |
+| `CORS_ALLOWED_METHODS`                                | optional | Set the allowed methods for CORS with a comma separated list. For example, `POST, PATCH, GET`                                       |
+| `CORS_ALLOWED_ORIGIN`                                 | optional | Set the allowed origins for defined cors methods.                                                                                   |
+| `CORS_ALLOWED_HEADERS`                                | optional | Set the allowed request headers.                                                                                                    |
+| `TASKS_VALIDATION_HTTP_HEADER_NAME`                   | optional | Adds request validation to tasks triggers. Specifies the expected request head for validation.                                      |
+| `TASKS_VALIDATION_HTTP_HEADER_VALUE`                  | optional | Expected value for request validation.                                                                                              |
+| `TASKS_VALIDATION_ALLOWED_IP_ADDRESSES`               | optional | Adds ip address validation to tasks triggers. Multiple comma separated ip addresses can be specified.                               |
+| `UNIFORM_BUCKET_LEVEL_ACCESS`                         | optional | Set uniform bucket level access for created backups (see [more](https://cloud.google.com/storage/docs/uniform-bucket-level-access)) |
 
 # Deploy Basic Setup
 

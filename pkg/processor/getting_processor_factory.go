@@ -4,23 +4,23 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/pkg/errors"
 	"github.com/ottogroup/penelope/pkg/http/auth"
-    "github.com/ottogroup/penelope/pkg/http/impersonate"
-    "github.com/ottogroup/penelope/pkg/repository"
+	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-    "github.com/ottogroup/penelope/pkg/secret"
-    "go.opencensus.io/trace"
+	"github.com/ottogroup/penelope/pkg/secret"
+	"github.com/pkg/errors"
+	"go.opencensus.io/trace"
 )
 
 // GettingProcessorFactory create Process for Getting
 type GettingProcessorFactory struct {
-    tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
-    credentialProvider  secret.SecretProvider
+	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
+	credentialProvider  secret.SecretProvider
 }
 
-func NewGettingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider  secret.SecretProvider) *GettingProcessorFactory {
-    return &GettingProcessorFactory{tokenSourceProvider, credentialProvider}
+func NewGettingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider) *GettingProcessorFactory {
+	return &GettingProcessorFactory{tokenSourceProvider, credentialProvider}
 }
 
 // DoMatchRequestType does request type match Getting

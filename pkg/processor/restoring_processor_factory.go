@@ -4,23 +4,23 @@ import (
 	"context"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/pkg/errors"
 	"github.com/ottogroup/penelope/pkg/http/auth"
-    "github.com/ottogroup/penelope/pkg/http/impersonate"
-    "github.com/ottogroup/penelope/pkg/repository"
+	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-    "github.com/ottogroup/penelope/pkg/secret"
-    "go.opencensus.io/trace"
+	"github.com/ottogroup/penelope/pkg/secret"
+	"github.com/pkg/errors"
+	"go.opencensus.io/trace"
 )
 
 // RestoringProcessorFactory create Operations for Restoring
 type RestoringProcessorFactory struct {
-    tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
-    credentialsProvider secret.SecretProvider
+	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
+	credentialsProvider secret.SecretProvider
 }
 
 func NewRestoringProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) *RestoringProcessorFactory {
-    return &RestoringProcessorFactory{tokenSourceProvider, credentialsProvider}
+	return &RestoringProcessorFactory{tokenSourceProvider, credentialsProvider}
 }
 
 // DoMatchRequestType does request type match Restoring

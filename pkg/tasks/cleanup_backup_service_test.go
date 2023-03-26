@@ -246,7 +246,7 @@ func TestCleanupExpiredSinkService_WithoutExpiredGcsMirrorRevisions(t *testing.T
 	assert.NotContainsf(t, strings.TrimSpace(stdErr), logMsg, "Run should not write log message %q but it logged\n\t%s", logMsg, stdErr)
 }
 
-//this test is dependent on the grpc client of cloud storage which currently can't be mocked
+// this test is dependent on the grpc client of cloud storage which currently can't be mocked
 func TestCleanupExpiredSinkService_WithExpiredGcsMirrorRevisions(t *testing.T) {
 	t.Skip()
 
@@ -299,7 +299,7 @@ func TestCleanupExpiredSinkService_WithExpiredGcsMirrorRevisions(t *testing.T) {
 	//assert.Len(t, exists, 0)
 }
 
-//this test is dependent on the grpc client of cloud storage which currently can't be mocked
+// this test is dependent on the grpc client of cloud storage which currently can't be mocked
 func TestCleanupExpiredSinkService_WithTrashcanedGcsMirrorRevisions(t *testing.T) {
 	t.Skip()
 

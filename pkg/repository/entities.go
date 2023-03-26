@@ -36,8 +36,8 @@ type User struct {
 
 // Backup core entity
 type Backup struct {
-    //lint:ignore U1000 makes sure to have correct table name
-    tableName struct{} `pg:"backups,alias:b"`
+	//lint:ignore U1000 makes sure to have correct table name
+	tableName struct{} `pg:"backups,alias:b"`
 
 	ID     string       `pg:"id,pk"`
 	Status BackupStatus `pg:"status"`
@@ -143,8 +143,8 @@ type ForeignJobID struct {
 
 // Job a backup unit of work
 type Job struct {
-    //lint:ignore U1000 makes sure to have correct table name
-    tableName struct{} `pg:"jobs,alias:j"`
+	//lint:ignore U1000 makes sure to have correct table name
+	tableName struct{} `pg:"jobs,alias:j"`
 
 	ID       string     `pg:"id,pk"`
 	BackupID string     `pg:"backup_id"`
@@ -169,14 +169,15 @@ func (j Job) String() string {
 
 // SourceMetadata for a BigQuery mirroring
 type SourceMetadata struct {
-    //lint:ignore U1000 makes sure to have correct table name
+	//lint:ignore U1000 makes sure to have correct table name
 	tableName struct{} `pg:"source_metadata,alias:sm"`
 
-	ID             int    `pg:"id,pk"`
-	BackupID       string `pg:"backup_id"`
-	Source         string `pg:"source"`
-	SourceChecksum string `pg:"source_checksum"`
-	Operation      string `pg:"operation"`
+	ID               int       `pg:"id,pk"`
+	BackupID         string    `pg:"backup_id"`
+	Source           string    `pg:"source"`
+	SourceChecksum   string    `pg:"source_checksum"`
+	LastModifiedTime time.Time `pg:"last_modified_time"`
+	Operation        string    `pg:"operation"`
 
 	CreatedTimestamp time.Time `pg:"audit_created_timestamp"`
 	DeletedTimestamp time.Time `pg:"audit_deleted_timestamp"`
@@ -184,7 +185,7 @@ type SourceMetadata struct {
 
 // SourceMetadataJob for a BigQuery mirroring
 type SourceMetadataJob struct {
-    //lint:ignore U1000 makes sure to have correct table name
+	//lint:ignore U1000 makes sure to have correct table name
 	tableName struct{} `pg:"source_metadata_jobs,alias:smj"`
 
 	SourceMetadataID int    `pg:"source_metadata_id"`
@@ -193,10 +194,10 @@ type SourceMetadataJob struct {
 
 // SourceTrashcan holds information about objects moved into trashcan
 type SourceTrashcan struct {
-    //lint:ignore U1000 makes sure to have correct table name
-    tableName struct{} `pg:"source_trashcan,alias:st"`
+	//lint:ignore U1000 makes sure to have correct table name
+	tableName struct{} `pg:"source_trashcan,alias:st"`
 
-    BackupID         string
-    Source           string
-    CreatedTimestamp time.Time `pg:"audit_created_timestamp"`
+	BackupID         string
+	Source           string
+	CreatedTimestamp time.Time `pg:"audit_created_timestamp"`
 }
