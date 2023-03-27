@@ -25,6 +25,15 @@ type Table struct {
 	LastModifiedTime time.Time
 }
 
+func newTableEntry(name string, tableMetadata *bq.TableMetadata) *Table {
+	return &Table{
+		Name:             name,
+		Checksum:         tableMetadata.ETag,
+		SizeInBytes:      float64(tableMetadata.NumBytes),
+		LastModifiedTime: tableMetadata.LastModifiedTime,
+	}
+}
+
 // Client define operations for BigQuery
 type Client interface {
 	IsInitialized(ctxIn context.Context) bool
@@ -141,11 +150,11 @@ func (d *defaultBigQueryClient) GetTable(ctxIn context.Context, project string, 
 	defer span.End()
 
 	oDataset := d.client.DatasetInProject(project, dataset)
-	m, err := oDataset.Table(table).Metadata(ctx)
+	tableMetadata, err := oDataset.Table(table).Metadata(ctx)
 	if err != nil {
 		return &Table{}, err
 	}
-	return &Table{Name: table, Checksum: m.ETag, SizeInBytes: float64(m.NumBytes)}, nil
+	return newTableEntry(table, tableMetadata), nil
 }
 
 // GetTablesInDataset list all tables in a dataset
@@ -292,7 +301,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 		if err != nil {
 			return []*Table{}, err
 		}
-		partitions = append(partitions, &Table{Name: partitionTable, Checksum: tableMetadata.ETag, SizeInBytes: float64(tableMetadata.NumBytes)})
+		partitions = append(partitions, newTableEntry(table, tableMetadata))
 	}
 	return partitions, nil
 }
