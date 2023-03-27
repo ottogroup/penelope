@@ -301,7 +301,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 		if err != nil {
 			return []*Table{}, err
 		}
-		partitions = append(partitions, newTableEntry(table, tableMetadata))
+		partitions = append(partitions, newTableEntry(partitionTable, tableMetadata))
 	}
 	return partitions, nil
 }
