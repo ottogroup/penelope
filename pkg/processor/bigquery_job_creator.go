@@ -218,7 +218,7 @@ func (b *BigQueryJobCreator) collateState(ctxIn context.Context, backupID string
 			})
 			descriptors = append(descriptors, &jobDescriptor{backupID: backupID, table: table.Name})
 		} else if meta.SourceChecksum != table.Checksum || // schema changed
-			table.LastModifiedTime.After(meta.LastModifiedTime) { // there are new data in the table
+			(!meta.LastModifiedTime.IsZero() && !table.LastModifiedTime.IsZero() && table.LastModifiedTime.After(meta.LastModifiedTime)) { // there are new data in the table
 			toUpdate = append(toUpdate,
 				&repository.SourceMetadata{
 					BackupID:         backupID,
