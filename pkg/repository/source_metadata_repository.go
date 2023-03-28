@@ -73,6 +73,7 @@ func (b *defaultSourceMetadataRepository) GetLastByBackupID(ctxIn context.Contex
 			"operation",
 			"audit_created_timestamp",
 			"audit_deleted_timestamp",
+			"last_modified_time",
 		).
 		Where("inner_rank = 1").
 		Select(&sourceMetadata)

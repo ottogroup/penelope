@@ -182,12 +182,7 @@ func (d *defaultBigQueryClient) GetTablesInDataset(ctxIn context.Context, projec
 			return []*Table{}, err
 		}
 		if tableMetadata.Type == bq.RegularTable {
-			tables = append(tables, &Table{
-				Name:             oTable.TableID,
-				Checksum:         tableMetadata.ETag,
-				SizeInBytes:      float64(tableMetadata.NumBytes),
-				LastModifiedTime: tableMetadata.LastModifiedTime,
-			})
+			tables = append(tables, newTableEntry(oTable.TableID, tableMetadata))
 		}
 	}
 	return tables, nil
