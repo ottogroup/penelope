@@ -33,7 +33,7 @@ Penelope consists of three main components:
 
 # Requirements
 
-* Go >= 1.14
+* Go >= 1.19
 * PostgreSQL >= 10.15
 * Google Service Account
 
@@ -122,7 +122,7 @@ free to change the values, but be carefully with the handlers.
 
 ```yaml
 # app.yaml
-runtime: go114
+runtime: go119
 service: default
 handlers:
   -   url: /
