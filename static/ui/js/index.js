@@ -242,7 +242,7 @@ var App = (function () {
                         element.classList.remove('hidden')
                     });
                     if (backup.snapshot_options.lifetime_in_days) {
-                        document.getElementById('update-backup-form-snapshot-ttl').value = backup.mirror_options.lifetime_in_days
+                        document.getElementById('update-backup-form-snapshot-ttl').value = backup.snapshot_options.lifetime_in_days
                     }
                 }
                 if (backup.target && backup.target.archive_ttm >= 0) {
