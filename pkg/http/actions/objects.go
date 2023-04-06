@@ -68,7 +68,7 @@ func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job) requ
 				LastScheduled:    formatTime(backup.LastScheduledTime),
 			},
 			MirrorOptions: requestobjects.MirrorOptions{
-				LifetimeInDays: backup.SnapshotOptions.LifetimeInDays,
+				LifetimeInDays: backup.MirrorOptions.LifetimeInDays,
 			},
 			BigQueryOptions: requestobjects.BigQueryOptions{
 				Dataset:        backup.Dataset,
