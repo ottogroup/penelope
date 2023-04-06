@@ -230,6 +230,9 @@ var App = (function () {
                     document.querySelectorAll('.update-mirror').forEach(function (element) {
                         element.classList.remove('hidden')
                     });
+                    document.querySelectorAll('.update-snapshot').forEach(function (element) {
+                        element.classList.add('hidden')
+                    });
                     if (backup.type === "BigQuery" && backup.mirror_options.lifetime_in_days) {
                         document.getElementById('update-backup-form-mirror-ttl').value = backup.mirror_options.lifetime_in_days
                     }
@@ -240,6 +243,9 @@ var App = (function () {
                 if (backup.strategy === "Snapshot" && backup.type === "CloudStorage") {
                     document.querySelectorAll('.update-snapshot').forEach(function (element) {
                         element.classList.remove('hidden')
+                    });
+                    document.querySelectorAll('.update-mirror').forEach(function (element) {
+                        element.classList.add('hidden')
                     });
                     if (backup.snapshot_options.lifetime_in_days) {
                         document.getElementById('update-backup-form-snapshot-ttl').value = backup.snapshot_options.lifetime_in_days
