@@ -139,7 +139,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Arguments) (*Res
 		return &Result{backups: []*repository.Backup{backup}}, err
 	}
 
-	client, err := gcs.NewCloudStorageClient(ctx, c.tokenSourceProvider, backup.SourceProject)
+	client, err := gcs.NewCloudStorageClient(ctx, c.tokenSourceProvider, backup.TargetProject)
 	if err != nil {
 		return &Result{backups: []*repository.Backup{backup}}, fmt.Errorf("updatingProcessor.Process NewCloudStorageClient failed: %v", err)
 	}
