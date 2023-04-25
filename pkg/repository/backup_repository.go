@@ -171,7 +171,7 @@ func (d *defaultBackupRepository) MarkStatus(ctxIn context.Context, id string, s
 	return nil
 }
 
-// UpdateBackupStatus change backup status
+// UpdateBackup change backup status
 func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields UpdateFields) error {
 	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).UpdateBackupStatus")
 	defer span.End()
@@ -207,20 +207,25 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 		backup.DeletedTimestamp = time.Now()
 	}
 
+	columns := []string{
+		"snapshot_lifetime_in_days",
+		"bigquery_table",
+		"bigquery_excluded_tables",
+		"cloudstorage_include_path",
+		"cloudstorage_exclude_path",
+		"audit_updated_timestamp",
+		"audit_deleted_timestamp",
+		"mirror_lifetime_in_days",
+		"archive_ttm",
+	}
+
+	if fields.Status != "" {
+		columns = append(columns, "status")
+	}
+
 	result, err := d.storageService.DB().
 		Model(backup).
-		Column(
-			"status",
-			"snapshot_lifetime_in_days",
-			"bigquery_table",
-			"bigquery_excluded_tables",
-			"cloudstorage_include_path",
-			"cloudstorage_exclude_path",
-			"audit_updated_timestamp",
-			"audit_deleted_timestamp",
-			"mirror_lifetime_in_days",
-			"archive_ttm",
-		).
+		Column(columns...).
 		WherePK().
 		Update()
 
