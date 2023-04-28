@@ -1,4 +1,4 @@
-runtime: go114
+runtime: go120
 service: penelope
 handlers:
   -   url: /
