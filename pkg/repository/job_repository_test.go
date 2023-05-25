@@ -1,7 +1,10 @@
 package repository
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -487,4 +490,84 @@ func TestDefaultJobRepository_GetBackupRestoreJobs(t *testing.T) {
 	restoreJobs, err := repository.GetBackupRestoreJobs(ctx, "backup-id-1", "job-id-1")
 	assert.NoError(t, err)
 	assert.Len(t, restoreJobs, 1)
+}
+
+func TestDefaultJobRepository_GetExpiredSnapshotJobs(t *testing.T) {
+	// ARRANGE
+	backups := []Backup{
+		{ID: "backup-id-1", Strategy: Snapshot},
+		{ID: "backup-id-2", Strategy: Snapshot},
+	}
+
+	referenceTime, _ := time.Parse(time.DateTime, "2020-01-01 00:00:00")
+
+	// Create a couple of jobs and simulate creation every hour.
+	var jobs []Job
+	for i := 0; i < MaxJobsToKeep+2; i++ {
+		createdTimestamp := TimeBefore(referenceTime, time.Duration(i)*time.Hour)
+		jobs = append(jobs, Job{
+			ID:       strconv.Itoa(i),
+			BackupID: "backup-id-1",
+			Type:     CloudStorage,
+			Status:   FinishedOk,
+			Source:   "Source-1",
+
+			ForeignJobID: ForeignJobID{CloudStorageID: TransferJobID(fmt.Sprintf("transferJob/%011d", i))},
+			EntityAudit:  EntityAudit{CreatedTimestamp: createdTimestamp, UpdatedTimestamp: createdTimestamp},
+		})
+	}
+	for i := MaxJobsToKeep + 2; i < 2*MaxJobsToKeep; i++ {
+		createdTimestamp := TimeBefore(referenceTime, time.Duration(i)*time.Hour)
+		jobs = append(jobs, Job{
+			ID:       strconv.Itoa(i),
+			BackupID: "backup-id-2",
+			Type:     CloudStorage,
+			Status:   FinishedOk,
+			Source:   "Source-2",
+
+			ForeignJobID: ForeignJobID{CloudStorageID: TransferJobID(fmt.Sprintf("transferJob/%011d", i))},
+			EntityAudit:  EntityAudit{CreatedTimestamp: createdTimestamp, UpdatedTimestamp: createdTimestamp},
+		})
+	}
+
+	// Create some random jobs, which should be kept.
+	for i := 2 * MaxJobsToKeep; i < 4*MaxJobsToKeep; i++ {
+		backups = append(backups, Backup{ID: fmt.Sprintf("backup-id-%d", i), Strategy: Snapshot})
+		jobs = append(jobs, Job{
+			ID:       strconv.Itoa(i),
+			BackupID: fmt.Sprintf("backup-id-%d", i),
+			Type:     CloudStorage,
+			Status:   FinishedOk,
+			Source:   "Source-2",
+
+			ForeignJobID: ForeignJobID{CloudStorageID: TransferJobID(fmt.Sprintf("transferJob/%011d", i))},
+			EntityAudit:  EntityAudit{CreatedTimestamp: referenceTime, UpdatedTimestamp: referenceTime},
+		})
+	}
+
+	ctx, storageService := prepareTest(t)
+
+	repository := &defaultJobRepository{storageService: storageService}
+
+	err := setDatabase(storageService, backups, jobs, []SourceMetadata{}, []SourceMetadataJob{})
+	assert.NoError(t, err)
+
+	// ACT
+	expiredSnapshotJobs, err := repository.GetExpiredSnapshotJobs(ctx, JobPage{
+		Size:   0,
+		Number: 0,
+	})
+
+	// ASSERT
+	assert.NoError(t, err)
+	assert.Len(t, expiredSnapshotJobs, 2)
+
+	// we should have two backups to delete for backup-id-1 which created two more backups than the number of backups to keep
+	listA, _ := json.Marshal(expiredSnapshotJobs)
+	listB, _ := json.Marshal(jobs[MaxJobsToKeep:(MaxJobsToKeep + 2)])
+	assert.JSONEq(t, string(listA), string(listB))
+}
+
+func TimeBefore(t time.Time, duration time.Duration) time.Time {
+	return t.Add(-8 * duration)
 }

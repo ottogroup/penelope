@@ -15,7 +15,10 @@ import (
 type JobStatistics map[JobStatus]uint64
 
 // AllJobs will fetch all jobs
-const AllJobs = -101
+const (
+	AllJobs       = -101
+	MaxJobsToKeep = 15
+)
 
 // JobPage represent what subset of jobs to fetch
 type JobPage struct {
@@ -134,6 +137,30 @@ func (d *defaultJobRepository) GetJobsForBackupID(ctxIn context.Context, backupI
 	if err != nil {
 		return nil, fmt.Errorf("error during executing GetJobsForBackupID statement: %s", err)
 	}
+	return jobs, err
+}
+
+func (d *defaultJobRepository) GetExpiredSnapshotJobs(ctxIn context.Context, page JobPage) ([]*Job, error) {
+	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetExpiredJobs")
+	defer span.End()
+
+	var jobs []*Job
+	db := d.storageService.DB()
+
+	jobsRankedByAge := db.Model().
+		TableExpr("jobs j").
+		Column("j.cloudstorage_transfer_job_id", "j.id", "j.backup_id", "j.type", "j.status", "j.source", "j.audit_created_timestamp", "j.audit_updated_timestamp", "j.audit_deleted_timestamp").
+		ColumnExpr("rank() OVER (PARTITION BY b.id ORDER BY j.audit_updated_timestamp DESC)").
+		Join("JOIN backups AS b").
+		JoinOn("j.backup_id = b.id").
+		Where("j.type = 'CloudStorage' AND b.strategy = 'Snapshot'")
+
+	err := db.Model().
+		Column("rank_filter.cloudstorage_transfer_job_id", "rank_filter.id", "rank_filter.backup_id", "rank_filter.type", "rank_filter.status", "rank_filter.source", "rank_filter.audit_created_timestamp", "rank_filter.audit_updated_timestamp", "rank_filter.audit_deleted_timestamp").
+		TableExpr("(?) AS rank_filter", jobsRankedByAge).
+		Where("rank_filter.rank > ? AND rank_filter.cloudstorage_transfer_job_id IS NOT NULL AND rank_filter.cloudstorage_transfer_job_id != ''", MaxJobsToKeep).
+		Select(&jobs)
+
 	return jobs, err
 }
 
