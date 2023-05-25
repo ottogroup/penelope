@@ -36,6 +36,7 @@ type JobRepository interface {
 	MarkDeleted(context.Context, string) error
 	GetByJobTypeAndStatus(context.Context, BackupType, ...JobStatus) ([]*Job, error)
 	GetByStatusAndBefore(context.Context, []JobStatus, int) ([]*Job, error)
+	GetExpiredSnapshotJobs(ctx context.Context) ([]*Job, error)
 	PatchJobStatus(ctx context.Context, patch JobPatch) error
 	GetJobsForBackupID(ctx context.Context, backupID string, jobPage JobPage) ([]*Job, error)
 	GetBackupRestoreJobs(ctx context.Context, backupID, jobID string) ([]*Job, error)

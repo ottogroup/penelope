@@ -133,7 +133,13 @@ func (j *cleanupBackupService) cleanupBackup(ctxIn context.Context, backup *repo
 	}
 
 	if repository.CloudStorage == backup.Type {
-		return j.deleteTransferJobs(ctx, backup)
+		// errors are ignored from here after because they are not crucial
+		jobPage := repository.JobPage{Size: repository.AllJobs}
+
+		jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
+		if err == nil {
+			j.deleteTransferJobs(ctx, backup.TargetProject, jobs)
+		}
 	}
 
 	return nil
@@ -175,25 +181,28 @@ func (j *cleanupBackupService) deleteSink(ctxIn context.Context, backup *reposit
 	return j.scheduleProcessor.MarkBackupDeleted(ctx, backup.ID)
 }
 
-func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backup *repository.Backup) error {
+// deleteTransferJobs
+func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backupTargetProject string, jobs []*repository.Job) (deletedJobs []string, err error) {
+
 	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).deleteTransferJobs")
 	defer span.End()
 
-	jobHandler, err := gcs.NewTransferJobHandler(ctx, j.tokenSourceProvider, backup.TargetProject)
+	jobHandler, err := gcs.NewTransferJobHandler(ctx, j.tokenSourceProvider, backupTargetProject)
 	if err != nil {
-		return fmt.Errorf("could not create TransferJobHandler: %s", err)
+		err = fmt.Errorf("could not create TransferJobHandler: %s", err)
+		return
 	}
 
-	// errors are ignored from here after because they are not crucial
-	jobPage := repository.JobPage{Size: repository.AllJobs}
-	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
-	if err == nil {
-		for _, job := range jobs {
-			jobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.ForeignJobID.CloudStorageID.String())
+	for _, job := range jobs {
+		deleteErr := jobHandler.DeleteTransferJob(ctx, backupTargetProject, job.ForeignJobID.CloudStorageID.String())
+		if deleteErr == nil {
+			deletedJobs = append(deletedJobs, job.CloudStorageID.String())
+		} else {
+			err = fmt.Errorf("could not delete all jobs as requested")
 		}
 	}
 
-	return nil
+	return
 }
 
 func (j *cleanupBackupService) deleteBigQueryRevision(ctxIn context.Context, revision *repository.MirrorRevision) error {
