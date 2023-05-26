@@ -29,7 +29,7 @@ Penelope consists of three main components:
 
 **Bellow:** Screenshot from Penelope using the form to create a new backup
 
-![Backup Form](/resources/screenshots/backup_form_screentshot.png?raw=true)
+![Backup Form](resources/screenshots/backup_form_screentshot.png?raw=true)
 
 # Requirements
 
@@ -369,3 +369,36 @@ The content can look like this.
     - role: viewer
       project: 'project-two'
 ```
+
+# Internal Data Model and Backup Mechanics
+
+Penelope tracks backup configuration specified by the user as well as the backups current success state in the `backups`
+table. Each backup definition lets Penelope schedule, execute and track (aka orchestrate) jobs in GCP. Depending on the
+backup source a job is either implemented as
+
+- a StorageTransferJob, if the backup source is CloudStorage
+- a BigQueryExtractJob, if the backup source is BigQuery
+
+Penelope keeps track of jobs in the `jobs` table. A fk relation to the corresponding backup indentifies which backup
+definition lead to a certain job.
+
+Both db entities - `backups` and `jobs` - have a `status` field representing the current state they are in. The `status` 
+field different [Penelope tasks](pkg/tasks/tasks_multiplexer.go) operate on it and trigger a state chang in the model.
+State changes of `backups` are well-defined in the [processor.go](pkg/processor/processor.go).
+
+Since a StorageTransferJob is handled by GCP, it runs asynchronously. Penelope checks job statuses in regular intervals
+when the task `CheckJobsStatus` is invoked. It monitors StorageTransferJobs and corresponding TransferOperations. The 
+following diagram shows how the job status is assessed.
+
+```mermaid
+flowchart LR
+    Start["GetJobs(Scheduled || Pending)"] --> A[ListOperations]
+    A --> B{Any Runs?}
+    B --> |Yes| C{Any Run not done?}
+    B --> |No| SPen[Pending]
+    C --> |No| SDone[FinishedOk]
+    C --> |Yes| D{Any of them failed?}
+    D --> |Yes| SFail[FinishedError]
+    D--> |No| SPen
+```
+
