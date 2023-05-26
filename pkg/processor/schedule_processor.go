@@ -27,6 +27,7 @@ type ScheduleProcessor interface {
 	GetScheduledBackups(context.Context, repository.BackupType) ([]*repository.Backup, error)
 	GetByStatusAndAfter(context.Context, []repository.JobStatus, int) ([]*repository.Job, error)
 	GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.JobPage) ([]*repository.Job, error)
+	GetSnapshotJobsForDeletion(ctxIn context.Context) map[string][]*repository.Job
 	UpdateJob(ctxIn context.Context, backupType repository.BackupType, jobID string, status repository.JobStatus, externalID string) error
 	UpdateBackupStatus(ctxIn context.Context, id string, status repository.BackupStatus) error
 	UpdateLastCleanupTime(ctxIn context.Context, backupID string, lastCleanupTime time.Time) error
@@ -46,6 +47,39 @@ type defaultScheduleProcessor struct {
 	sourceMetadataRepository    repository.SourceMetadataRepository
 	sourceMetadataJobRepository repository.SourceMetadataJobRepository
 	sourceTrashcanRepository    repository.SourceTrashcanRepository
+}
+
+// GetSnapshotJobsForDeletion returns all jobs eligible for deletion grouped by the target project of the corresponding
+// backup entry.
+//
+// Penelope should retain only the most recent StorageTransferJobs for a certain backup and delete the rest in order to
+// reduce the number of StorageTransferJobs in the respective target project.
+func (d *defaultScheduleProcessor) GetSnapshotJobsForDeletion(ctxIn context.Context) (result map[string][]*repository.Job) {
+	backupToTargetProject := make(map[string]string)
+
+	jobsForDeletion, err := d.jobRepository.GetExpiredSnapshotJobs(ctxIn)
+	if err != nil {
+		return
+	}
+
+	for _, job := range jobsForDeletion {
+		var targetProject string
+
+		if _, ok := backupToTargetProject[job.BackupID]; !ok {
+			backup, err := d.backupRepository.GetBackup(ctxIn, job.BackupID)
+			if err != nil {
+				continue
+			}
+
+			backupToTargetProject[job.BackupID] = backup.TargetProject
+
+			targetProject = backup.TargetProject
+		}
+
+		result[targetProject] = append(result[targetProject], job)
+	}
+
+	return
 }
 
 // NewScheduleProcessor create new instance of ScheduleProcessor

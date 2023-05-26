@@ -46,6 +46,7 @@ func (j *cleanupBackupService) Run(ctxIn context.Context) {
 
 	for _, t := range repository.BackupTypes {
 		j.handleExpiredBackups(ctx, t)
+		j.handleJobsToDelete(ctx, t)
 
 		if repository.BigQuery.EqualTo(t.String()) {
 			j.handleBigQueryMirror(ctx, t)
@@ -76,6 +77,21 @@ func (j *cleanupBackupService) handleExpiredBackups(ctxIn context.Context, t rep
 			glog.Warningf("[FAIL] Error deleting sink for backup %s: %s", backup, err)
 		} else {
 			glog.Infof("[SUCCESS] Deleting sink finished for backup %s", backup)
+		}
+	}
+}
+
+func (j *cleanupBackupService) handleJobsToDelete(ctxIn context.Context, t repository.BackupType) {
+	ctx, span := trace.StartSpan(ctxIn, "(*handleExpiredBackups).handleJobsToDelete")
+	defer span.End()
+
+	jobs := j.scheduleProcessor.GetSnapshotJobsForDeletion(ctx)
+
+	for target, jobsInTarget := range jobs {
+		deletedJobs, err := j.deleteTransferJobs(ctx, target, jobsInTarget)
+		// Since GCS StorageTransferJob garbage collection is only a secondary concern to Penelope, ignore errors
+		if len(deletedJobs) != len(jobsInTarget) || err != nil {
+			glog.Warningf("[WARN] Of %d jobs in project %s only %d were successfully deleted. Error Message: %v", len(jobsInTarget), target, len(deletedJobs), err)
 		}
 	}
 }
