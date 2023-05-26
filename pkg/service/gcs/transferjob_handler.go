@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 	"google.golang.org/api/googleapi"
 	gimpersonate "google.golang.org/api/impersonate"
@@ -128,6 +129,21 @@ func (t *TransferJobHandler) GetStatusOfJob(ctxIn context.Context, targetProject
 	storageTransferService, err := t.createClient(ctx, targetProjectID)
 	if err != nil {
 		return StateUnspecified, err
+	}
+
+	jobDescFields := []googleapi.Field{"name", "projectId", "status"}
+	gcsJob, err := storageTransferService.TransferJobs.Get(name, targetProjectID).Fields(jobDescFields...).Do()
+
+	if err != nil {
+		var apiErr *googleapi.Error
+		if errors.As(err, &apiErr) && apiErr.Code == http.StatusNotFound {
+			return Deleted, nil
+		}
+		return StateUnspecified, fmt.Errorf("error querying transferjob %w", err)
+	}
+
+	if gcsJob.Status == "DELETED" {
+		return Deleted, nil
 	}
 
 	filterValue := fmt.Sprintf(`{"project_id" : "%s", "job_names" : ["%s"]}`, targetProjectID, name)

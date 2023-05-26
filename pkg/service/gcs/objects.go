@@ -19,5 +19,6 @@ const (
 	// Done is a state that describes that the job is done.
 	Done TransferJobState = "Done"
 	// Failed is a state that describes that the job complete unsuccessfully.
-	Failed TransferJobState = "Failed"
+	Failed  TransferJobState = "Failed"
+	Deleted TransferJobState = "Deleted"
 )
