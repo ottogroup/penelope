@@ -81,6 +81,17 @@ func (t *TransferJobHandler) CreateTransferJob(ctxIn context.Context, srcProject
 		return "", fmt.Errorf("failed to create new oauth2 client: %s", err)
 	}
 
+	rb := newTransferJobObject(srcProjectID, srcBucket, targetProjectID, targetBucket, includePath, excludePath)
+
+	resp, err := storageTransferService.TransferJobs.Create(rb).Context(ctx).Do()
+	if err != nil {
+		return "", fmt.Errorf("error creation transfer job: %s", err)
+	}
+
+	return resp.Name, nil
+}
+
+func newTransferJobObject(srcProjectID string, srcBucket string, targetProjectID string, targetBucket string, includePath []string, excludePath []string) *storagetransfer.TransferJob {
 	appProjectID := config.GCPProjectId.GetOrDefault("")
 	description := fmt.Sprintf("Job to transfer %s:%s to %s:%s. Triggered by BackupApp in project %s", srcProjectID, srcBucket, targetProjectID, targetBucket, appProjectID)
 
@@ -111,13 +122,7 @@ func (t *TransferJobHandler) CreateTransferJob(ctxIn context.Context, srcProject
 		objectConditions.ExcludePrefixes = excludePath
 	}
 	rb.TransferSpec.ObjectConditions = objectConditions
-
-	resp, err := storageTransferService.TransferJobs.Create(rb).Context(ctx).Do()
-	if err != nil {
-		return "", fmt.Errorf("error creation transfer job: %s", err)
-	}
-
-	return resp.Name, nil
+	return rb
 }
 
 // GetStatusOfJob return actual status of transfer job
