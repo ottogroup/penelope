@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/http/mock"
@@ -10,10 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"net/http"
-	"strconv"
 	"strings"
 	"testing"
-	"text/template"
 	"time"
 )
 
@@ -74,7 +71,7 @@ func TestJobStatusService_WithValidCloudStorageJob(t *testing.T) {
 
 			// ARRANGE
 			// Simulate a job with three transferOperations
-			mockResponse, _ := SimpleResponseBodyFromTemplate(mockResponseBody, test.TransferOperationInputValues, http.StatusOK)
+			mockResponse, _ := mock.SimpleResponseBodyFromTemplate(mockResponseBody, test.TransferOperationInputValues, http.StatusOK)
 			httpMockHandler.Register(
 				mock.NewMockedHTTPRequestWithQuery("GET", "/v1/transferOperations", mockResponse, map[string]string{
 					"fields":       "operations.done,operations.response,operations.error",
@@ -234,38 +231,6 @@ func TestJobStatusService_WithValidJobValidBackup(t *testing.T) {
 	updatedBackup, err := backupRepository.GetBackup(ctx, statusServiceBackupID)
 	require.NoError(t, err)
 	assert.Equal(t, repository.Prepared, updatedBackup.Status)
-}
-
-func SimpleResponseBodyFromTemplate(bodyTemplate string, values map[string]string, statusCode int) (string, error) {
-	bodyTmpl, err := template.New("MockResponseBody").Parse(bodyTemplate)
-	if err != nil {
-		return "", err
-	}
-
-	var bodyBuf bytes.Buffer
-	err = bodyTmpl.Execute(&bodyBuf, values)
-	if err != nil {
-		return "", err
-	}
-
-	envelopeTmpl, err := template.New("MockResponseEnvelope").Parse(`HTTP/1.0 {{ .StatusCode }} {{ .StatusText }}
-Content-Length: {{ .ContentLength }}
-Content-Type: application/json; charset=UTF-8
-
-{{ .Body }}
-`)
-	body := bodyBuf.String()
-	templateData := map[string]string{
-		"StatusCode":    strconv.Itoa(statusCode),
-		"StatusText":    http.StatusText(statusCode),
-		"ContentLength": strconv.Itoa(len(body)),
-		"Body":          body,
-	}
-
-	var responseBuf bytes.Buffer
-	envelopeTmpl.Execute(&responseBuf, templateData)
-
-	return responseBuf.String(), err
 }
 
 var mockResponseBody = `{

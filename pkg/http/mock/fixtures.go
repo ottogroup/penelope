@@ -1,5 +1,13 @@
 package mock
 
+import (
+	"bytes"
+	"net/http"
+	"strconv"
+	"strings"
+	"text/template"
+)
+
 const (
 	// DefaultJWTToken dummy token
 	DefaultJWTToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjZmYjA1Zjc0MjM2NmVlNGNmNGJjZjQ5Zjk4NGM0ODdlNDVjOGM4M2QiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiIvcHJvamVjdHMvMTIzNDU2Nzg5L2FwcHMvZ2NwLWJhY2t1cCIsImVtYWlsIjoiaGFucy53dXJzdEBleGFtcGxlLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjogdHJ1ZSwiZXhwIjoxNTQ4ODYwNTg1LCJoZCI6ImV4YW1wbGUuY29tIiwiaWF0IjoxNTQ4ODU5OTg1LCJpc3MiOiJodHRwczovL2Nsb3VkLmdvb2dsZS5jb20vaWFwIiwic3ViIjoiYWNjb3VudHMuZ29vZ2xlLmNvbToxMjM0NTY3ODkxMjM0NTY3ODkxMjMifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
@@ -179,3 +187,43 @@ Content-Type: application/xml; charset=UTF-8
 
 `
 )
+
+func SimpleResponseBodyFromTemplate(bodyTemplate string, values map[string]string, statusCode int) (string, error) {
+	internalFuncMap := template.FuncMap{
+		"replace": templateReplace,
+	}
+
+	bodyTmpl, err := template.New("MockResponseBody").Funcs(internalFuncMap).Parse(bodyTemplate)
+	if err != nil {
+		return "", err
+	}
+
+	var bodyBuf bytes.Buffer
+	err = bodyTmpl.Execute(&bodyBuf, values)
+	if err != nil {
+		return "", err
+	}
+
+	envelopeTmpl, err := template.New("MockResponseEnvelope").Parse(`HTTP/1.0 {{ .StatusCode }} {{ .StatusText }}
+Content-Length: {{ .ContentLength }}
+Content-Type: application/json; charset=UTF-8
+
+{{ .Body }}
+`)
+	body := bodyBuf.String()
+	templateData := map[string]string{
+		"StatusCode":    strconv.Itoa(statusCode),
+		"StatusText":    http.StatusText(statusCode),
+		"ContentLength": strconv.Itoa(len(body)),
+		"Body":          body,
+	}
+
+	var responseBuf bytes.Buffer
+	envelopeTmpl.Execute(&responseBuf, templateData)
+
+	return responseBuf.String(), err
+}
+
+func templateReplace(input, from, to string) string {
+	return strings.Replace(input, from, to, -1)
+}
