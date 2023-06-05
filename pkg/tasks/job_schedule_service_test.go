@@ -326,7 +326,7 @@ func TestJobScheduleService_WithValidJobValidCloudStorageBackupAndReusableJob(t 
 	// 2. Since it exists the existing job is updated with a PATCH operation.
 	mockPostResponse, err := mock.SimpleResponseBodyFromTemplate(cloudStorageGetResponseTpl, templateValues, http.StatusOK)
 	require.NoError(t, err)
-	httpMockHandler.Register(mock.NewMockedHTTPRequest("PATCH", "/v1/transferJobs.*", mockPostResponse))
+	httpMockHandler.Register(mock.NewMockedHTTPRequest("POST", "/v1/transferJobs.*", mockPostResponse))
 	// 3. A patched job without schedule (Penelope manages scheduling itself and never sets a schedule on a transferJob)
 	//    needs to be triggered separately.
 	mockPostTransferOperationResponse, err := mock.SimpleResponseBodyFromTemplate(cloudStorageRunResponseTpl, templateValues, http.StatusOK)
