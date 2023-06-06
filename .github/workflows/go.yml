@@ -55,6 +55,7 @@ jobs:
       - name: Test
         run: |
           set -o pipefail
+          GOOGLE_APPLICATION_CREDENTIALS="$(PWD)/resources/credentials/fake-service-account.json"
           mkdir output
           go test -v -p 1 ./... | tee output/tmp-test-output.txt
 
