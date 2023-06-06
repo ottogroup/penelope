@@ -326,13 +326,13 @@ func TestJobScheduleService_WithValidJobValidCloudStorageBackupAndReusableJob(t 
 	// 2. Since it exists the existing job is updated with a PATCH operation.
 	mockPostResponse, err := mock.SimpleResponseBodyFromTemplate(cloudStorageGetResponseTpl, templateValues, http.StatusOK)
 	require.NoError(t, err)
-	httpMockHandler.Register(mock.NewMockedHTTPRequest("POST", "/v1/transferJobs.*", mockPostResponse))
+	httpMockHandler.Register(mock.NewMockedHTTPRequest("PATCH", "/v1/transferJobs/1234567890123456789.*", mockPostResponse))
 	// 3. A patched job without schedule (Penelope manages scheduling itself and never sets a schedule on a transferJob)
 	//    needs to be triggered separately.
 	mockPostTransferOperationResponse, err := mock.SimpleResponseBodyFromTemplate(cloudStorageRunResponseTpl, templateValues, http.StatusOK)
 	require.NoError(t, err)
 
-	httpMockHandler.Register(mock.NewMockedHTTPRequest("POST", "/v1/transferJobs/9099182517880104661:run", mockPostTransferOperationResponse))
+	httpMockHandler.Register(mock.NewMockedHTTPRequest("POST", "/v1/transferJobs/1234567890123456789:run", mockPostTransferOperationResponse))
 	httpMockHandler.Start()
 	defer httpMockHandler.Stop()
 
@@ -380,22 +380,11 @@ func TestJobScheduleService_WithValidJobValidCloudStorageBackupAndReusableJob(t 
 		ForeignJobID: repository.ForeignJobID{CloudStorageID: transferJobID1},
 		EntityAudit:  repository.EntityAudit{CreatedTimestamp: time.Now().Add(-4 * time.Hour)},
 	}
-	job2 := repository.Job{
-		ID:           "schedule-uuid-0123",
-		BackupID:     scheduleServiceBackupID,
-		Type:         repository.CloudStorage,
-		Status:       repository.NotScheduled,
-		Source:       "amount_budget_plan",
-		ForeignJobID: repository.ForeignJobID{CloudStorageID: transferJobID2},
-		EntityAudit:  repository.EntityAudit{CreatedTimestamp: time.Now().Add(-48 * time.Hour)},
-	}
 	err = jobRepository.AddJob(ctx, &job1)
 	require.NoError(t, err, "should add new job")
-	err = jobRepository.AddJob(ctx, &job2)
 	require.NoError(t, err, "should add new job")
 	defer func() {
 		jobRepository.DeleteJob(ctx, scheduleServiceJobID)
-		jobRepository.DeleteJob(ctx, "schedule-uuid-0123")
 	}()
 
 	// ACT
@@ -637,6 +626,15 @@ func dropSourceMetadata(backupID string) error {
 		Delete()
 	return err
 }
+
+var cloudStorageTransferGetResponse404Tpl = `{
+  "error": {
+    "code": 404,
+    "message": "Getting the transfer job transferJobs/0123456789012345678 encountered error: NOT_FOUND",
+    "status": "NOT_FOUND"
+  }
+}
+`
 
 var cloudStorageGetResponseTpl = `{
   "name": "{{ .TransferJobID }}",
