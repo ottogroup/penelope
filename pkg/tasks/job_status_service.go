@@ -162,29 +162,30 @@ func (j *jobStatusService) checkCloudStorageBackupJob(ctxIn context.Context, job
 	}
 	glog.Infof("Successfully checked status of cloudstroage transferJob with id %s and status %s for job %s", transferJobStatus, transferJobID, job.ID)
 
-	var state repository.JobStatus
+	var jobStatus repository.JobStatus
 
 	if transferJobStatus == gcs.Done {
-		state = repository.FinishedOk
+		jobStatus = repository.FinishedOk
 	} else if transferJobStatus == gcs.Pending || transferJobStatus == gcs.Running {
-		state = repository.Pending
+		jobStatus = repository.Pending
 	} else if transferJobStatus == gcs.Failed {
-		state = repository.FinishedError
+		jobStatus = repository.FinishedError
 	} else {
-		return fmt.Errorf("extract job %s has unpredictable state for job with id %s to %s", transferJobID, state.String(), job.ID)
+		return fmt.Errorf("extract job %s has unpredictable jobStatus for job with id %s to %s", transferJobID, jobStatus.String(), job.ID)
 	}
 
-	err = j.scheduleProcessor.UpdateJob(ctx, backupType, job.ID, state, transferJobID)
+	if jobStatus == repository.FinishedError {
+		glog.Errorf("[FAIL] Job finished with error %s: %s", job, err)
+	}
+
+	err = j.scheduleProcessor.UpdateJob(ctx, backupType, job.ID, jobStatus, transferJobID)
 	if err != nil {
-		return fmt.Errorf("could not update status of job with id %s to %s: %s", job.ID, state, err)
+		return fmt.Errorf("could not update status of job with id %s to %s: %s", job.ID, jobStatus, err)
 	}
-	glog.Infof("Updating state to %s of job %s", state.String(), job.ID)
-	if state == repository.FinishedError {
-		glog.Infof("[FAIL] Job finished with error %s: %s", job, err)
-	}
+	glog.Infof("Updating jobStatus to %s of job %s", jobStatus.String(), job.ID)
 
-	//update status of backup if it is a oneshot snapshot
-	if repository.Snapshot == backup.Strategy && backup.SnapshotOptions.FrequencyInHours == 0 {
+	//update status of backup if it is an oneshot snapshot
+	if jobStatus == repository.FinishedOk && backup.IsOneshot() {
 		err = j.scheduleProcessor.UpdateBackupStatus(ctx, backup.ID, repository.Finished)
 		if err != nil {
 			return fmt.Errorf("could not update status of backup with id %s to %s: %s", backup.ID, repository.Finished.String(), err)
