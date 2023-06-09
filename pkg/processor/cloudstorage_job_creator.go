@@ -40,12 +40,19 @@ func (b *CloudStorageJobCreator) prepareSnapshotJobs(ctxIn context.Context, back
 	ctx, span := trace.StartSpan(ctxIn, "(*CloudStorageJobCreator).prepareSnapshotJobs")
 	defer span.End()
 
+	// In a CloudStorageTransferJob Snapshot case defensively try to re-use an old Job.
+	fjId := repository.ForeignJobID{}
+	if reusableJob, err := b.jobRepository.GetMostRecentJobForBackupID(ctx, backup.ID, repository.FinishedOk, repository.FinishedError); backup.Strategy == repository.Snapshot && err == nil && reusableJob != nil {
+		fjId = repository.ForeignJobID{CloudStorageID: reusableJob.ForeignJobID.CloudStorageID}
+	}
+
 	job := &repository.Job{
-		ID:       generateNewID(),
-		BackupID: backup.ID,
-		Status:   repository.NotScheduled,
-		Source:   backup.CloudStorageOptions.Bucket,
-		Type:     repository.CloudStorage,
+		ID:           generateNewID(),
+		BackupID:     backup.ID,
+		Status:       repository.NotScheduled,
+		Source:       backup.CloudStorageOptions.Bucket,
+		Type:         repository.CloudStorage,
+		ForeignJobID: fjId,
 	}
 
 	err := b.jobRepository.AddJob(ctx, job)

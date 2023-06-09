@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opencensus.io/trace"
 	"google.golang.org/api/googleapi"
 	gimpersonate "google.golang.org/api/impersonate"
@@ -71,6 +72,51 @@ func (t *TransferJobHandler) createClient(ctxIn context.Context, targetProjectID
 	return storageTransferService, nil
 }
 
+// ReuseTransferJob takes a StorageTransferJob with the id transferJobID, patches (changes) the configuration so it meets
+// the given backup specification and then starts a run.
+func (t *TransferJobHandler) ReuseTransferJob(ctxIn context.Context, srcProjectID, targetProjectID, srcBucket, targetBucket string, includePath, excludePath []string, transferJobID repository.TransferJobID) (string, error) {
+	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).ReuseTransferJob")
+	defer span.End()
+
+	storageTransferService, err := t.createClient(ctx, targetProjectID)
+	if err != nil {
+		return "", fmt.Errorf("failed to create new oauth2 client: %s", err)
+	}
+
+	// Check if the job for reuse exists.
+	reusableJob, err := storageTransferService.TransferJobs.Get(transferJobID.String(), targetProjectID).Do()
+	if err != nil {
+		return "", fmt.Errorf("error reusing transfer job: %s", err)
+	}
+	// If the projectID does not match, it is not possible to patch the job, because changing the projectID is not allowed.
+	if reusableJob.ProjectId != targetProjectID {
+		return "", fmt.Errorf("error reusing transfer job because its target project id %s differs from the configured %s", reusableJob.ProjectId, targetProjectID)
+	}
+
+	// Leave the targetProjectID blank, otherwise there is an API error.
+	rb := newTransferJobObject(srcProjectID, srcBucket, "", targetBucket, includePath, excludePath)
+
+	resp, err := storageTransferService.TransferJobs.Patch(transferJobID.String(), &storagetransfer.UpdateTransferJobRequest{
+		ProjectId:                  targetProjectID,
+		TransferJob:                rb,
+		UpdateTransferJobFieldMask: "transfer_spec,status,description",
+	}).Context(ctx).Do()
+
+	if err != nil {
+		return "", fmt.Errorf("error reusing transfer job: %s", err)
+	}
+
+	_, err = storageTransferService.TransferJobs.Run(transferJobID.String(), &storagetransfer.RunTransferJobRequest{
+		ProjectId: targetProjectID,
+	}).Context(ctx).Do()
+
+	if err != nil {
+		return "", fmt.Errorf("error starting run for re-used transfer job: %s", err)
+	}
+
+	return resp.Name, nil
+}
+
 // CreateTransferJob create new transfer job
 func (t *TransferJobHandler) CreateTransferJob(ctxIn context.Context, srcProjectID, targetProjectID, srcBucket, targetBucket string, includePath, excludePath []string) (string, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).CreateTransferJob")
@@ -81,6 +127,17 @@ func (t *TransferJobHandler) CreateTransferJob(ctxIn context.Context, srcProject
 		return "", fmt.Errorf("failed to create new oauth2 client: %s", err)
 	}
 
+	rb := newTransferJobObject(srcProjectID, srcBucket, targetProjectID, targetBucket, includePath, excludePath)
+
+	resp, err := storageTransferService.TransferJobs.Create(rb).Context(ctx).Do()
+	if err != nil {
+		return "", fmt.Errorf("error creation transfer job: %s", err)
+	}
+
+	return resp.Name, nil
+}
+
+func newTransferJobObject(srcProjectID string, srcBucket string, targetProjectID string, targetBucket string, includePath []string, excludePath []string) *storagetransfer.TransferJob {
 	appProjectID := config.GCPProjectId.GetOrDefault("")
 	description := fmt.Sprintf("Job to transfer %s:%s to %s:%s. Triggered by BackupApp in project %s", srcProjectID, srcBucket, targetProjectID, targetBucket, appProjectID)
 
@@ -111,13 +168,7 @@ func (t *TransferJobHandler) CreateTransferJob(ctxIn context.Context, srcProject
 		objectConditions.ExcludePrefixes = excludePath
 	}
 	rb.TransferSpec.ObjectConditions = objectConditions
-
-	resp, err := storageTransferService.TransferJobs.Create(rb).Context(ctx).Do()
-	if err != nil {
-		return "", fmt.Errorf("error creation transfer job: %s", err)
-	}
-
-	return resp.Name, nil
+	return rb
 }
 
 // GetStatusOfJob return actual status of transfer job

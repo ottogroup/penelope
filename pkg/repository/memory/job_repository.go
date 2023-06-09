@@ -13,6 +13,10 @@ type JobRepository struct {
 	jobs []*repository.Job
 }
 
+func (r *JobRepository) GetMostRecentJobForBackupID(ctxIn context.Context, backupID string, status ...repository.JobStatus) (*repository.Job, error) {
+	return nil, nil
+}
+
 // GetStatisticsForBackupID prepare stats for a backup
 func (r *JobRepository) GetStatisticsForBackupID(ctxIn context.Context, backupID string) (repository.JobStatistics, error) {
 	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetStatisticsForBackupID")

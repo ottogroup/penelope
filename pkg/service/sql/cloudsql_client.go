@@ -2,7 +2,9 @@ package sql
 
 import (
 	"fmt"
+	"github.com/go-pg/pg/extra/pgdebug"
 	"github.com/go-pg/pg/v10"
+
 	"strconv"
 	"sync"
 )
@@ -55,6 +57,12 @@ func NewCloudSQLClient(options ConnectOptions) CloudSQLClient {
 	once.Do(func() {
 		db := pg.Connect(options.toPgOptions())
 		debug, _ := strconv.ParseBool(options.DebugQueries)
+		if debug {
+			db.AddQueryHook(pgdebug.DebugHook{
+				// Print all queries.
+				Verbose: true,
+			})
+		}
 		instance = &defaultCloudSQLClient{db: db, debug: debug}
 	})
 	return instance

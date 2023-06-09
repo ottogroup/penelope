@@ -35,6 +35,7 @@ type JobRepository interface {
 	GetByStatusAndBefore(context.Context, []JobStatus, int) ([]*Job, error)
 	PatchJobStatus(ctx context.Context, patch JobPatch) error
 	GetJobsForBackupID(ctx context.Context, backupID string, jobPage JobPage) ([]*Job, error)
+	GetMostRecentJobForBackupID(ctxIn context.Context, backupID string, status ...JobStatus) (*Job, error)
 	GetBackupRestoreJobs(ctx context.Context, backupID, jobID string) ([]*Job, error)
 	GetStatisticsForBackupID(ctx context.Context, backupID string) (JobStatistics, error)
 }
@@ -135,6 +136,31 @@ func (d *defaultJobRepository) GetJobsForBackupID(ctxIn context.Context, backupI
 		return nil, fmt.Errorf("error during executing GetJobsForBackupID statement: %s", err)
 	}
 	return jobs, err
+}
+
+func (d *defaultJobRepository) GetMostRecentJobForBackupID(ctxIn context.Context, backupID string, status ...JobStatus) (*Job, error) {
+	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetMostRecentJobForBackupID")
+	defer span.End()
+
+	var jobs []*Job
+	db := d.storageService.DB()
+
+	query := db.Model(&jobs).
+		Where("backup_id = ?", backupID).
+		Order("audit_created_timestamp DESC").
+		Order("audit_updated_timestamp DESC").
+		Where("status in (?)", pg.In(status)).
+		Where("audit_deleted_timestamp IS NULL").
+		Limit(1)
+
+	err := query.Select()
+	if err != nil {
+		return nil, fmt.Errorf("error during executing GetMostRecentJobForBackupID statement: %s", err)
+	}
+	if len(jobs) == 0 {
+		return nil, err
+	}
+	return jobs[0], err
 }
 
 // GetBackupRestoreJobs get restore jobs for a backup

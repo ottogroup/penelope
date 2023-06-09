@@ -60,6 +60,11 @@ func (b Backup) GetTrashcanPath() string {
 	return fmt.Sprintf(".trashcan_%s", b.ID)
 }
 
+// IsOneshot returns true if backup is oneshot snapshot
+func (b Backup) IsOneshot() bool {
+	return b.Strategy == Snapshot && b.SnapshotOptions.FrequencyInHours == 0
+}
+
 func (b Backup) String() string {
 	snapshotOptionsString := ""
 	if Snapshot == b.Strategy {

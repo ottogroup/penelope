@@ -135,8 +135,20 @@ func (j *jobScheduleService) scheduleCloudStorageBackupJob(ctxIn context.Context
 	}
 	defer jobHandler.Close(ctx)
 
-	glog.Infof("Creating cloudstorage transferJob with source %s for job %s", backup.Bucket, job.ID)
-	transferJobID, err := jobHandler.CreateTransferJob(ctx, backup.SourceProject, backup.TargetProject, backup.Bucket, backup.Sink, backup.IncludePath, backup.ExcludePath)
+	var transferJobID string
+
+	if job.CloudStorageID != "" {
+		glog.Infof("Reusing cloudstorage transferJob %s with source %s for job %s", job.CloudStorageID, backup.Bucket, job.ID)
+		transferJobID, err = jobHandler.ReuseTransferJob(ctx, backup.SourceProject, backup.TargetProject, backup.Bucket, backup.Sink, backup.IncludePath, backup.ExcludePath, job.CloudStorageID)
+		if err != nil {
+			glog.Warningf("Reusing cloudstorage transferJob %s failed with source %s for job %s - error: %s", job.CloudStorageID, backup.Bucket, job.ID, err)
+		}
+	}
+	if job.CloudStorageID == "" || err != nil {
+		glog.Infof("Creating cloudstorage transferJob with source %s for job %s", backup.Bucket, job.ID)
+		transferJobID, err = jobHandler.CreateTransferJob(ctx, backup.SourceProject, backup.TargetProject, backup.Bucket, backup.Sink, backup.IncludePath, backup.ExcludePath)
+	}
+
 	if err != nil {
 		return fmt.Errorf("could not create transferJob: %s", err)
 	}
