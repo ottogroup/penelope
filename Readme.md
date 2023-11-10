@@ -394,11 +394,11 @@ following diagram shows how the job status is assessed.
 flowchart LR
     Start["GetJobs(Scheduled || Pending)"] --> A[ListOperations]
     A --> B{Any Runs?}
-    B --> |Yes| C{Any Run not done?}
-    B --> |No| SPen[Pending]
-    C --> |No| SDone[FinishedOk]
-    C --> |Yes| D{Any of them failed?}
-    D --> |Yes| SFail[FinishedError]
-    D--> |No| SPen
+    B -->|Yes|C{Any Run not done?}
+    B -->|No|SPen[Pending]
+    C -->|No|SDone[FinishedOk]
+    C -->|Yes|D{Any of them failed?}
+    D -->|Yes|SFail[FinishedError]
+    D-->|No|SPen
 ```
 
