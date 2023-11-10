@@ -36,16 +36,16 @@ jobs:
 
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-        
+        uses: actions/checkout@v4
+
       - name: Install Flyway
-        run: wget -qO- https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/9.9.0/flyway-commandline-9.9.0-linux-x64.tar.gz | tar xvz && sudo ln -s `pwd`/flyway-9.9.0/flyway /usr/local/bin
+        run: wget -qO- https://download.red-gate.com/maven/release/com/redgate/flyway/flyway-commandline/10.0.0/flyway-commandline-10.0.0-linux-x64.tar.gz | tar xvz && sudo ln -s `pwd`/flyway-10.0.0/flyway /usr/local/bin
       
       - name: DB Migration
         run: flyway migrate -url=jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD -locations=filesystem:./resources/migrations
 
       - name: Set up Go ^1.21
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: ^1.21
 
