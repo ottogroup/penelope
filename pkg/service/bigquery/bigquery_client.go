@@ -45,6 +45,8 @@ type Client interface {
 	HasTablePartitions(ctxIn context.Context, project string, dataset string, table string) (bool, error)
 	GetTablePartitions(ctxIn context.Context, project string, dataset string, table string) ([]*Table, error)
 	GetDatasets(ctxIn context.Context, project string) ([]string, error)
+	DeleteJob(ctx context.Context, id string) error
+	Close()
 }
 
 // defaultBigQueryClient represent BigqUEry Client implementation
@@ -259,7 +261,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 	}
 
 	var partitions []*Table
-	q := fmt.Sprintf("SELECT count(*) as total, %s as %s FROM `%s.%s.%s` WHERE %s IS NOT NULL GROUP BY %s",
+	q := fmt.Sprintf("SELECT COUNT(*) AS total, %s AS %s FROM `%s.%s.%s` WHERE %s IS NOT NULL GROUP BY %s",
 		timePartitioningField, targetFieldInTablePartition,
 		project, dataset, table,
 		timePartitioningField,
@@ -322,6 +324,25 @@ func (d *defaultBigQueryClient) GetDatasets(ctxIn context.Context, project strin
 		datasets = append(datasets, dataset.DatasetID)
 	}
 	return datasets, err
+}
+
+func (d *defaultBigQueryClient) DeleteJob(ctx context.Context, id string) error {
+	ctx, span := trace.StartSpan(ctx, "(*defaultBigQueryClient).DeleteJob")
+	defer span.End()
+
+	job, err := d.client.JobFromID(ctx, id)
+	if err != nil {
+		return err
+	}
+	err = job.Delete(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *defaultBigQueryClient) Close() {
+	_ = d.client.Close()
 }
 
 func zerofill(intToFill int) string {

@@ -38,11 +38,29 @@ type JobRepository interface {
 	GetMostRecentJobForBackupID(ctxIn context.Context, backupID string, status ...JobStatus) (*Job, error)
 	GetBackupRestoreJobs(ctx context.Context, backupID, jobID string) ([]*Job, error)
 	GetStatisticsForBackupID(ctx context.Context, backupID string) (JobStatistics, error)
+	ListFinishedJobs(ctx context.Context, inLastDays int) ([]*Job, error)
 }
 
 // defaultJobRepository implements JobRepository
 type defaultJobRepository struct {
 	storageService *service.Service
+}
+
+func (d *defaultJobRepository) ListFinishedJobs(ctx context.Context, inLastDays int) (result []*Job, err error) {
+	_, span := trace.StartSpan(ctx, "(*defaultJobRepository).ListFinishedJobs")
+	defer span.End()
+
+	err = d.storageService.DB().
+		Model(result).
+		Where("audit_deleted_timestamp is not null").
+		Where("status in (?)", pg.In([]JobStatus{FinishedOk})).
+		Where("j.audit_created_timestamp::DATE >= (CURRENT_DATE - INTERVAL '? days')", inLastDays).
+		Select()
+	if err != nil {
+		return nil, fmt.Errorf("error during executing ListFinishedJobs statement: %s", err)
+	}
+
+	return result, nil
 }
 
 // NewJobRepository create new instance of JobRepository

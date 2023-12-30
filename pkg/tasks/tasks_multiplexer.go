@@ -24,6 +24,8 @@ const (
 	PrepareBackupJobs = "prepare_backup_jobs"
 	// CheckJobsStuck is handled by task that prepares check Jobs that are running to long
 	CheckJobsStuck = "check_jobs_stuck"
+	// CleanupExpiredJobs is handled by task that cleans up expired jobs
+	CleanupExpiredJobs = "cleanup_expired_jobs"
 )
 
 // TaskRunner runs tasks
@@ -80,6 +82,12 @@ func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProj
 		service, err := newRescheduleJobsWithQuotaError(ctx, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new RescheduleJobsWithQuotaErrorService: %s", err)
+		}
+		service.Run(ctx)
+	case CleanupExpiredJobs:
+		service, err := newCleanupExpiredJobsService(ctx, tokenSourceProvider, credentialsProvider)
+		if err != nil {
+			glog.Errorf("could not instantiate new ListFinishedJobs: %s", err)
 		}
 		service.Run(ctx)
 	default:

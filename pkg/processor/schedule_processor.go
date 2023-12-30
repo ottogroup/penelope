@@ -38,6 +38,7 @@ type ScheduleProcessor interface {
 	DeleteTrashcanEntry(ctxIn context.Context, backupID string, source string) error
 	FilterExistingTrashcanEntries(context.Context, []TrashcanEntry) ([]TrashcanEntry, error)
 	GetEntriesInTrashcanBefore(ctxIn context.Context, deltaWeeks int) ([]*repository.SourceTrashcan, error)
+	ListExpiredJobs(ctx context.Context, inLastDays int) ([]*repository.Job, error)
 }
 
 type defaultScheduleProcessor struct {
@@ -46,6 +47,15 @@ type defaultScheduleProcessor struct {
 	sourceMetadataRepository    repository.SourceMetadataRepository
 	sourceMetadataJobRepository repository.SourceMetadataJobRepository
 	sourceTrashcanRepository    repository.SourceTrashcanRepository
+}
+
+func (d *defaultScheduleProcessor) ListExpiredJobs(ctx context.Context, inLastDays int) ([]*repository.Job, error) {
+	jobs, err := d.jobRepository.ListFinishedJobs(ctx, inLastDays)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list expired jobs: %v", err)
+	}
+
+	return jobs, nil
 }
 
 // NewScheduleProcessor create new instance of ScheduleProcessor
