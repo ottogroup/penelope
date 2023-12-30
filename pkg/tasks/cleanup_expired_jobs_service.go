@@ -54,6 +54,10 @@ func (s cleanupExpiredJobsService) Run(ctxIn context.Context) {
 		return
 	}
 
+	glog.Infof("Found %d expired jobs", len(jobs))
+
+	var errorCount = 0
+
 	for _, job := range jobs {
 		backup, err := s.backupRepository.GetBackup(ctx, job.BackupID)
 		if err != nil {
@@ -71,6 +75,8 @@ func (s cleanupExpiredJobsService) Run(ctxIn context.Context) {
 
 			err = extractJobHandler.DeleteJob(ctx, job.BigQueryID.String())
 			if err != nil {
+				glog.Errorf("could not delete job %s: %s", job.BigQueryID, err)
+				errorCount++
 				continue
 			}
 			extractJobHandler.Close()
@@ -83,6 +89,8 @@ func (s cleanupExpiredJobsService) Run(ctxIn context.Context) {
 
 			err = transferJobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.CloudStorageID.String())
 			if err != nil {
+				glog.Errorf("could not delete job %s: %s", job.CloudStorageID, err)
+				errorCount++
 				continue
 			}
 			transferJobHandler.Close(ctx)
@@ -91,6 +99,11 @@ func (s cleanupExpiredJobsService) Run(ctxIn context.Context) {
 		err = s.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
 		if err != nil {
 			glog.Errorf("could not mark job %s as deleted: %s", job.ID, err)
+			return
+		}
+
+		if errorCount > 9 {
+			glog.Errorf("too many errors stop processing expired jobs")
 			return
 		}
 	}
