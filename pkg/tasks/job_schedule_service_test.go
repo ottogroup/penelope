@@ -38,6 +38,10 @@ type MockScheduleProcessor struct {
 	ctx                     context.Context
 }
 
+func (m MockScheduleProcessor) ListExpiredJobs(ctx context.Context, inLastDays int) ([]*repository.Job, error) {
+	panic("implement me")
+}
+
 func (m MockScheduleProcessor) FilterExistingTrashcanEntries(context.Context, []processor.TrashcanEntry) ([]processor.TrashcanEntry, error) {
 	panic("implement me")
 }
