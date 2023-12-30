@@ -174,3 +174,18 @@ func (r *JobRepository) PatchJobStatus(ctxIn context.Context, patch repository.J
 	j.ForeignJobID = patch.ForeignJobID
 	return nil
 }
+
+func (r *JobRepository) ListFinishedJobs(ctxIn context.Context, inLastDays int) ([]*repository.Job, error) {
+	_, span := trace.StartSpan(ctxIn, "(*JobRepository).ListFinishedJobs")
+	defer span.End()
+
+	var result []*repository.Job
+	for _, job := range r.jobs {
+		if !job.DeletedTimestamp.IsZero() &&
+			job.Status == repository.FinishedOk &&
+			job.CreatedTimestamp.After(time.Now().AddDate(0, 0, -inLastDays)) {
+			result = append(result, job)
+		}
+	}
+	return result, nil
+}
