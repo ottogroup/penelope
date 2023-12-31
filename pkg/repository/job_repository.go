@@ -52,7 +52,7 @@ func (d *defaultJobRepository) ListFinishedJobs(ctx context.Context, inLastDays 
 
 	err = d.storageService.DB().
 		Model(&result).
-		Where("audit_deleted_timestamp is not null").
+		Where("audit_deleted_timestamp is null").
 		Where("status in (?)", pg.In([]JobStatus{FinishedOk})).
 		Where("j.audit_created_timestamp::DATE >= (CURRENT_DATE - INTERVAL '? days')", inLastDays).
 		Select()
