@@ -54,7 +54,7 @@ func (d *defaultJobRepository) ListFinishedJobs(ctx context.Context, inLastDays 
 
 	subselect := db.Model().
 		Table("jobs").
-		Column("id as job_id").
+		Column("id").
 		Column("audit_deleted_timestamp").
 		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY j.backup_id, j.cloudstorage_transfer_job_id, j.bigquery_extract_job_id ORDER BY j.audit_updated_timestamp DESC) AS row_number").
 		Where("audit_updated_timestamp::DATE >= (CURRENT_DATE - INTERVAL '? days')", inLastDays).
@@ -62,7 +62,7 @@ func (d *defaultJobRepository) ListFinishedJobs(ctx context.Context, inLastDays 
 
 	query := db.Model().TableExpr("(?) AS s", subselect).
 		Column("j.*").
-		Join("LEFT JOIN jobs j on s.job_id = j.id").
+		Join("LEFT JOIN jobs j on s.id = j.id").
 		Where("s.audit_deleted_timestamp IS NOT NULL").
 		Where("s.row_number = 1")
 	err = query.Select(&result)
