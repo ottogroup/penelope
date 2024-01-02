@@ -56,7 +56,7 @@ func (d *defaultJobRepository) ListFinishedJobs(ctx context.Context, inLastDays 
 		Table("jobs").
 		Column("id").
 		Column("audit_deleted_timestamp").
-		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY j.backup_id, j.cloudstorage_transfer_job_id, j.bigquery_extract_job_id ORDER BY j.audit_updated_timestamp DESC) AS row_number").
+		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY jobs.backup_id, jobs.cloudstorage_transfer_job_id, jobs.bigquery_extract_job_id ORDER BY jobs.audit_updated_timestamp DESC) AS row_number").
 		Where("audit_updated_timestamp::DATE >= (CURRENT_DATE - INTERVAL '? days')", inLastDays).
 		Where("status != 'Error'")
 
