@@ -231,6 +231,36 @@ func TestDefaultJobRepository_GetJobsForBackupID(t *testing.T) {
 	assert.Len(t, jobsForBackupID, 0)
 }
 
+func TestDefaultJobRepository_ListFinishedJobs(t *testing.T) {
+	backupIDs := []string{"backup-id-1", "backup-id-2", "backup-id-3", "backup-id-4", "backup-id-5"}
+	jobs := []*Job{
+		{ID: "job-id-11", BackupID: "backup-id-1", Status: FinishedOk, Type: BigQuery, ForeignJobID: ForeignJobID{BigQueryID: "bigquery-id-1"}},
+		{ID: "job-id-21", BackupID: "backup-id-2", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-1"}, EntityAudit: EntityAudit{CreatedTimestamp: time.Now().AddDate(0, 0, -1)}},
+		{ID: "job-id-22", BackupID: "backup-id-2", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-1"}},
+		{ID: "job-id-41", BackupID: "backup-id-3", Status: Scheduled, Type: BigQuery},
+	}
+
+	ctx, storageService := prepareTest(t)
+
+	setBackupWithIDs(t, storageService, backupIDs...)
+	repository := &defaultJobRepository{storageService: storageService}
+
+	err := repository.AddJobs(ctx, jobs)
+	assert.NoError(t, err)
+
+	result, err := repository.ListFinishedJobs(ctx, 7)
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+
+	var ids []string
+	for _, job := range result {
+		ids = append(ids, job.ID)
+	}
+	assert.Contains(t, ids, "job-id-11")
+	assert.Contains(t, ids, "job-id-22")
+	assert.NotContains(t, ids, "job-id-21")
+}
+
 func TestDefaultJobRepository_GetJobsForBackupID_PageSize(t *testing.T) {
 	backupIDs := []string{"backup-id-1", "backup-id-2", "backup-id-3", "backup-id-4", "backup-id-5"}
 	jobs := []*Job{

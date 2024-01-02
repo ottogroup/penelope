@@ -50,12 +50,21 @@ func (d *defaultJobRepository) ListFinishedJobs(ctx context.Context, inLastDays 
 	_, span := trace.StartSpan(ctx, "(*defaultJobRepository).ListFinishedJobs")
 	defer span.End()
 
-	err = d.storageService.DB().
-		Model(&result).
-		Where("audit_deleted_timestamp is null").
-		Where("status in (?)", pg.In([]JobStatus{FinishedOk})).
-		Where("j.audit_created_timestamp::DATE >= (CURRENT_DATE - INTERVAL '? days')", inLastDays).
-		Select()
+	db := d.storageService.DB()
+
+	subselect := db.Model().
+		Table("jobs").
+		Column("id as job_id").
+		Column("audit_deleted_timestamp").
+		ColumnExpr("ROW_NUMBER() OVER (PARTITION BY j.backup_id, j.cloudstorage_transfer_job_id, j.bigquery_extract_job_id ORDER BY j.audit_updated_timestamp DESC) AS row_number").
+		Where("audit_updated_timestamp::DATE >= (CURRENT_DATE - INTERVAL '? days')", inLastDays).
+		Where("status != 'Error'")
+
+	err = db.Model().TableExpr("(?) AS s", subselect).
+		Column("j.*").
+		Join("LEFT JOIN jobs j on s.job_id = j.id").
+		Where("row_number = 1 AND s.audit_deleted_timestamp NOT NULL").
+		Select(&result)
 	if err != nil {
 		return nil, fmt.Errorf("error during executing ListFinishedJobs statement: %s", err)
 	}
