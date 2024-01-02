@@ -60,12 +60,13 @@ func (d *defaultJobRepository) ListFinishedJobs(ctx context.Context, inLastDays 
 		Where("audit_updated_timestamp::DATE >= (CURRENT_DATE - INTERVAL '? days')", inLastDays).
 		Where("status != 'Error'")
 
-	err = db.Model().TableExpr("(?) AS s", subselect).
+	query := db.Model().TableExpr("(?) AS s", subselect).
 		Column("j.*").
 		Join("LEFT JOIN jobs j on s.job_id = j.id").
 		Where("s.row_number = 1").
-		Where("s.audit_deleted_timestamp NOT NULL").
-		Select(&result)
+		Where("s.audit_deleted_timestamp NOT NULL")
+	fmt.Println(query)
+	err = query.Select(&result)
 	if err != nil {
 		return nil, fmt.Errorf("error during executing ListFinishedJobs statement: %s", err)
 	}
