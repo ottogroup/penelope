@@ -233,10 +233,12 @@ func TestDefaultJobRepository_GetJobsForBackupID(t *testing.T) {
 
 func TestDefaultJobRepository_ListFinishedJobs(t *testing.T) {
 	backupIDs := []string{"backup-id-1", "backup-id-2", "backup-id-3", "backup-id-4", "backup-id-5"}
+	today := time.Now()
+	yesterday := time.Now().AddDate(0, 0, -1)
 	jobs := []*Job{
-		{ID: "job-id-11", BackupID: "backup-id-1", Status: FinishedOk, Type: BigQuery, ForeignJobID: ForeignJobID{BigQueryID: "bigquery-id-1"}},
-		{ID: "job-id-21", BackupID: "backup-id-2", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-1"}, EntityAudit: EntityAudit{CreatedTimestamp: time.Now().AddDate(0, 0, -1)}},
-		{ID: "job-id-22", BackupID: "backup-id-2", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-1"}},
+		{ID: "job-id-11", BackupID: "backup-id-1", Status: FinishedOk, Type: BigQuery, ForeignJobID: ForeignJobID{BigQueryID: "bigquery-id-1"}, EntityAudit: EntityAudit{CreatedTimestamp: today, UpdatedTimestamp: today}},
+		{ID: "job-id-21", BackupID: "backup-id-2", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-1"}, EntityAudit: EntityAudit{CreatedTimestamp: yesterday, UpdatedTimestamp: yesterday}},
+		{ID: "job-id-22", BackupID: "backup-id-2", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-1"}, EntityAudit: EntityAudit{CreatedTimestamp: today, UpdatedTimestamp: today}},
 		{ID: "job-id-41", BackupID: "backup-id-3", Status: Scheduled, Type: BigQuery},
 	}
 
