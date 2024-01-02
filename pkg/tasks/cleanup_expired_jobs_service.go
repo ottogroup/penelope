@@ -9,7 +9,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	bq "github.com/ottogroup/penelope/pkg/service/bigquery"
-	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
 )
 
@@ -59,42 +58,29 @@ func (s cleanupExpiredJobsService) Run(ctxIn context.Context) {
 	var errorCount = 0
 
 	for _, job := range jobs {
+		if job.Type != repository.BigQuery {
+			continue
+		}
+
 		backup, err := s.backupRepository.GetBackup(ctx, job.BackupID)
 		if err != nil {
 			glog.Errorf("could not get backup %s: %s", job.BackupID, err)
 			continue
 		}
 
-		switch backup.Type {
-		case repository.BigQuery:
-			extractJobHandler, err := bq.NewExtractJobHandler(ctx, s.tokenSourceProvider, backup.SourceProject, backup.TargetProject)
-			if err != nil {
-				glog.Errorf("could not create ExtractJobHandler: %s", err)
-				return
-			}
-
-			err = extractJobHandler.DeleteJob(ctx, job.BigQueryID.String())
-			if err != nil {
-				glog.Errorf("could not delete job %s: %s", job.BigQueryID, err)
-				errorCount++
-				continue
-			}
-			extractJobHandler.Close()
-		case repository.CloudStorage:
-			transferJobHandler, err := gcs.NewTransferJobHandler(ctx, s.tokenSourceProvider, backup.TargetProject)
-			if err != nil {
-				glog.Errorf("could not create TransferJobHandler: %s", err)
-				return
-			}
-
-			err = transferJobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.CloudStorageID.String())
-			if err != nil {
-				glog.Errorf("could not delete job %s: %s", job.CloudStorageID, err)
-				errorCount++
-				continue
-			}
-			transferJobHandler.Close(ctx)
+		extractJobHandler, err := bq.NewExtractJobHandler(ctx, s.tokenSourceProvider, backup.SourceProject, backup.TargetProject)
+		if err != nil {
+			glog.Errorf("could not create ExtractJobHandler: %s", err)
+			return
 		}
+
+		err = extractJobHandler.DeleteJob(ctx, job.BigQueryID.String())
+		if err != nil {
+			glog.Errorf("could not delete job %s: %s", job.BigQueryID, err)
+			errorCount++
+			continue
+		}
+		extractJobHandler.Close()
 
 		err = s.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
 		if err != nil {
