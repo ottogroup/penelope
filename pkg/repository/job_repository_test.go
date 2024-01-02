@@ -239,6 +239,8 @@ func TestDefaultJobRepository_ListFinishedJobs(t *testing.T) {
 		{ID: "job-id-11", BackupID: "backup-id-1", Status: FinishedOk, Type: BigQuery, ForeignJobID: ForeignJobID{BigQueryID: "bigquery-id-1"}, EntityAudit: EntityAudit{CreatedTimestamp: today, UpdatedTimestamp: today}},
 		{ID: "job-id-21", BackupID: "backup-id-2", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-1"}, EntityAudit: EntityAudit{CreatedTimestamp: yesterday, UpdatedTimestamp: yesterday}},
 		{ID: "job-id-22", BackupID: "backup-id-2", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-1"}, EntityAudit: EntityAudit{CreatedTimestamp: today, UpdatedTimestamp: today}},
+		{ID: "job-id-31", BackupID: "backup-id-3", Status: FinishedOk, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-2"}, EntityAudit: EntityAudit{CreatedTimestamp: yesterday, UpdatedTimestamp: yesterday}},
+		{ID: "job-id-32", BackupID: "backup-id-3", Status: JobDeleted, Type: CloudStorage, ForeignJobID: ForeignJobID{CloudStorageID: "cloudstorage-id-2"}, EntityAudit: EntityAudit{CreatedTimestamp: today, UpdatedTimestamp: today}},
 		{ID: "job-id-41", BackupID: "backup-id-3", Status: Scheduled, Type: BigQuery},
 	}
 
@@ -261,6 +263,7 @@ func TestDefaultJobRepository_ListFinishedJobs(t *testing.T) {
 	assert.Contains(t, ids, "job-id-11")
 	assert.Contains(t, ids, "job-id-22")
 	assert.NotContains(t, ids, "job-id-21")
+	assert.NotContains(t, ids, "job-id-32")
 }
 
 func TestDefaultJobRepository_GetJobsForBackupID_PageSize(t *testing.T) {
