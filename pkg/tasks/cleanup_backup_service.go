@@ -406,12 +406,20 @@ func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *re
 	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
 	if err == nil {
 		for _, job := range jobs {
-			deleteErr := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID.String())
-			if deleteErr != nil {
-				glog.Warningf("[FAIL] Error deleting extract job %s: %s", job.ForeignJobID.BigQueryID.String(), deleteErr)
-			} else {
-				glog.Infof("[SUCCESS] Deleting extract job finished %s", job.ForeignJobID.BigQueryID.String())
+			err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID.String())
+			if err != nil {
+				glog.Warningf("[FAIL] Error deleting extract job %s: %s", job.ForeignJobID.BigQueryID.String(), err)
+				continue
 			}
+
+			err = j.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
+			if err != nil {
+				glog.Warningf("[FAIL] Error marking job %s as deleted: %s", job.ID, err)
+				return err
+			}
+
+			glog.Infof("[SUCCESS] Deleting extract job finished %s", job.ForeignJobID.BigQueryID.String())
+
 		}
 	} else {
 		glog.Warningf("[FAIL] Error getting extract jobs for backup %s: %s", backup.ID, err)
