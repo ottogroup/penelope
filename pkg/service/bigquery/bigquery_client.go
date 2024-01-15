@@ -45,6 +45,7 @@ type Client interface {
 	HasTablePartitions(ctxIn context.Context, project string, dataset string, table string) (bool, error)
 	GetTablePartitions(ctxIn context.Context, project string, dataset string, table string) ([]*Table, error)
 	GetDatasets(ctxIn context.Context, project string) ([]string, error)
+	DeleteExtractJob(ctxIn context.Context, extractJobID string) error
 }
 
 // defaultBigQueryClient represent BigqUEry Client implementation
@@ -52,6 +53,17 @@ type defaultBigQueryClient struct {
 	client          *bq.Client
 	sourceProjectID string
 	targetProjectID string
+}
+
+func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID string) error {
+	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).DeleteExtractJob")
+	defer span.End()
+
+	job, err := d.client.JobFromID(ctx, extractJobID)
+	if err != nil {
+		return err
+	}
+	return job.Delete(ctx)
 }
 
 // NewBigQueryClient crete new instance of defaultBigQueryClient
@@ -259,7 +271,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 	}
 
 	var partitions []*Table
-	q := fmt.Sprintf("SELECT count(*) as total, %s as %s FROM `%s.%s.%s` WHERE %s IS NOT NULL GROUP BY %s",
+	q := fmt.Sprintf("SELECT COUNT(*) AS total, %s AS %s FROM `%s.%s.%s` WHERE %s IS NOT NULL GROUP BY %s",
 		timePartitioningField, targetFieldInTablePartition,
 		project, dataset, table,
 		timePartitioningField,

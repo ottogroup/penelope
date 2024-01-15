@@ -63,3 +63,10 @@ func (e *ExtractJobHandler) GetStatusOfJob(ctxIn context.Context, extractJobID s
 
 	return toJobState(jobStatus.State), nil
 }
+
+func (e *ExtractJobHandler) DeleteExtractJob(ctx context.Context, jobID string) error {
+	ctx, span := trace.StartSpan(ctx, "(*ExtractJobHandler).DeleteExtractJob")
+	defer span.End()
+
+	return e.bq.DeleteExtractJob(ctx, jobID)
+}
