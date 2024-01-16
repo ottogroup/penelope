@@ -67,11 +67,13 @@ func (e *ExtractJobHandler) GetStatusOfJob(ctxIn context.Context, extractJobID s
 	return toJobState(jobStatus.State), nil
 }
 
-func (e *ExtractJobHandler) DeleteExtractJob(ctx context.Context, jobID string) error {
+// DeleteExtractJob delete a BigQuery job
+// If job does not exist, it returns nil
+func (e *ExtractJobHandler) DeleteExtractJob(ctx context.Context, jobID string, location string) error {
 	ctx, span := trace.StartSpan(ctx, "(*ExtractJobHandler).DeleteExtractJob")
 	defer span.End()
 
-	err := e.bq.DeleteExtractJob(ctx, jobID)
+	err := e.bq.DeleteExtractJob(ctx, jobID, location)
 	var googleAPIErr *googleapi.Error
 	if err != nil && errors.As(err, &googleAPIErr) && googleAPIErr.Code == http.StatusNotFound {
 		return nil

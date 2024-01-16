@@ -191,6 +191,7 @@ func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backup 
 	jobPage := repository.JobPage{Size: repository.AllJobs}
 	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
 	if err == nil {
+		glog.Infof("Deleting transfer jobs for backup %s", backup.ID)
 		for _, job := range jobs {
 			err := jobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.ForeignJobID.CloudStorageID.String())
 			if err != nil {
@@ -418,7 +419,7 @@ func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *re
 	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
 	if err == nil {
 		for _, job := range jobs {
-			err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID.String())
+			err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID.String(), backup.Region)
 			if err != nil {
 				glog.Warningf("[FAIL] Error deleting extract job %s: %s", job.ForeignJobID.BigQueryID.String(), err)
 				continue

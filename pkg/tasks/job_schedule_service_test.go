@@ -38,73 +38,73 @@ type MockScheduleProcessor struct {
 	ctx                     context.Context
 }
 
-func (m MockScheduleProcessor) FilterExistingTrashcanEntries(context.Context, []processor.TrashcanEntry) ([]processor.TrashcanEntry, error) {
+func (m *MockScheduleProcessor) FilterExistingTrashcanEntries(context.Context, []processor.TrashcanEntry) ([]processor.TrashcanEntry, error) {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) UpdateLastCleanupTime(ctxIn context.Context, backupID string, lastCleanupTime time.Time) error {
+func (m *MockScheduleProcessor) UpdateLastCleanupTime(ctxIn context.Context, backupID string, lastCleanupTime time.Time) error {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) AddTrashcanEntry(ctxIn context.Context, backupID string, source string, timestamp time.Time) error {
+func (m *MockScheduleProcessor) AddTrashcanEntry(ctxIn context.Context, backupID string, source string, timestamp time.Time) error {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) DeleteTrashcanEntry(ctxIn context.Context, backupID string, source string) error {
+func (m *MockScheduleProcessor) DeleteTrashcanEntry(ctxIn context.Context, backupID string, source string) error {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) GetEntriesInTrashcanBefore(ctxIn context.Context, deltaWeeks int) ([]*repository.SourceTrashcan, error) {
+func (m *MockScheduleProcessor) GetEntriesInTrashcanBefore(ctxIn context.Context, deltaWeeks int) ([]*repository.SourceTrashcan, error) {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.JobPage) ([]*repository.Job, error) {
+func (m *MockScheduleProcessor) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.JobPage) ([]*repository.Job, error) {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) MarkBackupDeleted(ctxIn context.Context, id string) error {
+func (m *MockScheduleProcessor) MarkBackupDeleted(ctxIn context.Context, id string) error {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) MarkSourceMetadataDeleted(ctxIn context.Context, id int) error {
+func (m *MockScheduleProcessor) MarkSourceMetadataDeleted(ctxIn context.Context, id int) error {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) MarkJobDeleted(ctxIn context.Context, id string) error {
+func (m *MockScheduleProcessor) MarkJobDeleted(ctxIn context.Context, id string) error {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*repository.MirrorRevision, error) {
+func (m *MockScheduleProcessor) GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*repository.MirrorRevision, error) {
 	if m.shouldReturnValidBackup {
 		return []*repository.MirrorRevision{m.mirrorRevision}, nil
 	}
 	return nil, fmt.Errorf("GetBackupForID failed")
 }
 
-func (m MockScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context) *processor.CloudStorageJobCreator {
+func (m *MockScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context) *processor.CloudStorageJobCreator {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) GetByStatusAndAfter(context.Context, []repository.JobStatus, int) ([]*repository.Job, error) {
+func (m *MockScheduleProcessor) GetByStatusAndAfter(context.Context, []repository.JobStatus, int) ([]*repository.Job, error) {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) CreateBigQueryJobCreator(c context.Context, bigQueryClient bigquery.Client) *processor.BigQueryJobCreator {
+func (m *MockScheduleProcessor) CreateBigQueryJobCreator(c context.Context, bigQueryClient bigquery.Client) *processor.BigQueryJobCreator {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) AddJobs(jobs []*repository.Job) error {
+func (m *MockScheduleProcessor) AddJobs(jobs []*repository.Job) error {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) GetScheduledBackups(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Backup, error) {
+func (m *MockScheduleProcessor) GetScheduledBackups(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Backup, error) {
 	if m.shouldReturnValidBackup {
 		return []*repository.Backup{m.scheduledBackup}, nil
 	}
 	return nil, fmt.Errorf("GetBackupForID failed")
 }
 
-func (m MockScheduleProcessor) GetExpired(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Backup, error) {
+func (m *MockScheduleProcessor) GetExpired(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Backup, error) {
 	if m.shouldReturnValidBackup {
 		return []*repository.Backup{{
 			ID:            scheduleServiceBackupID,
@@ -126,15 +126,15 @@ func (m MockScheduleProcessor) GetExpired(ctxIn context.Context, backupType repo
 	return nil, fmt.Errorf("GetBackupForID failed")
 }
 
-func (m MockScheduleProcessor) UpdateJob(ctxIn context.Context, backupType repository.BackupType, jobID string, status repository.JobStatus, externalID string) error {
+func (m *MockScheduleProcessor) UpdateJob(ctxIn context.Context, backupType repository.BackupType, jobID string, status repository.JobStatus, externalID string) error {
 	return nil
 }
 
-func (m MockScheduleProcessor) UpdateBackupStatus(ctxIn context.Context, id string, status repository.BackupStatus) error {
+func (m *MockScheduleProcessor) UpdateBackupStatus(ctxIn context.Context, id string, status repository.BackupStatus) error {
 	panic("implement me")
 }
 
-func (m MockScheduleProcessor) GetScheduledBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {
+func (m *MockScheduleProcessor) GetScheduledBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {
 	if backupType == repository.BigQuery {
 		if m.shouldReturnValidJob {
 			return []*repository.Job{{
@@ -161,7 +161,7 @@ func (m MockScheduleProcessor) GetScheduledBackupJobs(ctxIn context.Context, bac
 	return nil, fmt.Errorf("implement me")
 }
 
-func (m MockScheduleProcessor) GetNextBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {
+func (m *MockScheduleProcessor) GetNextBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {
 	if backupType == repository.BigQuery {
 		if m.shouldReturnValidJob {
 			return []*repository.Job{{
@@ -188,7 +188,7 @@ func (m MockScheduleProcessor) GetNextBackupJobs(ctxIn context.Context, backupTy
 	return nil, fmt.Errorf("implement me")
 }
 
-func (m MockScheduleProcessor) GetBackupForID(ctxIn context.Context, id string) (*repository.Backup, error) {
+func (m *MockScheduleProcessor) GetBackupForID(ctxIn context.Context, id string) (*repository.Backup, error) {
 	if m.shouldReturnValidBackup {
 		return &repository.Backup{
 			ID:            scheduleServiceBackupID,
@@ -211,7 +211,7 @@ func (m MockScheduleProcessor) GetBackupForID(ctxIn context.Context, id string) 
 	return &repository.Backup{}, fmt.Errorf("GetBackupForID failed")
 }
 
-func (m MockScheduleProcessor) UpdateBackupJob(backupType repository.BackupType, jobID string, status repository.JobStatus, externalID string) error {
+func (m *MockScheduleProcessor) UpdateBackupJob(backupType repository.BackupType, jobID string, status repository.JobStatus, externalID string) error {
 	m.updatedStatus = status
 	m.updatedExternalID = externalID
 	return nil
@@ -220,7 +220,7 @@ func (m MockScheduleProcessor) UpdateBackupJob(backupType repository.BackupType,
 func TestJobScheduleService_WithoutValidJob(t *testing.T) {
 	ctx := context.Background()
 	s, _ := newJobScheduleService(ctx, nil, secret.NewEnvSecretProvider())
-	s.scheduleProcessor = MockScheduleProcessor{
+	s.scheduleProcessor = &MockScheduleProcessor{
 		shouldReturnValidJob:    false,
 		shouldReturnValidBackup: false,
 		ctx:                     ctx,
@@ -238,7 +238,7 @@ func TestJobScheduleService_WithoutValidJob(t *testing.T) {
 func TestJobScheduleService_WithValidJobInvalidBackup(t *testing.T) {
 	ctx := context.Background()
 	s, _ := newJobScheduleService(ctx, nil, secret.NewEnvSecretProvider())
-	s.scheduleProcessor = MockScheduleProcessor{
+	s.scheduleProcessor = &MockScheduleProcessor{
 		shouldReturnValidJob:    true,
 		shouldReturnValidBackup: false,
 		ctx:                     ctx,

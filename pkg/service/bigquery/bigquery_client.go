@@ -45,7 +45,7 @@ type Client interface {
 	HasTablePartitions(ctxIn context.Context, project string, dataset string, table string) (bool, error)
 	GetTablePartitions(ctxIn context.Context, project string, dataset string, table string) ([]*Table, error)
 	GetDatasets(ctxIn context.Context, project string) ([]string, error)
-	DeleteExtractJob(ctxIn context.Context, extractJobID string) error
+	DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error
 }
 
 // defaultBigQueryClient represent BigqUEry Client implementation
@@ -55,14 +55,15 @@ type defaultBigQueryClient struct {
 	targetProjectID string
 }
 
-func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID string) error {
+func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).DeleteExtractJob")
 	defer span.End()
 
-	job, err := d.client.JobFromID(ctx, extractJobID)
+	job, err := d.client.JobFromIDLocation(ctx, extractJobID, location)
 	if err != nil {
 		return err
 	}
+
 	return job.Delete(ctx)
 }
 
@@ -99,7 +100,6 @@ func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonat
 	if err != nil {
 		return &defaultBigQueryClient{}, fmt.Errorf("failed to create client: %s", err)
 	}
-
 	return &defaultBigQueryClient{client: client, sourceProjectID: sourceProjectID, targetProjectID: targetProjectID}, nil
 }
 

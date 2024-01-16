@@ -205,7 +205,8 @@ func (t *TransferJobHandler) GetStatusOfJob(ctxIn context.Context, targetProject
 	return Done, nil
 }
 
-// DeleteTransferJob mark transfer job as deleted
+// DeleteTransferJob delete transfer job
+// If job does not exist, it returns nil
 func (t *TransferJobHandler) DeleteTransferJob(ctxIn context.Context, targetProjectID, transferJobID string) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).DeleteTransferJob")
 	defer span.End()
