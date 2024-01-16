@@ -193,10 +193,12 @@ func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backup 
 	if err == nil {
 		glog.Infof("Deleting transfer jobs for backup %s", backup.ID)
 		for _, job := range jobs {
-			err := jobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.ForeignJobID.CloudStorageID.String())
-			if err != nil {
-				glog.Warningf("[FAIL] Error deleting transfer job %s: %s", job.ForeignJobID.CloudStorageID.String(), err)
-				continue
+			if job.ForeignJobID.CloudStorageID.String() != "" {
+				err := jobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.ForeignJobID.CloudStorageID.String())
+				if err != nil {
+					glog.Warningf("[FAIL] Error deleting transfer job %s: %s", job.ForeignJobID.CloudStorageID.String(), err)
+					continue
+				}
 			}
 
 			err = j.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
@@ -419,10 +421,12 @@ func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *re
 	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
 	if err == nil {
 		for _, job := range jobs {
-			err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID.String(), backup.Region)
-			if err != nil {
-				glog.Warningf("[FAIL] Error deleting extract job %s: %s", job.ForeignJobID.BigQueryID.String(), err)
-				continue
+			if job.ForeignJobID.BigQueryID.String() != "" {
+				err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID.String(), backup.Region)
+				if err != nil {
+					glog.Warningf("[FAIL] Error deleting extract job %s: %s", job.ForeignJobID.BigQueryID.String(), err)
+					continue
+				}
 			}
 
 			err = j.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
