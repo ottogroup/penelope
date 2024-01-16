@@ -2,6 +2,7 @@ package gcs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
@@ -205,7 +206,7 @@ func (t *TransferJobHandler) GetStatusOfJob(ctxIn context.Context, targetProject
 }
 
 // DeleteTransferJob mark transfer job as deleted
-func (t *TransferJobHandler) DeleteTransferJob(ctxIn context.Context, targetProjectID, name string) error {
+func (t *TransferJobHandler) DeleteTransferJob(ctxIn context.Context, targetProjectID, transferJobID string) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).DeleteTransferJob")
 	defer span.End()
 
@@ -214,14 +215,11 @@ func (t *TransferJobHandler) DeleteTransferJob(ctxIn context.Context, targetProj
 		return fmt.Errorf("failed to create new oauth2 client: %s", err)
 	}
 
-	rb := &storagetransfer.UpdateTransferJobRequest{
-		ProjectId: targetProjectID,
-		TransferJob: &storagetransfer.TransferJob{
-			Status: "DELETED",
-		},
-		UpdateTransferJobFieldMask: "status",
+	_, err = storageTransferService.TransferJobs.Delete(transferJobID, targetProjectID).Do()
+	var googleAPIErr *googleapi.Error
+	if errors.As(err, &googleAPIErr) && googleAPIErr.Code == http.StatusNotFound {
+		return nil
 	}
 
-	_, err = storageTransferService.TransferJobs.Patch(name, rb).Do()
 	return err
 }

@@ -2,9 +2,12 @@ package bigquery
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"go.opencensus.io/trace"
+	"google.golang.org/api/googleapi"
+	"net/http"
 )
 
 // ExtractJobHandler represent exporting data from BigQuery
@@ -68,5 +71,11 @@ func (e *ExtractJobHandler) DeleteExtractJob(ctx context.Context, jobID string) 
 	ctx, span := trace.StartSpan(ctx, "(*ExtractJobHandler).DeleteExtractJob")
 	defer span.End()
 
-	return e.bq.DeleteExtractJob(ctx, jobID)
+	err := e.bq.DeleteExtractJob(ctx, jobID)
+	var googleAPIErr *googleapi.Error
+	if err != nil && errors.As(err, &googleAPIErr) && googleAPIErr.Code == http.StatusNotFound {
+		return nil
+	}
+
+	return err
 }

@@ -192,11 +192,23 @@ func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backup 
 	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
 	if err == nil {
 		for _, job := range jobs {
-			jobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.ForeignJobID.CloudStorageID.String())
+			err := jobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.ForeignJobID.CloudStorageID.String())
+			if err != nil {
+				glog.Warningf("[FAIL] Error deleting transfer job %s: %s", job.ForeignJobID.CloudStorageID.String(), err)
+				continue
+			}
+
+			err = j.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
+			if err != nil {
+				glog.Errorf("[FAIL] Error marking job %s as deleted: %s", job.ID, err)
+				return err
+			}
+
+			glog.Infof("[SUCCESS] Deleting transfer job finished %s", job.ForeignJobID.CloudStorageID.String())
 		}
 	}
 
-	return nil
+	return err
 }
 
 func (j *cleanupBackupService) deleteBigQueryRevision(ctxIn context.Context, revision *repository.MirrorRevision) error {
