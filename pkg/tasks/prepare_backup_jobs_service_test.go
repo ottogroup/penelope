@@ -83,7 +83,7 @@ func prepareBackupServiceCloudStorageBackup() *repository.Backup {
 func TestPrepareBackupJobsService_WithoutValidJob(t *testing.T) {
 	ctx := context.Background()
 	service, _ := newPrepareBackupJobsService(ctx, nil, secret.NewEnvSecretProvider())
-	service.scheduleProcessor = MockScheduleProcessor{
+	service.scheduleProcessor = &MockScheduleProcessor{
 		shouldReturnValidJob:    false,
 		shouldReturnValidBackup: false,
 		ctx:                     ctx,
