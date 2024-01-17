@@ -30,7 +30,7 @@ func TestJobStatusService_WithoutValidJob(t *testing.T) {
 	service, err := newJobStatusService(ctx, nil, secret.NewEnvSecretProvider())
 	require.NoError(t, err)
 
-	service.scheduleProcessor = MockScheduleProcessor{
+	service.scheduleProcessor = &MockScheduleProcessor{
 		shouldReturnValidJob:    false,
 		shouldReturnValidBackup: false,
 		ctx:                     ctx,

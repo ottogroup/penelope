@@ -46,7 +46,7 @@ func (j *jobStuckService) Run(ctxIn context.Context) {
 	}
 
 	glog.Infof("Alerting on %d stuck jobs in status %v before %d hours:", len(jobs), statuses, deltaHours)
-	logMessage := "[FAIL]"
+	logMessage := "[FAIL] stuck jobs:"
 	logMessage += strings.Join(toString(jobs), "|")
 	glog.Info(logMessage)
 }

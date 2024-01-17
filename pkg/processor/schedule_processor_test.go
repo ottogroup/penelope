@@ -389,6 +389,10 @@ type testBigQueryClient struct {
 	fGetTableErr            error
 }
 
+func (t *testBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error {
+	panic("implement me")
+}
+
 func (t *testBigQueryClient) GetDatasets(context.Context, string) ([]string, error) {
 	panic("implement me")
 }

@@ -23,7 +23,7 @@ func TestCleanupExpiredSinkService_WithoutValidJob(t *testing.T) {
 	ctx := context.Background()
 	service, err := newCleanupExpiredSinkService(ctx, nil, secret.NewEnvSecretProvider())
 	require.NoError(t, err)
-	service.scheduleProcessor = MockScheduleProcessor{
+	service.scheduleProcessor = &MockScheduleProcessor{
 		shouldReturnValidJob:    false,
 		shouldReturnValidBackup: false,
 		ctx:                     ctx,

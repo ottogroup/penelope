@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/secret"
+	bq "github.com/ottogroup/penelope/pkg/service/bigquery"
 	"go.opencensus.io/trace"
 	"regexp"
 	"time"
@@ -134,6 +135,8 @@ func (j *cleanupBackupService) cleanupBackup(ctxIn context.Context, backup *repo
 
 	if repository.CloudStorage == backup.Type {
 		return j.deleteTransferJobs(ctx, backup)
+	} else if repository.BigQuery == backup.Type {
+		return j.deleteExtractJobs(ctx, backup)
 	}
 
 	return nil
@@ -188,12 +191,27 @@ func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backup 
 	jobPage := repository.JobPage{Size: repository.AllJobs}
 	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
 	if err == nil {
+		glog.Infof("Deleting transfer jobs for backup %s", backup.ID)
 		for _, job := range jobs {
-			jobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.ForeignJobID.CloudStorageID.String())
+			if job.ForeignJobID.CloudStorageID.String() != "" {
+				err := jobHandler.DeleteTransferJob(ctx, backup.TargetProject, job.ForeignJobID.CloudStorageID.String())
+				if err != nil {
+					glog.Warningf("[FAIL] Error deleting transfer job %s: %s", job.ForeignJobID.CloudStorageID.String(), err)
+					continue
+				}
+			}
+
+			err = j.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
+			if err != nil {
+				glog.Errorf("[FAIL] Error marking job %s as deleted: %s", job.ID, err)
+				return err
+			}
+
+			glog.Infof("[SUCCESS] Deleting transfer job finished %s", job.ForeignJobID.CloudStorageID.String())
 		}
 	}
 
-	return nil
+	return err
 }
 
 func (j *cleanupBackupService) deleteBigQueryRevision(ctxIn context.Context, revision *repository.MirrorRevision) error {
@@ -387,4 +405,42 @@ func (j *cleanupBackupService) deleteObjects(ctxIn context.Context, revision *re
 
 	glog.Infof("deleted %d objects for backupID=%s in %s", deletedObjects, revision.BackupID, prefix)
 	return nil
+}
+
+func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *repository.Backup) error {
+	ctx, span := trace.StartSpan(ctx, "(*cleanupBackupService).deleteExtractJobs")
+	defer span.End()
+
+	jobHandler, err := bq.NewExtractJobHandler(ctx, j.tokenSourceProvider, backup.SourceProject, backup.TargetProject)
+	if err != nil {
+		return fmt.Errorf("could not create ExtractJobHandler: %s", err)
+	}
+
+	// errors are ignored from here after because they are not crucial
+	jobPage := repository.JobPage{Size: repository.AllJobs}
+	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
+	if err == nil {
+		for _, job := range jobs {
+			if job.ForeignJobID.BigQueryID.String() != "" {
+				err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID.String(), backup.Region)
+				if err != nil {
+					glog.Warningf("[FAIL] Error deleting extract job %s: %s", job.ForeignJobID.BigQueryID.String(), err)
+					continue
+				}
+			}
+
+			err = j.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
+			if err != nil {
+				glog.Warningf("[FAIL] Error marking job %s as deleted: %s", job.ID, err)
+				return err
+			}
+
+			glog.Infof("[SUCCESS] Deleting extract job finished %s", job.ForeignJobID.BigQueryID.String())
+
+		}
+	} else {
+		glog.Warningf("[FAIL] Error getting extract jobs for backup %s: %s", backup.ID, err)
+	}
+
+	return err
 }
