@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/monitoring v1.17.0
 	cloud.google.com/go/storage v1.36.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
-	github.com/aws/aws-sdk-go v1.49.12
+	github.com/aws/aws-sdk-go v1.50.5
 	github.com/go-pg/pg/extra/pgdebug v0.2.0
 	github.com/go-pg/pg/v10 v10.12.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
@@ -46,7 +46,6 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/flatbuffers v23.5.26+incompatible // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
