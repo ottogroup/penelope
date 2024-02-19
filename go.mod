@@ -5,7 +5,7 @@ require (
 	cloud.google.com/go/bigquery v1.58.0
 	cloud.google.com/go/logging v1.9.0
 	cloud.google.com/go/monitoring v1.17.1
-	cloud.google.com/go/storage v1.37.0
+	cloud.google.com/go/storage v1.38.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/aws/aws-sdk-go v1.50.9
 	github.com/go-pg/pg/extra/pgdebug v0.2.0
@@ -18,7 +18,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	go.opencensus.io v0.24.0
-	google.golang.org/api v0.161.0
+	google.golang.org/api v0.162.0
 	google.golang.org/genproto v0.0.0-20240125205218-1f4bbc51befe
 	google.golang.org/grpc v1.61.0
 	google.golang.org/protobuf v1.32.0
@@ -81,7 +81,7 @@ require (
 	golang.org/x/tools v0.17.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240125205218-1f4bbc51befe // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240205150955-31a09d347014 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240125205218-1f4bbc51befe // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	mellium.im/sasl v0.3.1 // indirect
