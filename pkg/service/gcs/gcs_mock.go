@@ -42,7 +42,7 @@ func (c *MockGcsClient) DoesBucketExist(ctxIn context.Context, project string, b
 	panic("implement me")
 }
 
-func (c *MockGcsClient) CreateBucket(ctxIn context.Context, project, bucket, location, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
+func (c *MockGcsClient) CreateBucket(ctxIn context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
 	panic("implement me")
 }
 

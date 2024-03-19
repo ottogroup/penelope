@@ -1,10 +1,16 @@
 package gcs
 
 import (
-	"cloud.google.com/go/monitoring/apiv3/v2"
-	"cloud.google.com/go/storage"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+
+	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
+	"cloud.google.com/go/storage"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
@@ -17,11 +23,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"io/ioutil"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
 )
 
 // CloudStorageClient define operations with the GCS
@@ -29,7 +30,7 @@ type CloudStorageClient interface {
 	IsInitialized(ctxIn context.Context) bool
 	DoesBucketExist(ctxIn context.Context, project string, bucket string) (bool, error)
 	BucketUsageInBytes(ctxIn context.Context, project string, bucket string) (float64, error)
-	CreateBucket(ctxIn context.Context, project, bucket, location, storageClass string, lifetimeInDays uint, archiveTTM uint) error
+	CreateBucket(ctxIn context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error
 	CreateObject(ctxIn context.Context, bucketName, objectName, content string) error
 	DeleteBucket(ctxIn context.Context, bucket string) error
 	DeleteObject(ctxIn context.Context, bucketName string, objectName string) error
@@ -319,12 +320,11 @@ func (c *defaultGcsClient) UpdateBucket(ctxIn context.Context, bucket string, li
 }
 
 // CreateBucket create new bucket in a given project
-func (c *defaultGcsClient) CreateBucket(ctxIn context.Context, project, bucket, location, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
+func (c *defaultGcsClient) CreateBucket(ctxIn context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).CreateBucket")
 	defer span.End()
 
 	var bucketAttrs = storage.BucketAttrs{
-		Location:         location,
 		StorageClass:     storageClass,
 		BucketPolicyOnly: storage.BucketPolicyOnly{Enabled: true},
 		Labels:           map[string]string{"purpose": "backup"},
@@ -333,6 +333,15 @@ func (c *defaultGcsClient) CreateBucket(ctxIn context.Context, project, bucket, 
 		},
 	}
 	bucketAttrs.Lifecycle = storage.Lifecycle{}
+
+	if dualLocation == "" {
+		bucketAttrs.Location = location
+	} else {
+		bucketAttrs.Location = "eu"
+		bucketAttrs.CustomPlacementConfig = &storage.CustomPlacementConfig{
+			DataLocations: []string{location, dualLocation},
+		}
+	}
 
 	if archiveTTM > 0 {
 		ruleTTM := storage.LifecycleRule{
@@ -381,7 +390,7 @@ func (c *defaultGcsClient) ReadObject(ctxIn context.Context, bucketName, objectN
 		return nil, fmt.Errorf("unable to open file from bucket %q, file %q: %v", bucketName, objectName, err)
 	}
 
-	slurp, err := ioutil.ReadAll(rc)
+	slurp, err := io.ReadAll(rc)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read data from bucket %q, file %q: %v", bucketName, objectName, err)
 	}

@@ -3,12 +3,13 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"go.opencensus.io/trace"
-	"io/ioutil"
-	"net/http"
 )
 
 type CalculateBackupHandler struct {
@@ -95,6 +96,10 @@ func validateCancelRequest(w http.ResponseWriter, request requestobjects.Calcula
 	}
 
 	if !checkRegionIsValid(w, request.TargetOptions.Region, body) {
+		return false
+	}
+
+	if !checkDualRegionIsValid(w, request.TargetOptions.Region, body) {
 		return false
 	}
 

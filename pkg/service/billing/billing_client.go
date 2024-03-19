@@ -3,17 +3,20 @@ package billing
 import (
 	"context"
 	"fmt"
+	"math"
+	"net/http"
+
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 	gcpBilling "google.golang.org/api/cloudbilling/v1"
 	"google.golang.org/api/option"
-	"net/http"
 )
 
 // Client represent operation with the GCP billing
 type Client interface {
-	GetServiceSkuByEan(ean string) (*gcpBilling.Sku, error)
+	GetServiceSkuBySKUId(ean string) (*gcpBilling.Sku, error)
+	PricePerMonth(skuid string) (float64, error)
 }
 
 // defaultCloudBillingClient implements Client
@@ -39,8 +42,8 @@ func NewCloudBillingClient(ctxIn context.Context) (Client, error) {
 	return &defaultCloudBillingClient{client: client, ctx: ctx}, nil
 }
 
-// GetServiceSkuByEan get actual service SKU by EAN
-func (c *defaultCloudBillingClient) GetServiceSkuByEan(ean string) (*gcpBilling.Sku, error) {
+// GetServiceSkuBySKU get actual service SKU by skuID
+func (c *defaultCloudBillingClient) GetServiceSkuBySKUId(skuID string) (*gcpBilling.Sku, error) {
 	gcpCloudStorageName := "services/95FF-2EF5-5EA1"
 	skus, err := c.client.Services.Skus.List(gcpCloudStorageName).CurrencyCode("EUR").Do()
 	if err != nil {
@@ -48,9 +51,27 @@ func (c *defaultCloudBillingClient) GetServiceSkuByEan(ean string) (*gcpBilling.
 	}
 
 	for _, sku := range skus.Skus {
-		if sku.SkuId == ean {
+		if sku.SkuId == skuID {
 			return sku, nil
 		}
 	}
-	return nil, errors.New(fmt.Sprintf("SKU not found %s", ean))
+	return nil, errors.New(fmt.Sprintf("SKU not found %s", skuID))
+}
+
+func (c *defaultCloudBillingClient) PricePerMonth(skuID string) (float64, error) {
+	averageGregorianDaysInMonth := 365.2425 / 12
+
+	sku, err := c.GetServiceSkuBySKUId(skuID)
+	if err != nil {
+		return 0, errors.Wrap(err, fmt.Sprintf("GetServiceSkuBySKUId failed for skuID %s", skuID))
+	}
+	if sku != nil {
+		if 0 < len(sku.PricingInfo) &&
+			nil != sku.PricingInfo[0].PricingExpression &&
+			0 < len(sku.PricingInfo[0].PricingExpression.TieredRates) &&
+			nil != sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice {
+			return float64(sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice.Nanos) * math.Pow(10, 9) / float64(sku.PricingInfo[0].PricingExpression.BaseUnitConversionFactor) / math.Pow(2, 30) * 60 * 60 * 24 * averageGregorianDaysInMonth, nil
+		}
+	}
+	return 0, errors.New(fmt.Sprintf("sku for skuID %s not found", skuID))
 }

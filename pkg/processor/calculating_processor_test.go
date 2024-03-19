@@ -3,11 +3,12 @@ package processor
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	bq "github.com/ottogroup/penelope/pkg/service/bigquery"
 	"google.golang.org/api/cloudbilling/v1"
-	"testing"
 )
 
 func TestCalculatingProcessor_Process_expect0(t *testing.T) {
@@ -15,7 +16,7 @@ func TestCalculatingProcessor_Process_expect0(t *testing.T) {
 	sourceProjectID := "local-account"
 	calculateRequest := requestobjects.CalculateRequest{}
 	calculateRequest.Project = sourceProjectID
-	calculateRequest.TargetOptions = requestobjects.TargetOptions{Region: repository.EuropeWest1.String(), StorageClass: repository.Regional.String()}
+	calculateRequest.TargetOptions = requestobjects.TargetOptions{Region: "europe-west1", StorageClass: "REGIONAL"}
 	calculateRequest.Type = repository.BigQuery.String()
 	calculateRequest.BigQueryOptions = requestobjects.BigQueryOptions{Dataset: "Billing", Table: []string{"gcp_billing_export_v1_01E0E5_3EB3D2_2206EC$20190101"}}
 
@@ -48,7 +49,7 @@ func TestCalculatingProcessor_Process_expectOne(t *testing.T) {
 	sourceProjectID := "local-account"
 	calculateRequest := requestobjects.CalculateRequest{}
 	calculateRequest.Project = sourceProjectID
-	calculateRequest.TargetOptions = requestobjects.TargetOptions{Region: repository.EuropeWest1.String(), StorageClass: repository.Regional.String()}
+	calculateRequest.TargetOptions = requestobjects.TargetOptions{Region: "europe-west1", StorageClass: "REGIONAL"}
 	calculateRequest.Type = repository.BigQuery.String()
 	calculateRequest.Strategy = repository.Snapshot.String()
 	calculateRequest.BigQueryOptions = requestobjects.BigQueryOptions{Dataset: "Billing", Table: []string{"gcp_billing_export_v1_01E0E5_3EB3D2_2206EC$20190101"}}
@@ -97,11 +98,11 @@ type contextBigQueryCalculator struct {
 }
 
 func (ctx *contextBigQueryCalculator) addPriceForStorage(priceInNanos int64, priceEarlyDeletionInNanos int64, storageClass string, storageRegion string) {
-	cost := getStorageCost(storageClass, storageRegion)
-	if cost.StorageEAN == "" {
+	cost := getStorageCost(storageClass, storageRegion, false)
+	if cost.StorageSKU == "" {
 		panic("ean is empty")
 	}
-	ctx.Billing.SKU[cost.StorageEAN] = &cloudbilling.Sku{
+	ctx.Billing.SKU[cost.StorageSKU] = &cloudbilling.Sku{
 		PricingInfo: []*cloudbilling.PricingInfo{
 			{
 				PricingExpression: &cloudbilling.PricingExpression{
@@ -115,11 +116,11 @@ func (ctx *contextBigQueryCalculator) addPriceForStorage(priceInNanos int64, pri
 			},
 		},
 	}
-	if 0 < priceEarlyDeletionInNanos && cost.EarlyDeleteEAN == "" {
+	if 0 < priceEarlyDeletionInNanos && cost.EarlyDeleteSKU == "" {
 		panic("ean for early deletion is empty")
 	}
 	if 0 < priceEarlyDeletionInNanos {
-		ctx.Billing.SKU[cost.EarlyDeleteEAN] = &cloudbilling.Sku{
+		ctx.Billing.SKU[cost.EarlyDeleteSKU] = &cloudbilling.Sku{
 			PricingInfo: []*cloudbilling.PricingInfo{
 				{
 					PricingExpression: &cloudbilling.PricingExpression{
