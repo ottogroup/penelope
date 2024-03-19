@@ -3,6 +3,9 @@ package processor
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/auth"
@@ -15,8 +18,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
-	"strings"
-	"time"
 )
 
 // CreatingProcessorFactory create Process for Creating
@@ -135,7 +136,7 @@ func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, requ
 	if storageClass == "" {
 		storageClass = config.DefaultBucketStorageClass.MustGet()
 	} else {
-		for _, r := range repository.StorageClasses {
+		for _, r := range StorageClasses {
 			if strings.EqualFold(r.String(), storageClass) {
 				storageClass = r.String()
 				break
@@ -152,9 +153,17 @@ func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, requ
 	}
 
 	region := request.TargetOptions.Region
-	for _, r := range repository.Regions {
+	for _, r := range Regions {
 		if strings.EqualFold(r.String(), region) {
 			region = r.String()
+			break
+		}
+	}
+
+	dualRegion := request.TargetOptions.DualRegion
+	for _, r := range Regions {
+		if strings.EqualFold(r.String(), dualRegion) {
+			dualRegion = r.String()
 			break
 		}
 	}
@@ -185,6 +194,7 @@ func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, requ
 		SinkOptions: repository.SinkOptions{
 			TargetProject: targetProject,
 			Region:        region,
+			DualRegion:    dualRegion,
 			Sink:          sinkName,
 			StorageClass:  storageClass,
 			ArchiveTTM:    request.TargetOptions.ArchiveTTM,
@@ -419,7 +429,7 @@ func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClien
 			lifetimeInDays = backup.SnapshotOptions.LifetimeInDays
 		}
 
-		err = cloudStorageClient.CreateBucket(ctx, backup.TargetProject, backup.Sink, backup.Region, backup.StorageClass, lifetimeInDays, backup.ArchiveTTM)
+		err = cloudStorageClient.CreateBucket(ctx, backup.TargetProject, backup.Sink, backup.Region, backup.DualRegion, backup.StorageClass, lifetimeInDays, backup.ArchiveTTM)
 		if err == nil {
 			return cloudStorageClient.CreateObject(ctx, backup.Sink, fmt.Sprintf("%s/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE", backup.GetTrashcanPath()), "")
 		}

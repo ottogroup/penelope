@@ -1,0 +1,1 @@
+ALTER TABLE backups ADD COLUMN target_dual_region TEXT;

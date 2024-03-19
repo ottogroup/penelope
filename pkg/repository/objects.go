@@ -2,8 +2,9 @@ package repository
 
 import (
 	"fmt"
-	"github.com/golang/glog"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 // BackupStatus for backup
@@ -47,22 +48,6 @@ const (
 	BigQuery BackupType = "BigQuery"
 	// CloudStorage type
 	CloudStorage BackupType = "CloudStorage"
-)
-const (
-	// EuropeWest1 GCS sink bucket region
-	EuropeWest1 Region = "europe-west1"
-	// EuropeWest3 GCS sink bucket region
-	EuropeWest3 Region = "europe-west3"
-	// EuropeWest4 GCS sink bucket region
-	EuropeWest4 Region = "europe-west4"
-)
-const (
-	// Regional GCS sink bucket storage class
-	Regional StorageClass = "REGIONAL"
-	// Nearline GCS sink bucket storage class
-	Nearline StorageClass = "NEARLINE"
-	// Coldline GCS sink bucket storage class
-	Coldline StorageClass = "COLDLINE"
 )
 
 const (
@@ -113,12 +98,6 @@ var Strategies = []Strategy{Snapshot, Mirror}
 
 // BackupTypes source for a backup
 var BackupTypes = []BackupType{BigQuery, CloudStorage}
-
-// Regions available regions classes for a sink
-var Regions = []Region{EuropeWest1, EuropeWest3, EuropeWest4}
-
-// StorageClasses available storage classes for a sink
-var StorageClasses = []StorageClass{Regional, Nearline, Coldline}
 
 // JobStatutses available job statuses
 var JobStatutses = []JobStatus{NotScheduled, Scheduled, Error, Pending, FinishedOk, FinishedError, FinishedQuotaError, JobDeleted}

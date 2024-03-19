@@ -3,14 +3,16 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"reflect"
+
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/builder"
+	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"go.opencensus.io/trace"
-	"io/ioutil"
-	"net/http"
-	"reflect"
 )
 
 type AddBackupHandler struct {
@@ -26,7 +28,7 @@ func (dl *AddBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, span := trace.StartSpan(r.Context(), "AddBackupHandler.ServeHTTP")
 	defer span.End()
 
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if !checkRequestBodyIsValid(w, err) {
 		return
 	}
@@ -163,7 +165,7 @@ func checkTypeIsValid(w http.ResponseWriter, backupType string, body string) boo
 
 func checkRegionIsValid(w http.ResponseWriter, region string, body string) bool {
 	validRegion := false
-	for _, r := range repository.Regions {
+	for _, r := range processor.Regions {
 		if r.EqualTo(region) {
 			validRegion = true
 			break
@@ -180,6 +182,25 @@ func checkRegionIsValid(w http.ResponseWriter, region string, body string) bool 
 	return true
 }
 
+func checkDualRegionIsValid(w http.ResponseWriter, region string, body string) bool {
+	validRegion := region == ""
+	for _, r := range processor.Regions {
+		if r.EqualTo(region) {
+			validRegion = true
+			break
+		}
+	}
+
+	if !validRegion {
+		logMsg := fmt.Sprintf("Error invalid dual region %s\n body: %s", region, body)
+		respMsg := "Provided invalid dual region: " + region
+		prepareResponse(w, logMsg, respMsg, http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
+
 func checkStorageClassIsValid(w http.ResponseWriter, storageClass string, body string) bool {
 	if storageClass == "" { //this will fall back to default
 		return true
@@ -187,7 +208,7 @@ func checkStorageClassIsValid(w http.ResponseWriter, storageClass string, body s
 
 	validRegion := false
 
-	for _, r := range repository.StorageClasses {
+	for _, r := range processor.StorageClasses {
 		if r.EqualTo(storageClass) {
 			validRegion = true
 			break
@@ -234,6 +255,10 @@ func validateCreateRequest(w http.ResponseWriter, request requestobjects.CreateR
 	}
 
 	if !checkRegionIsValid(w, request.TargetOptions.Region, body) {
+		return false
+	}
+
+	if !checkDualRegionIsValid(w, request.TargetOptions.Region, body) {
 		return false
 	}
 

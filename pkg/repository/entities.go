@@ -90,6 +90,7 @@ func (b Backup) String() string {
 type SinkOptions struct {
 	TargetProject string
 	Region        string `pg:"target_region"`
+	DualRegion    string `pg:"target_dual_region"`
 	Sink          string `pg:"target_sink"`
 	StorageClass  string `pg:"target_storage_class"`
 	ArchiveTTM    uint   `pg:"archive_ttm"`

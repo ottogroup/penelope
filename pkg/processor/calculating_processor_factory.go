@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
@@ -14,7 +15,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
-	"math"
 )
 
 const oneGigiByteInBytes = 1073741824
@@ -220,25 +220,43 @@ func (c *baseCalculator) calculateCosts(request *requestobjects.CalculateRequest
 	if storageClass == "" {
 		storageClass = config.DefaultBucketStorageClass.MustGet()
 	}
-	cost := getStorageCost(storageClass, request.TargetOptions.Region)
+	var storageCosts []StorageConfiguration
+	if request.TargetOptions.DualRegion == "" {
+		storageCosts = append(storageCosts, getStorageCost(storageClass, request.TargetOptions.Region, false))
+	} else {
+		storageCosts = append(storageCosts,
+			getStorageCost(storageClass, request.TargetOptions.Region, true),
+			getStorageCost(storageClass, request.TargetOptions.DualRegion, true),
+		)
+	}
+
 	var (
+		minTTL                     int64
 		storagePricePerGBMonth     float64
 		earlyDeletePricePerGBMonth float64
 		frequencyPerMonth          float64
 		periods                    []int64
 	)
-	if cost.StorageEAN != "" {
-		storagePricePerGBMonth, err = pricePerMonth(c.billingClient, cost.StorageEAN)
-		if err != nil {
-			return costs, errors.Wrap(err, "pricePerMonth failed")
+	for _, cost := range storageCosts {
+		if cost.StorageSKU != "" {
+			price, err := c.billingClient.PricePerMonth(cost.StorageSKU)
+			if err != nil {
+				return costs, errors.Wrap(err, "pricePerMonth failed")
+			}
+			storagePricePerGBMonth += price
+		}
+		if cost.EarlyDeleteSKU != "" {
+			price, err := c.billingClient.PricePerMonth(cost.EarlyDeleteSKU)
+			if err != nil {
+				return costs, errors.Wrap(err, "pricePerMonth failed")
+			}
+			earlyDeletePricePerGBMonth += price
+		}
+		if cost.MinTTL > minTTL {
+			minTTL = cost.MinTTL
 		}
 	}
-	if cost.EarlyDeleteEAN != "" {
-		earlyDeletePricePerGBMonth, err = pricePerMonth(c.billingClient, cost.EarlyDeleteEAN)
-		if err != nil {
-			return costs, errors.Wrap(err, "pricePerMonth failed")
-		}
-	}
+
 	if repository.Snapshot.EqualTo(request.Strategy) && request.SnapshotOptions.LifetimeInDays != 0 {
 		periods = append(periods, int64(request.SnapshotOptions.LifetimeInDays))
 	} else {
@@ -260,10 +278,15 @@ func (c *baseCalculator) calculateCosts(request *requestobjects.CalculateRequest
 			Period:      period,
 			SizeInBytes: int64(storageSizeInBytes),
 		}
-		if period < cost.MinTTL {
-			costFraction += storagePricePerGBMonth * float64(period) / float64(cost.MinTTL)
-			costFraction += earlyDeletePricePerGBMonth * float64(cost.MinTTL-period) / float64(cost.MinTTL)
+		if period < minTTL {
+			fmt.Printf("Period: %d Storage: %f, EarlyDelete: %f Min TTL %d\n", period, storagePricePerGBMonth, earlyDeletePricePerGBMonth, minTTL)
+			fmt.Println(float64(period))
+			fmt.Println(float64(minTTL - period))
+
+			costFraction += storagePricePerGBMonth * float64(period)
+			costFraction += earlyDeletePricePerGBMonth * float64(minTTL-period)
 		} else {
+			fmt.Printf("Period: %d Storage: %f, EalryDelete: %f\n", period, storagePricePerGBMonth, earlyDeletePricePerGBMonth)
 			costFraction += storagePricePerGBMonth * float64(period)
 		}
 
@@ -271,50 +294,4 @@ func (c *baseCalculator) calculateCosts(request *requestobjects.CalculateRequest
 		costs = append(costs, &storageCost)
 	}
 	return costs, err
-}
-
-func pricePerMonth(client billing.Client, ean string) (float64, error) {
-	sku, err := client.GetServiceSkuByEan(ean)
-	if err != nil {
-		return 0, errors.Wrap(err, fmt.Sprintf("GetServiceSkuByEan failed for ean %s", ean))
-	}
-	if sku != nil {
-		if 0 < len(sku.PricingInfo) &&
-			nil != sku.PricingInfo[0].PricingExpression &&
-			0 < len(sku.PricingInfo[0].PricingExpression.TieredRates) &&
-			nil != sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice {
-			return float64(sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice.Nanos) / math.Pow(10, 9), nil
-		}
-	}
-	return 0, errors.New(fmt.Sprintf("sku for ean %s not found", ean))
-}
-
-func getStorageCost(storageClass string, region string) storageCost {
-	// source: https://developers.google.com/apis-explorer/#search/cloudbilling.services.skus.list/m/cloudbilling/v1/cloudbilling.services.skus.list?parent=services%252F95FF-2EF5-5EA1&currencyCode=EUR&_h=17&
-	var costs = []storageCost{
-		{Region: repository.EuropeWest1, StorageClass: repository.Regional, StorageEAN: "A703-5CB6-E0BF"},
-		{Region: repository.EuropeWest1, StorageClass: repository.Nearline, StorageEAN: "D78D-ECDE-752A", EarlyDeleteEAN: "64AA-A2F3-3387", MinTTL: 1},
-		{Region: repository.EuropeWest1, StorageClass: repository.Coldline, StorageEAN: "DB5F-944C-9031", EarlyDeleteEAN: "3BDD-5E66-FF01", MinTTL: 3},
-		{Region: repository.EuropeWest3, StorageClass: repository.Regional, StorageEAN: "F272-7933-F065"},
-		{Region: repository.EuropeWest3, StorageClass: repository.Nearline, StorageEAN: "4783-1B32-D7D2", EarlyDeleteEAN: "7FCC-957C-36E9", MinTTL: 1},
-		{Region: repository.EuropeWest3, StorageClass: repository.Coldline, StorageEAN: "DCF3-6CFB-DC70", EarlyDeleteEAN: "70BC-7DCD-47E1", MinTTL: 3},
-		{Region: repository.EuropeWest4, StorageClass: repository.Regional, StorageEAN: "89D8-0CF9-9F2E"},
-		{Region: repository.EuropeWest4, StorageClass: repository.Nearline, StorageEAN: "A5D0-60CC-E116", EarlyDeleteEAN: "9AB3-E6C0-3726", MinTTL: 1},
-		{Region: repository.EuropeWest4, StorageClass: repository.Coldline, StorageEAN: "2743-ACA0-4E7F", EarlyDeleteEAN: "6D21-A940-7268", MinTTL: 3},
-	}
-
-	for _, cost := range costs {
-		if cost.StorageClass.EqualTo(storageClass) && cost.Region.EqualTo(region) {
-			return cost
-		}
-	}
-	return storageCost{}
-}
-
-type storageCost struct {
-	StorageEAN     string
-	EarlyDeleteEAN string
-	MinTTL         int64
-	Region         repository.Region
-	StorageClass   repository.StorageClass
 }

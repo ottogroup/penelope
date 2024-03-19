@@ -88,6 +88,7 @@ type MirrorOptions struct {
 // TargetOptions specify backup sink options
 type TargetOptions struct {
 	Region         string `json:"region,omitempty"`
+	DualRegion     string `json:"dual_region,omitempty"`
 	StorageClass   string `json:"storage_class,omitempty"`
 	LifecycleCount uint   `json:"lifecycle_count,omitempty"`
 	ArchiveTTM     uint   `json:"archive_ttm"`
