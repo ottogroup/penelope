@@ -282,6 +282,31 @@
                    class="mdc-select-helper-text mdc-select-helper-text--persistent">
                     Bucket storage region
                 </p>
+                <div class="mdc-select create-backup-form-storage-dual-region dual-region hidden">
+                    <i class="mdc-select__dropdown-icon"></i>
+                    <select class="mdc-select__native-control create-backup-select-width"
+                            id="create-backup-form-storage-dual-region">
+                        <option value="" disabled selected>Optional</option>
+                        <option value="europe-west1">europe-west1</option>
+                        <option value="europe-west3">europe-west3</option>
+                        <option value="europe-west4">europe-west4</option>
+                        <option value="europe-west6">europe-west6</option>
+                        <option value="europe-west8">europe-west8</option>
+                        <option value="europe-west9">europe-west9</option>
+                        <option value="europe-west10">europe-west10</option>
+                        <option value="europe-west12">europe-west12</option>
+                        <option value="europe-central2">europe-central2</option>
+                        <option value="europe-southwest1">europe-southwest1</option>
+                        <option value="europe-north1">europe-north1</option>
+                        <option value="eu">Multi Region (EU)</option>
+                    </select>
+                    <label class="mdc-floating-label"></label>
+                    <div class="mdc-line-ripple"></div>
+                </div>
+                <p id="create-backup-form-storage-dual-region-text-helper"
+                   class="mdc-select-helper-text mdc-select-helper-text--persistent dual-region hidden">
+                    Choose second region for dual region or leave empty
+                </p>
                 <!-- CREATE ARCHIVE TTM -->
                 <div class="mdc-text-field create-backup-form-archive-ttm">
                     <input type="text" id="create-backup-form-archive-ttm"
