@@ -14,6 +14,7 @@ var App = (function () {
         requestBackup.project = $("#create-backup-form-project").val();
         requestBackup.target = {
             region: $("#create-backup-form-storage-region").val(),
+            dual_region: $("#create-backup-form-storage-dual-region").val(),
             storage_class: $("#create-backup-form-storage-class").val()
         };
         let archive_ttm = parseInt($("#update-backup-form-archive-ttm").val());
@@ -818,9 +819,19 @@ var App = (function () {
         });
         mdc.select.MDCSelect.attachTo(document.querySelector(".mdc-select.create-backup-form-storage-class"));
         mdc.select.MDCSelectHelperText.attachTo(document.querySelector("#create-backup-form-storage-class-text-helper"));
-        mdc.select.MDCSelect.attachTo(document.querySelector(".mdc-select.create-backup-form-storage-region"));
+        const createBackupFormStorageRegion = mdc.select.MDCSelect.attachTo(document.querySelector(".mdc-select.create-backup-form-storage-region"));
         mdc.select.MDCSelectHelperText.attachTo(document.querySelector("#create-backup-form-storage-region-text-helper"));
         const createBackupFormStrategy = mdc.select.MDCSelect.attachTo(document.querySelector(".mdc-select.create-backup-form-strategy"));
+
+        createBackupFormStorageRegion.listen('MDCSelect:change', (event) => {
+            document.querySelectorAll('.dual-region').forEach(function (element) {
+                if (event.detail.value !== "eu" && event.detail.value !== "") {
+                    element.classList.remove('hidden')
+                } else {
+                    element.classList.add('hidden')
+                }
+            });
+        });
 
         createBackupFormStrategy.listen('MDCSelect:change', (event) => {
             if (event.detail.value === "Snapshot") {
