@@ -2,14 +2,15 @@ package rest
 
 import (
 	"context"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/http/auth/model"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func TestGetting_WithUnknownResponse(t *testing.T) {
@@ -65,7 +66,7 @@ func TestGetting_WithKnownResponse(t *testing.T) {
 			TargetProject: "local-ability-backup",
 			Sink:          "uuid-5678-123456",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 			ArchiveTTM:    10203,
 		},
 		BackupOptions: repository.BackupOptions{

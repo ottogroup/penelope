@@ -30,10 +30,6 @@ func TestCalculatingProcessor_Process_expect0(t *testing.T) {
 	if err != nil {
 		t.Errorf(fmt.Sprintf("calculateCost failed. Err %+v", err))
 	}
-	if calculateResponse == nil {
-		t.Errorf("CalculateResponse is nil")
-		return
-	}
 	if len(calculateResponse.Costs) != 12 {
 		t.Errorf("CalculateResponse expected costs for whole year")
 	}
@@ -68,10 +64,6 @@ func TestCalculatingProcessor_Process_expectOne(t *testing.T) {
 	if err != nil {
 		t.Errorf(fmt.Sprintf("calculateCost failed. Err %+v", err))
 	}
-	if calculateResponse == nil {
-		t.Errorf("CalculateResponse is nil")
-		return
-	}
 	if len(calculateResponse.Costs) != 1 {
 		t.Errorf("CalculateResponse expected one cost")
 		return
@@ -88,8 +80,12 @@ type testBillingClient struct {
 	Err error
 }
 
-func (t *testBillingClient) GetServiceSkuByEan(ean string) (*cloudbilling.Sku, error) {
-	return t.SKU[ean], t.Err
+func (t *testBillingClient) GetServiceSkuBySKUId(sku string) (*cloudbilling.Sku, error) {
+	return t.SKU[sku], t.Err
+}
+
+func (t *testBillingClient) PricePerMonth(skuid string) (float64, error) {
+	return 0.017618, nil
 }
 
 type contextBigQueryCalculator struct {

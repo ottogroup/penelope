@@ -3,13 +3,14 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	service2 "github.com/ottogroup/penelope/pkg/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 const (
@@ -182,7 +183,7 @@ func jobStuckServiceBackup() *repository.Backup {
 			TargetProject: "local-ability-backup",
 			Sink:          "uuid-5678-123456",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},

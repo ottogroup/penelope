@@ -2,17 +2,18 @@ package rest
 
 import (
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
 	"github.com/ottogroup/penelope/pkg/http/mock"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
 )
 
 func TestCreateEmptyRequest(t *testing.T) {
@@ -233,7 +234,7 @@ func post(t *testing.T, s *httptest.Server, path string, requestBody interface{}
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
 	return resp, body
@@ -249,7 +250,7 @@ func get(t *testing.T, s *httptest.Server, path string) (*http.Response, string)
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
 	return resp, string(body)
@@ -268,7 +269,7 @@ func patch(t *testing.T, s *httptest.Server, path string, requestBody interface{
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 
 	return resp, string(body)

@@ -2,6 +2,10 @@ package tasks
 
 import (
 	"context"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/go-pg/pg/v10"
 	"github.com/ottogroup/penelope/pkg/http/mock"
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -9,9 +13,6 @@ import (
 	service2 "github.com/ottogroup/penelope/pkg/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -361,7 +362,7 @@ func cleanupBackupServiceBackup(id string, status repository.BackupStatus) *repo
 			TargetProject: "local-ability-backup",
 			Sink:          id + "-sink",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},

@@ -1,10 +1,11 @@
-package actions
+package processor
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_MakeResponseForArchiveTTM(t *testing.T) {

@@ -1,16 +1,17 @@
 package processor
 
 import (
-	"cloud.google.com/go/bigquery"
 	"context"
+	"regexp"
+	"testing"
+
+	"cloud.google.com/go/bigquery"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/repository/memory"
 	bq "github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
 )
 
 func TestBigQueryJobCreator_PrepareJobs_strategyNotExist(t *testing.T) {
@@ -473,7 +474,7 @@ func (*stubGcsClient) DoesBucketExist(c context.Context, project string, bucket 
 	panic("implement me")
 }
 
-func (*stubGcsClient) CreateBucket(c context.Context, project, bucket, location, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
+func (*stubGcsClient) CreateBucket(c context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
 	panic("implement me")
 }
 

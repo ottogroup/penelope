@@ -4,6 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/http/mock"
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -12,12 +19,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io"
-	"net/http"
-	"os"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -116,7 +117,7 @@ func (m *MockScheduleProcessor) GetExpired(ctxIn context.Context, backupType rep
 				TargetProject: "local-ability-backup",
 				Sink:          "uuid-5678-123456",
 				Region:        "europe-west1",
-				StorageClass:  repository.Nearline.String(),
+				StorageClass:  "NEARLINE",
 			},
 			BackupOptions: repository.BackupOptions{
 				BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},
@@ -200,7 +201,7 @@ func (m *MockScheduleProcessor) GetBackupForID(ctxIn context.Context, id string)
 				TargetProject: "local-ability-backup",
 				Sink:          "uuid-5678-123456",
 				Region:        "europe-west1",
-				StorageClass:  repository.Nearline.String(),
+				StorageClass:  "NEARLINE",
 			},
 			BackupOptions: repository.BackupOptions{
 				BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},
@@ -282,7 +283,7 @@ func TestJobScheduleService_WithValidJobValidBigQueryBackup(t *testing.T) {
 			TargetProject: "local-ability-backup",
 			Sink:          "uuid-5678-123456",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},
@@ -361,7 +362,7 @@ func TestJobScheduleService_WithValidJobValidCloudStorageBackupAndReusableJob(t 
 			TargetProject: targetProjectID,
 			Sink:          "uuid-5678-123456",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			CloudStorageOptions: repository.CloudStorageOptions{Bucket: "test-bucket"},
@@ -448,7 +449,7 @@ func TestJobScheduleService_WithValidJobValidCloudStorageBackupAndNotReusableJob
 			TargetProject: targetProjectID,
 			Sink:          "uuid-5678-123456",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			CloudStorageOptions: repository.CloudStorageOptions{Bucket: "test-bucket"},
@@ -524,7 +525,7 @@ func TestJobScheduleService_WithValidJobValidCloudStorageBackup(t *testing.T) {
 			TargetProject: "local-ability-backup",
 			Sink:          "uuid-5678-123456",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			CloudStorageOptions: repository.CloudStorageOptions{Bucket: "test-bucket"},
