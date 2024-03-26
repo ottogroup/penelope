@@ -1,9 +1,12 @@
 package cmd
 
 import (
-	"contrib.go.opencensus.io/exporter/stackdriver"
 	"flag"
 	"fmt"
+	"log"
+	"os"
+
+	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/config"
@@ -15,8 +18,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"go.opencensus.io/trace"
-	"log"
-	"os"
 )
 
 var envKeys = []config.EnvKey{
@@ -80,12 +81,7 @@ func Run(args AppStartArguments) {
 
 	s := server.CreateServer(api)
 
-	staticFilesPath := config.StaticFilesPath.GetOrDefault("")
-	if len(staticFilesPath) > 0 {
-		err = s.RunLocal(staticFilesPath)
-	} else {
-		err = s.Run()
-	}
+	err = s.Run()
 
 	if err != nil {
 		glog.Errorf("error could not start server: %s", err)
@@ -103,16 +99,17 @@ func validateEnvironmentVariables() {
 }
 
 func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
-	var factories []builder.ProcessorFactory
-	factories = append(factories, processor.NewCreatingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider, provider.SecretProvider))
-	factories = append(factories, processor.NewListingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider))
-	factories = append(factories, processor.NewUpdatingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider))
-	factories = append(factories, processor.NewGettingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider))
-	factories = append(factories, processor.NewRestoringProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider))
-	factories = append(factories, processor.NewCalculatingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider))
-	factories = append(factories, processor.NewDatasetListingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider))
-	factories = append(factories, processor.NewBucketListingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider))
-	return builder.NewProcessorBuilder(factories)
+	return builder.NewProcessorBuilder(
+		processor.NewCreatingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
+		processor.NewGettingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
+		processor.NewListingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
+		processor.NewUpdatingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
+		processor.NewRestoringProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
+		processor.NewCalculatingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
+		processor.NewComplianceProcessorFactory(),
+		processor.NewBucketListingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
+		processor.NewDatasetListingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
+	)
 }
 
 func createAndRegisterExporters() {
@@ -129,8 +126,7 @@ func createAndRegisterExporters() {
 }
 
 func newTokenValidator() (auth.TokenValidator, error) {
-	staticFilesPath := config.StaticFilesPath.GetOrDefault("")
-	if len(staticFilesPath) > 0 {
+	if config.DevMode.GetBoolOrDefault(false) {
 		return auth.NewEmptyTokenValidator(), nil
 	}
 

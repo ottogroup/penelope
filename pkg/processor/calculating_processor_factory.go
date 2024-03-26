@@ -19,26 +19,25 @@ import (
 
 const oneGigiByteInBytes = 1073741824
 
+type CalculatingProcessorFactory interface {
+	CreateProcessor(ctxIn context.Context) (Operation[requestobjects.CalculateRequest, requestobjects.CalculatedResponse], error)
+}
+
 // CalculatingProcessorFactory create Process for Calculating
-type CalculatingProcessorFactory struct {
+type calculatingProcessorFactory struct {
 	backupProvider      provider.SinkGCPProjectProvider
 	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
 }
 
-func NewCalculatingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider) *CalculatingProcessorFactory {
-	return &CalculatingProcessorFactory{
+func NewCalculatingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider) CalculatingProcessorFactory {
+	return &calculatingProcessorFactory{
 		backupProvider:      backupProvider,
 		tokenSourceProvider: tokenSourceProvider,
 	}
 }
 
-// DoMatchRequestType does request type match Calculating
-func (c CalculatingProcessorFactory) DoMatchRequestType(requestType requestobjects.RequestType) bool {
-	return requestobjects.Calculating.EqualTo(requestType.String())
-}
-
 // CreateProcessor return instance of Operations for Calculating
-func (c CalculatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operations, error) {
+func (c calculatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.CalculateRequest, requestobjects.CalculatedResponse], error) {
 	_, span := trace.StartSpan(ctxIn, "(*CalculatingProcessorFactory).CreateProcessor")
 	defer span.End()
 
@@ -54,54 +53,47 @@ type calculatingProcessor struct {
 }
 
 // Process request
-func (c *calculatingProcessor) Process(ctxIn context.Context, args *Arguments) (*Result, error) {
+func (c *calculatingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.CalculateRequest]) (requestobjects.CalculatedResponse, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*calculatingProcessor).Process")
 	defer span.End()
 
-	var request *requestobjects.CalculateRequest
-	if args.Request == nil {
-		return nil, fmt.Errorf("nil request object for processing backup calculate request")
-	}
-	request, ok := args.Request.(*requestobjects.CalculateRequest)
-	if !ok {
-		return nil, fmt.Errorf("wrong request object for processing backup calculate request")
-	}
+	var request *requestobjects.CalculateRequest = &args.Request
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.Calculating, request.Project) {
-		return nil, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Calculating.String(), args.Principal.User.Email, request.Project)
+		return requestobjects.CalculatedResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Calculating.String(), args.Principal.User.Email, request.Project)
 	}
 
 	sourceProject := request.Project
 	targetProject, err := c.backupProvider.GetSinkGCPProjectID(ctx, sourceProject)
 	if err != nil {
-		return nil, err
+		return requestobjects.CalculatedResponse{}, err
 	}
 
-	result := Result{}
+	result := requestobjects.CalculatedResponse{}
 	if repository.BigQuery.EqualTo(request.Type) {
 		bigQueryCalculator, err := c.newBigQueryCalculator(ctx, sourceProject, targetProject)
 		if err != nil {
-			return nil, errors.Wrap(err, "newBigQueryCalculator failed")
+			return requestobjects.CalculatedResponse{}, errors.Wrap(err, "newBigQueryCalculator failed")
 		}
 		calculateResponse, err := bigQueryCalculator.calculateCost(ctx, request)
 		if err != nil {
-			return nil, errors.Wrap(err, "bigQueryCalculator.calculateCost failed")
+			return requestobjects.CalculatedResponse{}, errors.Wrap(err, "bigQueryCalculator.calculateCost failed")
 		}
-		result.CalculateResponse = calculateResponse
+		result = calculateResponse
 	}
 	if repository.CloudStorage.EqualTo(request.Type) {
 		cloudStorageCalculator, err := c.newCloudStorageCalculator(ctx, targetProject)
 		if err != nil {
-			return nil, errors.Wrap(err, "newCloudStorageCalculator failed")
+			return requestobjects.CalculatedResponse{}, errors.Wrap(err, "newCloudStorageCalculator failed")
 		}
 		defer cloudStorageCalculator.storageClient.Close(ctx)
 		calculateResponse, err := cloudStorageCalculator.calculateCost(ctx, request)
 		if err != nil {
-			return nil, errors.Wrap(err, "cloudStorageCalculator.calculateCost failed")
+			return requestobjects.CalculatedResponse{}, errors.Wrap(err, "cloudStorageCalculator.calculateCost failed")
 		}
-		result.CalculateResponse = calculateResponse
+		result = calculateResponse
 	}
-	return &result, nil
+	return result, nil
 }
 
 type baseCalculator struct {
@@ -150,30 +142,30 @@ func (c *calculatingProcessor) newBigQueryCalculator(ctxIn context.Context, sour
 	return &BigQueryCalculator, nil
 }
 
-func (c *cloudStorageCalculator) calculateCost(ctxIn context.Context, request *requestobjects.CalculateRequest) (*requestobjects.CalculatedResponse, error) {
+func (c *cloudStorageCalculator) calculateCost(ctxIn context.Context, request *requestobjects.CalculateRequest) (requestobjects.CalculatedResponse, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*cloudStorageCalculator).calculateCost")
 	defer span.End()
 
 	response := requestobjects.CalculatedResponse{}
 	storageSize, err := c.storageClient.BucketUsageInBytes(ctx, request.Project, request.GCSOptions.Bucket)
 	if err != nil {
-		return nil, errors.Wrap(err, "getTotalStorageSize failed")
+		return requestobjects.CalculatedResponse{}, errors.Wrap(err, "getTotalStorageSize failed")
 	}
 	response.Costs, err = c.calculateCosts(request, storageSize)
-	return &response, err
+	return response, err
 }
 
-func (c *bigQueryCalculator) calculateCost(ctxIn context.Context, request *requestobjects.CalculateRequest) (*requestobjects.CalculatedResponse, error) {
+func (c *bigQueryCalculator) calculateCost(ctxIn context.Context, request *requestobjects.CalculateRequest) (requestobjects.CalculatedResponse, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*bigQueryCalculator).calculateCost")
 	defer span.End()
 
 	response := requestobjects.CalculatedResponse{}
 	storageSize, err := c.getTotalStorageSize(ctx, request)
 	if err != nil {
-		return nil, errors.Wrap(err, "getTotalStorageSize failed")
+		return requestobjects.CalculatedResponse{}, errors.Wrap(err, "getTotalStorageSize failed")
 	}
 	response.Costs, err = c.calculateCosts(request, storageSize)
-	return &response, err
+	return response, err
 }
 
 func (c *bigQueryCalculator) getTotalStorageSize(ctxIn context.Context, request *requestobjects.CalculateRequest) (totalSize float64, err error) {

@@ -1,9 +1,10 @@
 package config
 
 import (
-	"github.com/golang/glog"
 	"os"
 	"strconv"
+
+	"github.com/golang/glog"
 )
 
 type EnvKey string
@@ -31,7 +32,7 @@ const (
 	DefaultProviderSinkForProjectPathEnv              EnvKey = "DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH"
 	DefaultProviderPrincipalForUserPathEnv            EnvKey = "DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH"
 	DefaultProviderImpersonateGoogleServiceAccountEnv EnvKey = "DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT"
-	StaticFilesPath                                   EnvKey = "STATIC_FILES_PATH"
+	DevMode                                           EnvKey = "DEV_MODE"
 	TokenHeaderKey                                    EnvKey = "TOKEN_HEADER_KEY"
 	CompanyDomains                                    EnvKey = "COMPANY_DOMAINS"
 	CorsAllowedMethods                                EnvKey = "CORS_ALLOWED_METHODS"

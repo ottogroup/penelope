@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/provider"
@@ -12,32 +13,29 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// BucketListingProcessorFactory create Process for BucketListing
-type BucketListingProcessorFactory struct {
+type BucketListingProcessorFactory interface {
+	CreateProcessor(ctxIn context.Context) (Operation[requestobjects.BucketListRequest, requestobjects.BucketListResponse], error)
+}
+
+// bucketListingProcessorFactory create Process for BucketListing
+type bucketListingProcessorFactory struct {
 	backupProvider      provider.SinkGCPProjectProvider
 	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
 }
 
-func NewBucketListingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider) *BucketListingProcessorFactory {
-	return &BucketListingProcessorFactory{
+func NewBucketListingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider) BucketListingProcessorFactory {
+	return &bucketListingProcessorFactory{
 		backupProvider:      backupProvider,
 		tokenSourceProvider: tokenSourceProvider,
 	}
 }
 
-// DoMatchRequestType does request type match BucketListing
-func (c *BucketListingProcessorFactory) DoMatchRequestType(requestType requestobjects.RequestType) bool {
-	return requestobjects.BucketListing.EqualTo(requestType.String())
-}
-
 // CreateProcessor return instance of Operations for BucketListing
-func (c *BucketListingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operations, error) {
-	processor, err := c.newBucketListingProcessor()
-	if err != nil {
-		return nil, err
-	}
-
-	return processor, nil
+func (c *bucketListingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.BucketListRequest, requestobjects.BucketListResponse], error) {
+	return &bucketListingProcessor{
+		backupProvider:      c.backupProvider,
+		tokenSourceProvider: c.tokenSourceProvider,
+	}, nil
 }
 
 type bucketListingProcessor struct {
@@ -45,48 +43,34 @@ type bucketListingProcessor struct {
 	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
 }
 
-func (c *BucketListingProcessorFactory) newBucketListingProcessor() (*bucketListingProcessor, error) {
-	return &bucketListingProcessor{
-		backupProvider:      c.backupProvider,
-		tokenSourceProvider: c.tokenSourceProvider,
-	}, nil
-}
-
 // Process request
-func (l bucketListingProcessor) Process(ctxIn context.Context, args *Arguments) (*Result, error) {
+func (l bucketListingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.BucketListRequest]) (requestobjects.BucketListResponse, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(bucketListingProcessor).Process")
 	defer span.End()
 
-	var request *requestobjects.BucketListRequest
-	if args.Request == nil {
-		return nil, fmt.Errorf("nil request object for processing bucket list request")
-	}
-	request, ok := args.Request.(*requestobjects.BucketListRequest)
-	if !ok {
-		return nil, fmt.Errorf("wrong request object for processing bucket list request")
-	}
+	var request *requestobjects.BucketListRequest = &args.Request
 
 	sourceProject := request.Project
 	targetProject, err := l.backupProvider.GetSinkGCPProjectID(ctx, request.Project)
 	if err != nil {
-		return nil, err
+		return requestobjects.BucketListResponse{}, err
 	}
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.BucketListing, sourceProject) {
-		return nil, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.BucketListing.String(), args.Principal.User.Email, sourceProject)
+		return requestobjects.BucketListResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.BucketListing.String(), args.Principal.User.Email, sourceProject)
 	}
 
 	cloudStorageClient, err := gcs.NewCloudStorageClient(ctx, l.tokenSourceProvider, targetProject)
 	if err != nil {
-		return nil, errors.Wrapf(err, "NewCloudStorageClient failed for project %s", targetProject)
+		return requestobjects.BucketListResponse{}, errors.Wrapf(err, "NewCloudStorageClient failed for project %s", targetProject)
 	}
 	buckets, err := cloudStorageClient.GetBuckets(ctx, sourceProject)
 	if err != nil {
-		return nil, errors.Wrapf(err, "GetBuckets failed for source project %s", sourceProject)
+		return requestobjects.BucketListResponse{}, errors.Wrapf(err, "GetBuckets failed for source project %s", sourceProject)
 	}
 	defer cloudStorageClient.Close(ctx)
 	var bucketListResponse = requestobjects.BucketListResponse{}
 	bucketListResponse.Buckets = buckets
 
-	return &Result{BucketListResponse: &bucketListResponse}, err
+	return bucketListResponse, err
 }

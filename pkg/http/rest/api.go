@@ -2,6 +2,9 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httputil"
+
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/ottogroup/penelope/pkg/builder"
@@ -10,8 +13,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/secret"
-	"net/http"
-	"net/http/httputil"
 )
 
 // API will handle HTTP requests
@@ -66,12 +67,6 @@ func createRouter(args NewAPIArgs) *mux.Router {
 func createEndpoints(processorBuilder *builder.ProcessorBuilder, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) []*Endpoint {
 	return []*Endpoint{
 		newAPIEndpoint(
-			fmt.Sprintf("%s/{backup_id}", backupPath),
-			true,
-			actions.NewUpdateBackupHandler(processorBuilder).ServeHTTP,
-			[]string{http.MethodPatch},
-		),
-		newAPIEndpoint(
 			backupPath,
 			true,
 			actions.NewUpdateBackupHandler(processorBuilder).ServeHTTP,
@@ -108,12 +103,6 @@ func createEndpoints(processorBuilder *builder.ProcessorBuilder, tokenSourceProv
 			[]string{http.MethodGet},
 		),
 		newAPIEndpoint(
-			tasksPath,
-			false,
-			actions.NewTaskRunHandler(tokenSourceProvider, credentialsProvider).ServeHTTP,
-			[]string{http.MethodGet},
-		),
-		newAPIEndpoint(
 			fmt.Sprintf("%s/me", userPath),
 			true,
 			actions.NewGetUserMeHandler().ServeHTTP,
@@ -126,12 +115,6 @@ func createEndpoints(processorBuilder *builder.ProcessorBuilder, tokenSourceProv
 			[]string{http.MethodGet},
 		),
 		newAPIEndpoint(
-			restorePath,
-			true,
-			actions.NewRestoringBackupHandler(processorBuilder).ServeHTTP,
-			[]string{http.MethodGet},
-		),
-		newAPIEndpoint(
 			fmt.Sprintf("%s/{project_id}", datasetsPath),
 			true,
 			actions.NewDatasetListingHandler(processorBuilder).ServeHTTP,
@@ -139,12 +122,6 @@ func createEndpoints(processorBuilder *builder.ProcessorBuilder, tokenSourceProv
 		),
 		newAPIEndpoint(
 			fmt.Sprintf("%s/{project_id}", bucketsPath),
-			true,
-			actions.NewBucketListingHandler(processorBuilder).ServeHTTP,
-			[]string{http.MethodGet},
-		),
-		newAPIEndpoint(
-			bucketsPath,
 			true,
 			actions.NewBucketListingHandler(processorBuilder).ServeHTTP,
 			[]string{http.MethodGet},

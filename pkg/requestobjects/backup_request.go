@@ -173,6 +173,20 @@ type CalculatedResponse struct {
 	Costs []*Cost `json:"costs"`
 }
 
+// ComplianceRequest request compliance check for a backup
+type ComplianceRequest struct {
+	CreateRequest
+}
+
+// ComplianceResponse response for a ComplianceRequest request
+type ComplianceResponse struct {
+	Checks []struct {
+		Field       string `json:"field"`
+		Passed      bool   `json:"passed"`
+		Description string `json:"description"`
+	} `json:"checks"`
+}
+
 // Cost represent backup data price in a given month
 type Cost struct {
 	Cost        float64 `json:"cost"`

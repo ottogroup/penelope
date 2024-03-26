@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/provider"
@@ -12,32 +13,29 @@ import (
 	"go.opencensus.io/trace"
 )
 
+type DatasetListingProcessorFactory interface {
+	CreateProcessor(ctxIn context.Context) (Operation[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse], error)
+}
+
 // DatasetListingProcessorFactory create Process for DatasetListing
-type DatasetListingProcessorFactory struct {
+type datasetListingProcessorFactory struct {
 	backupProvider      provider.SinkGCPProjectProvider
 	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
 }
 
-func NewDatasetListingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider) *DatasetListingProcessorFactory {
-	return &DatasetListingProcessorFactory{backupProvider: backupProvider, tokenSourceProvider: tokenSourceProvider}
-}
-
-// DoMatchRequestType does request type match Listing
-func (c *DatasetListingProcessorFactory) DoMatchRequestType(requestType requestobjects.RequestType) bool {
-	return requestobjects.DatasetListing.EqualTo(requestType.String())
+func NewDatasetListingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider) DatasetListingProcessorFactory {
+	return &datasetListingProcessorFactory{backupProvider: backupProvider, tokenSourceProvider: tokenSourceProvider}
 }
 
 // CreateProcessor return instance of Operations for DatasetListing
-func (c *DatasetListingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operations, error) {
+func (c *datasetListingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse], error) {
 	_, span := trace.StartSpan(ctxIn, "(*DatasetListingProcessorFactory).CreateProcessor")
 	defer span.End()
 
-	processor, err := c.newDatasetListingProcessor()
-	if err != nil {
-		return nil, err
-	}
-
-	return processor, nil
+	return &datasetListingProcessor{
+		backupProvider:      c.backupProvider,
+		tokenSourceProvider: c.tokenSourceProvider,
+	}, nil
 }
 
 type datasetListingProcessor struct {
@@ -45,47 +43,33 @@ type datasetListingProcessor struct {
 	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
 }
 
-func (c *DatasetListingProcessorFactory) newDatasetListingProcessor() (*datasetListingProcessor, error) {
-	return &datasetListingProcessor{
-		backupProvider:      c.backupProvider,
-		tokenSourceProvider: c.tokenSourceProvider,
-	}, nil
-}
-
 // Process request
-func (l datasetListingProcessor) Process(ctxIn context.Context, args *Arguments) (*Result, error) {
+func (l datasetListingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.DatasetListRequest]) (requestobjects.DatasetListResponse, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*datasetListingProcessor).Process")
 	defer span.End()
 
-	var request *requestobjects.DatasetListRequest
-	if args.Request == nil {
-		return nil, fmt.Errorf("nil request object for processing dataset list request")
-	}
-	request, ok := args.Request.(*requestobjects.DatasetListRequest)
-	if !ok {
-		return nil, fmt.Errorf("wrong request object for processing dataset list request")
-	}
+	var request requestobjects.DatasetListRequest = args.Request
 
 	sourceProject := request.Project
 	targetProject, err := l.backupProvider.GetSinkGCPProjectID(ctx, sourceProject)
 	if err != nil {
-		return nil, err
+		return requestobjects.DatasetListResponse{}, err
 	}
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.DatasetListing, sourceProject) {
-		return nil, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.DatasetListing.String(), args.Principal.User.Email, sourceProject)
+		return requestobjects.DatasetListResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.DatasetListing.String(), args.Principal.User.Email, sourceProject)
 	}
 
 	bigQueryClient, err := bigquery.NewBigQueryClient(ctx, l.tokenSourceProvider, sourceProject, targetProject)
 	if err != nil {
-		return nil, errors.Wrapf(err, "NewBigQueryClient failed source/target %s/%s", sourceProject, targetProject)
+		return requestobjects.DatasetListResponse{}, errors.Wrapf(err, "NewBigQueryClient failed source/target %s/%s", sourceProject, targetProject)
 	}
 	dataSets, err := bigQueryClient.GetDatasets(ctx, sourceProject)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetDatasets failed")
+		return requestobjects.DatasetListResponse{}, errors.Wrap(err, "GetDatasets failed")
 	}
 	var datasetListResponse = requestobjects.DatasetListResponse{}
 	datasetListResponse.Datasets = dataSets
 
-	return &Result{DatasetListResponse: &datasetListResponse}, err
+	return datasetListResponse, err
 }

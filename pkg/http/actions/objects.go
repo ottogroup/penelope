@@ -1,15 +1,18 @@
 package actions
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/golang/glog"
-	"github.com/ottogroup/penelope/pkg/http/auth"
-	"github.com/ottogroup/penelope/pkg/http/auth/model"
-	"github.com/ottogroup/penelope/pkg/repository"
-	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"net/http"
 	"reflect"
 	"time"
+
+	"github.com/golang/glog"
+	"github.com/ottogroup/penelope/pkg/http/auth"
+	"github.com/ottogroup/penelope/pkg/http/auth/model"
+	"github.com/ottogroup/penelope/pkg/processor"
+	"github.com/ottogroup/penelope/pkg/repository"
 )
 
 func formatTime(t time.Time) string {
@@ -17,97 +20,6 @@ func formatTime(t time.Time) string {
 		return ""
 	}
 	return t.Format(time.RFC3339)
-}
-
-func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job) requestobjects.BackupResponse {
-	var jobResponse []requestobjects.JobResponse
-	for _, job := range jobs {
-		var foreignJobID string
-		if backup.Type == repository.BigQuery {
-			foreignJobID = string(job.ForeignJobID.BigQueryID)
-		}
-		if backup.Type == repository.CloudStorage {
-			foreignJobID = string(job.ForeignJobID.CloudStorageID)
-		}
-		jobResponse = append(jobResponse, requestobjects.JobResponse{
-			ID:               job.ID,
-			BackupID:         job.BackupID,
-			ForeignJobID:     foreignJobID,
-			Status:           job.Status.String(),
-			Source:           job.Source,
-			CreatedTimestamp: formatTime(job.CreatedTimestamp),
-			UpdatedTimestamp: formatTime(job.UpdatedTimestamp),
-			DeletedTimestamp: formatTime(job.DeletedTimestamp),
-		})
-	}
-	status := backup.Status
-	if repository.Prepared == backup.Status {
-		status = "Running" //rewording prepared status for frontend
-	}
-
-	return requestobjects.BackupResponse{
-		ID:               backup.ID,
-		Sink:             backup.SinkOptions.Sink,
-		Status:           status.String(),
-		SinkProject:      backup.SinkOptions.TargetProject,
-		CreatedTimestamp: formatTime(backup.CreatedTimestamp),
-		UpdatedTimestamp: formatTime(backup.UpdatedTimestamp),
-		DeletedTimestamp: formatTime(backup.DeletedTimestamp),
-		CreateRequest: requestobjects.CreateRequest{
-			Type:     backup.Type.String(),
-			Strategy: backup.Strategy.String(),
-			Project:  backup.SourceProject,
-			TargetOptions: requestobjects.TargetOptions{
-				StorageClass: backup.StorageClass,
-				Region:       backup.Region,
-				ArchiveTTM:   backup.SinkOptions.ArchiveTTM,
-			},
-			SnapshotOptions: requestobjects.SnapshotOptions{
-				FrequencyInHours: backup.FrequencyInHours,
-				LifetimeInDays:   backup.SnapshotOptions.LifetimeInDays,
-				LastScheduled:    formatTime(backup.LastScheduledTime),
-			},
-			MirrorOptions: requestobjects.MirrorOptions{
-				LifetimeInDays: backup.MirrorOptions.LifetimeInDays,
-			},
-			BigQueryOptions: requestobjects.BigQueryOptions{
-				Dataset:        backup.Dataset,
-				Table:          backup.Table,
-				ExcludedTables: backup.ExcludedTables,
-			},
-			GCSOptions: requestobjects.GCSOptions{
-				Bucket:      backup.Bucket,
-				ExcludePath: backup.ExcludePath,
-				IncludePath: backup.IncludePath,
-			},
-		},
-		Jobs: jobResponse,
-	}
-}
-
-func mapToRestoreResponse(backup *repository.Backup, jobs []*repository.Job) (restoreResponse requestobjects.RestoreResponse) {
-	restoreResponse.BackupID = backup.ID
-	for _, job := range jobs {
-		var action string
-		var backupType string
-		if backup.Type == repository.BigQuery {
-			backupType = "bq"
-			action += fmt.Sprintf(`bq --location=EU load --project_id "%s" --source_format=AVRO %s.%s "%s"`,
-				backup.SourceProject,
-				backup.BigQueryOptions.Dataset,
-				job.Source,
-				repository.BuildFullObjectStoragePath(backup.Sink, backup.BigQueryOptions.Dataset, job.Source, job.ID),
-			)
-		}
-		if backup.Type == repository.CloudStorage {
-			backupType = "gcs"
-		}
-		restoreResponse.RestoreActions = append(restoreResponse.RestoreActions, requestobjects.RestoreAction{
-			Type:   backupType,
-			Action: action,
-		})
-	}
-	return restoreResponse
 }
 
 func checkRequestBodyIsValid(w http.ResponseWriter, err error) bool {
@@ -155,5 +67,50 @@ func prepareResponse(w http.ResponseWriter, logMsg string, responseMsg string, r
 	w.WriteHeader(responseCode)
 	if _, err := fmt.Fprint(w, responseMsg); err != nil {
 		glog.Warningf("Error writing response: %s", err)
+	}
+}
+
+func handleRequestByProcessor[T, R any](ctx context.Context, w http.ResponseWriter, r *http.Request, request T, processorBuilder func(context.Context) (processor.Operation[T, R], error)) {
+	principal, isValid := getPrincipalOrElsePrepareFailedResponse(w, r)
+	if !isValid {
+		return
+	}
+
+	// business logic
+	p, err := processorBuilder(ctx)
+	if err != nil {
+		logMsg := fmt.Sprintf("Error creating new backup processor. Err: %s", err)
+		respMsg := "Could not handle request"
+		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
+		return
+	}
+	args := processor.Argument[T]{
+		Request:   request,
+		Principal: principal,
+	}
+	result, err := p.Process(ctx, &args)
+	if err != nil {
+		logMsg := fmt.Sprintf("Error dataset listing processing backup entity. Err: %s", err)
+		errMsg := fmt.Sprintf("could not handle request because of: %s", err)
+		prepareResponse(w, logMsg, errMsg, http.StatusPreconditionFailed)
+		return
+	}
+
+	responseBody, err := json.Marshal(result)
+	if err != nil {
+		logMsg := fmt.Sprintf("Error creating response body. Err: %s", err)
+		respMsg := "Could not handle request"
+		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(responseBody)
+	if err != nil {
+		logMsg := fmt.Sprintf("Error creating response body. Err: %s", err)
+		respMsg := "Could not handle request"
+		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
+		return
 	}
 }
