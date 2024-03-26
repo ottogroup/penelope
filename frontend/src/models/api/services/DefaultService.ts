@@ -6,6 +6,7 @@ import type { Backup } from '../models/Backup';
 import type { BigQueryOptions } from '../models/BigQueryOptions';
 import type { GCSOptions } from '../models/GCSOptions';
 import type { MirrorOptions } from '../models/MirrorOptions';
+import type { RestoreResponse } from '../models/RestoreResponse';
 import type { SnapshotOptions } from '../models/SnapshotOptions';
 import type { TargetOptions } from '../models/TargetOptions';
 import type { UserResponse } from '../models/UserResponse';
@@ -218,19 +219,13 @@ export class DefaultService {
      * Restore a backup
      * @param backupId Backup ID
      * @param jobIdForTimestamp Job ID for timestamp
-     * @returns any Restore response
+     * @returns RestoreResponse Restore response
      * @throws ApiError
      */
     public static getRestore(
         backupId: string,
         jobIdForTimestamp?: string,
-    ): CancelablePromise<{
-        backup_id?: string;
-        actions?: Array<{
-            action?: string;
-            type?: string;
-        }>;
-    }> {
+    ): CancelablePromise<RestoreResponse> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/restore/{backupId}',

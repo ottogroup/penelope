@@ -273,19 +273,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  backup_id:
-                    type: string
-                  actions:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        action:
-                          type: string
-                        type:
-                          type: string
+                $ref: '#/components/schemas/RestoreResponse'
         '400':
           description: Bad Request
   /datasets/{projectId}:
@@ -421,7 +409,7 @@ components:
           type: string
         foreign_job_id:
           type: string
-        Status:
+        status:
           type: string
         source:
           type: string
@@ -488,4 +476,18 @@ components:
           type: array
           items:
             type: string
+    RestoreResponse:
+      type: object
+      properties:
+        backup_id:
+          type: string
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+              type:
+                type: string
           

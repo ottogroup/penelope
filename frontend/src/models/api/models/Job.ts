@@ -7,7 +7,7 @@ export type Job = {
     id?: string;
     backup_id?: string;
     foreign_job_id?: string;
-    Status?: string;
+    status?: string;
     source?: string;
     created?: string;
     updated?: string;
