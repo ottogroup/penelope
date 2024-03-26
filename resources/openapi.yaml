@@ -1,0 +1,491 @@
+openapi: 3.1.0
+info:
+  title: Penenlope API
+  version: 1.0.0
+externalDocs:
+  url: https://github.com/ottogroup/penelope/wiki
+  description: Find more info here
+servers:
+  - url: /api
+paths:
+  /users/me:
+    get:
+      summary: Get current user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Bad Request
+  /backups:
+    get:
+      summary: Get all backups
+      parameters:
+        - in: query
+          name: project
+          schema:
+            type: string
+          required: false
+          description: Project ID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Backup'
+        '400':
+          description: Bad Request
+    post:
+      summary: Create a new backup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                strategy:
+                  type: string
+                project:
+                  type: string
+                target:
+                  $ref: '#/components/schemas/TargetOptions'
+                snapshot_options:
+                  $ref: '#/components/schemas/SnapshotOptions'
+                mirror_options:
+                  $ref: '#/components/schemas/MirrorOptions'
+                bigquery_options:
+                  $ref: '#/components/schemas/BigQueryOptions'
+                gcs_options:
+                  $ref: '#/components/schemas/GCSOptions'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backup'
+        '400':
+          description: Bad Request
+    patch:
+      summary: Update a backup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                backup_id:
+                  type: string
+                status: 
+                  type: string
+                mirror_ttl:
+                  type: integer
+                snapshot_ttl:
+                  type: integer
+                archive_ttm:
+                  type: integer
+                include_path:
+                  type: array
+                  items:
+                    type: string
+                exclude_path:
+                  type: array
+                  items:
+                    type: string
+                table:
+                  type: array
+                  items:
+                    type: string
+                excluded_tables: 
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backup'
+        '400':
+          description: Bad Request
+  /backups/{backupId}:
+    get:
+      summary: Get a backup
+      parameters:
+        - in: path
+          name: backupId
+          schema:
+            type: string
+          required: true
+          description: Backup ID
+        - in: query
+          name: size
+          schema:
+            type: integer
+          required: false
+          description: Size of job page
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: false
+          description: Page of job page
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Backup'
+        '400':
+          description: Bad Request
+  /backups/calculate:
+    post:
+      summary: Calculate backup costs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                strategy:
+                  type: string
+                project:
+                  type: string
+                target:
+                  $ref: '#/components/schemas/TargetOptions'
+                snapshot_options:
+                  $ref: '#/components/schemas/SnapshotOptions'
+                mirror_options:
+                  $ref: '#/components/schemas/MirrorOptions'
+                bigquery_options:
+                  $ref: '#/components/schemas/BigQueryOptions'
+                gcs_options:
+                  $ref: '#/components/schemas/GCSOptions'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  costs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cost:
+                          type: number
+                        currency:
+                          type: string
+                        name:
+                          type: string
+                        period:
+                          type: integer
+                        size_in_bytes: 
+                          type: integer
+        '400':
+          description: Bad Request
+  /backups/compliance:
+    post:
+      summary: Checks backup compliance level
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                strategy:
+                  type: string
+                project:
+                  type: string
+                target:
+                  $ref: '#/components/schemas/TargetOptions'
+                snapshot_options:
+                  $ref: '#/components/schemas/SnapshotOptions'
+                mirror_options:
+                  $ref: '#/components/schemas/MirrorOptions'
+                bigquery_options:
+                  $ref: '#/components/schemas/BigQueryOptions'
+                gcs_options:
+                  $ref: '#/components/schemas/GCSOptions'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        field:
+                          type: string
+                        passed:
+                          type: boolean
+                        description:
+                          type: string
+        '400':
+          description: Bad Request
+  /restore/{backupId}:
+    get:
+      summary: Restore a backup
+      parameters:
+        - in: path
+          name: backupId
+          schema:
+            type: string
+          required: true
+          description: Backup ID
+        - in: query
+          name: jobIDForTimestamp
+          schema:
+            type: string
+          required: false
+          description: Job ID for timestamp
+      responses:
+        '201':
+          description: Restore response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backup_id:
+                    type: string
+                  actions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        action:
+                          type: string
+                        type:
+                          type: string
+        '400':
+          description: Bad Request
+  /datasets/{projectId}:
+    get:
+      summary: Get all datasets
+      parameters:
+        - in: path
+          name: projectId
+          schema:
+            type: string
+          required: true
+          description: Project ID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datasets:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Bad Request
+  /buckets/{projectId}:
+    get:
+      summary: Get all buckets
+      parameters:
+        - in: path
+          name: projectId
+          schema:
+            type: string
+          required: true
+          description: Project ID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  buckets:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Bad Request
+  /tasks/{task}:
+    get:
+      summary: Run a task
+      parameters:
+        - in: path
+          name: task
+          schema:
+            type: string
+          required: true
+          description: Task name
+      responses:
+        '201':
+          description: Created
+        '403':
+          description: Forbidden
+components:
+  schemas:
+    UserResponse:
+      type: object
+      properties:
+        User:
+          type: object
+          properties:
+            Email: 
+              type: string
+        RoleBindings:
+          type: array
+          items:
+            type: object
+            properties:
+              Role: 
+                type: string
+              Project:
+                type: string
+    Backup:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        strategy:
+          type: string
+        project:
+          type: string
+        target:
+          $ref: '#/components/schemas/TargetOptions'
+        snapshot_options:
+          $ref: '#/components/schemas/SnapshotOptions'
+        mirror_options:
+          $ref: '#/components/schemas/MirrorOptions'
+        bigquery_options:
+          $ref: '#/components/schemas/BigQueryOptions'
+        gcs_options:
+          $ref: '#/components/schemas/GCSOptions'
+        status:
+          type: string
+        sink:
+          type: string
+        sink_project:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        deleted:
+          type: string
+          format: date-time
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Job'
+        jobs_total:
+          type: integer
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        backup_id:
+          type: string
+        foreign_job_id:
+          type: string
+        Status:
+          type: string
+        source:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        deleted:
+          type: string
+          format: date-time
+    TargetOptions:
+      type: object
+      properties:
+        region:
+          type: string
+        dual_region:
+          type: string
+        storage_class:
+          type: string
+        lifecycle_count:
+          type: integer
+        archive_ttm:
+          type: integer
+    SnapshotOptions:
+      type: object
+      properties:
+        lifetime_in_days:
+          type: integer
+        frequency_in_hours:
+          type: integer
+        last_scheduled:
+          type: string
+          format: date-time
+    MirrorOptions:
+      type: object
+      properties:
+        lifetime_in_days:
+          type: integer
+    BigQueryOptions:
+      type: object
+      properties:
+        dataset:
+          type: string
+        table:
+          type: array
+          items:
+            type: string
+        excluded_tables:
+          type: array
+          items:
+            type: string
+    GCSOptions:
+      type: object
+      properties:
+        bucket:
+          type: string
+        include_prefixes:
+          type: array
+          items:
+            type: string
+        exclude_prefixes:
+          type: array
+          items:
+            type: string
+          

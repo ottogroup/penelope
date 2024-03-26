@@ -3,6 +3,10 @@ package rest
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/auth/model"
@@ -15,9 +19,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/service"
 	"github.com/ottogroup/penelope/pkg/tasks"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func createBuilder(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider) *builder.ProcessorBuilder {
@@ -135,10 +136,6 @@ func (*StubProcessor) Process(ctxIn context.Context, p *processor.Arguments) (*p
 
 type StubFactory struct {
 	Type requestobjects.RequestType
-}
-
-func (s *StubFactory) DoMatchRequestType(requestType requestobjects.RequestType) bool {
-	return s.Type.EqualTo(requestType.String())
 }
 
 func (s *StubFactory) CreateProcessor(ctxIn context.Context) (processor.Operations, error) {

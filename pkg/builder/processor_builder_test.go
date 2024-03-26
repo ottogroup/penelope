@@ -2,9 +2,10 @@ package builder
 
 import (
 	"context"
+	"testing"
+
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"testing"
 )
 
 func TestUninitialisedBuilder(t *testing.T) {
@@ -31,10 +32,6 @@ func (*ProcessorMock) Process(context.Context, *processor.Arguments) (*processor
 type FactoryMock struct {
 	Type                  requestobjects.RequestType
 	createProcessorCalled bool
-}
-
-func (t *FactoryMock) DoMatchRequestType(requestType requestobjects.RequestType) bool {
-	return t.Type.EqualTo(requestType.String())
 }
 
 func (t *FactoryMock) CreateProcessor(ctxIn context.Context) (processor.Operations, error) {

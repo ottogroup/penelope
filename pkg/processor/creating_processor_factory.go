@@ -20,48 +20,28 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// CreatingProcessorFactory create Process for Creating
-type CreatingProcessorFactory struct {
+type CreatingProcessorFactory interface {
+	CreateProcessor(ctxIn context.Context) (Operation[requestobjects.CreateRequest, requestobjects.BackupResponse], error)
+}
+
+// creatingProcessorFactory create Process for Creating
+type creatingProcessorFactory struct {
 	backupProvider      provider.SinkGCPProjectProvider
 	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
 	credentialsProvider secret.SecretProvider
 }
 
-func NewCreatingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) *CreatingProcessorFactory {
-	return &CreatingProcessorFactory{
+func NewCreatingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) CreatingProcessorFactory {
+	return &creatingProcessorFactory{
 		backupProvider:      backupProvider,
 		tokenSourceProvider: tokenSourceProvider,
 		credentialsProvider: credentialsProvider,
 	}
 }
 
-// DoMatchRequestType does request type match Creating
-func (c *CreatingProcessorFactory) DoMatchRequestType(requestType requestobjects.RequestType) bool {
-	return requestobjects.Creating.EqualTo(requestType.String())
-}
-
 // CreateProcessor return instance of Operations for Creating
-func (c *CreatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operations, error) {
+func (c *creatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.CreateRequest, requestobjects.BackupResponse], error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*CreatingProcessorFactory).CreateProcessor")
-	defer span.End()
-
-	processor, err := c.newCreatingProcessor(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return processor, nil
-}
-
-type creatingProcessor struct {
-	BackupRepository    repository.BackupRepository
-	JobRepository       repository.JobRepository
-	backupProvider      provider.SinkGCPProjectProvider
-	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
-}
-
-func (c *CreatingProcessorFactory) newCreatingProcessor(ctxIn context.Context) (*creatingProcessor, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newCreatingProcessor")
 	defer span.End()
 
 	backupRepository, err := repository.NewBackupRepository(ctx, c.credentialsProvider)
@@ -83,50 +63,50 @@ func (c *CreatingProcessorFactory) newCreatingProcessor(ctxIn context.Context) (
 	}, nil
 }
 
-func (b *creatingProcessor) Process(ctxIn context.Context, args *Arguments) (*Result, error) {
+type creatingProcessor struct {
+	BackupRepository    repository.BackupRepository
+	JobRepository       repository.JobRepository
+	backupProvider      provider.SinkGCPProjectProvider
+	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
+}
+
+func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.CreateRequest]) (requestobjects.BackupResponse, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*creatingProcessor).Process")
 	defer span.End()
 
-	var request *requestobjects.CreateRequest
-	if args.Request == nil {
-		return nil, fmt.Errorf("nil request object for processing creating request")
-	}
-	request, ok := args.Request.(*requestobjects.CreateRequest)
-	if !ok {
-		return nil, fmt.Errorf("wrong request object for processing creating request")
-	}
+	var request requestobjects.CreateRequest = args.Request
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.Creating, request.Project) {
-		return nil, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Creating.String(), args.Principal.User.Email, request.Project)
+		return requestobjects.BackupResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Creating.String(), args.Principal.User.Email, request.Project)
 	}
 
 	backup, err := b.prepareBackupFromRequest(ctx, request)
 	if err != nil {
-		return nil, err
+		return requestobjects.BackupResponse{}, err
 	}
 	var impl creatingProcessorImpl
 	if repository.BigQuery.EqualTo(request.Type) {
 		impl, err = b.createBigQueryImpl(ctx, request)
 		if err != nil {
-			return nil, err
+			return requestobjects.BackupResponse{}, err
 		}
 	}
 	if repository.CloudStorage.EqualTo(request.Type) {
 		impl, err = b.createCloudStorageImpl(ctx, request)
 		if err != nil {
-			return nil, err
+			return requestobjects.BackupResponse{}, err
 		}
 	}
 	defer impl.close(ctx)
 
 	processedBackup, err := impl.process(ctx, backup)
 	if err != nil {
-		return nil, err
+		return requestobjects.BackupResponse{}, err
 	}
-	return &Result{backups: []*repository.Backup{processedBackup}}, nil
+	return mapBackupToResponse(processedBackup, nil), nil
 }
 
-func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, request *requestobjects.CreateRequest) (*repository.Backup, error) {
+func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, request requestobjects.CreateRequest) (*repository.Backup, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*creatingProcessor).prepareBackupFromRequest")
 	defer span.End()
 
@@ -242,7 +222,7 @@ func normalizePath(pathList []string) []string {
 	return updatedPathList
 }
 
-func (b *creatingProcessor) createBigQueryImpl(ctxIn context.Context, request *requestobjects.CreateRequest) (creatingProcessorImpl, error) {
+func (b *creatingProcessor) createBigQueryImpl(ctxIn context.Context, request requestobjects.CreateRequest) (creatingProcessorImpl, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*creatingProcessor).createBigQueryImpl")
 	defer span.End()
 
@@ -271,7 +251,7 @@ func (b *creatingProcessor) createBigQueryImpl(ctxIn context.Context, request *r
 	return bigQueryProcessor, nil
 }
 
-func (b *creatingProcessor) createCloudStorageImpl(ctxIn context.Context, request *requestobjects.CreateRequest) (creatingProcessorImpl, error) {
+func (b *creatingProcessor) createCloudStorageImpl(ctxIn context.Context, request requestobjects.CreateRequest) (creatingProcessorImpl, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*creatingProcessor).createCloudStorageImpl")
 	defer span.End()
 

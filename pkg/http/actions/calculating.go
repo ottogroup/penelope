@@ -2,8 +2,7 @@ package actions
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/ottogroup/penelope/pkg/builder"
@@ -25,7 +24,7 @@ func (dl *CalculateBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	ctx, span := trace.StartSpan(r.Context(), "CalculateBackupHandler.ServeHTTP")
 	defer span.End()
 
-	bodyBytes, err := ioutil.ReadAll(r.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if !checkRequestBodyIsValid(w, err) {
 		return
 	}
@@ -40,46 +39,7 @@ func (dl *CalculateBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	principal, isValid := getPrincipalOrElsePrepareFailedResponse(w, r)
-	if !isValid {
-		return
-	}
-
-	// business logic
-	processor, err := dl.processorBuilder.ProcessorForRequestType(ctx, requestobjects.Calculating)
-	if err != nil {
-		logMsg := fmt.Sprintf("Error creating new backup processor. Err: %s", err)
-		respMsg := "Could not handle request"
-		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
-		return
-	}
-
-	processorArguments := dl.processorBuilder.ProcessorArgumentsForRequest(&request, principal)
-	result, err := processor.Process(ctx, &processorArguments)
-	if err != nil {
-		logMsg := fmt.Sprintf("Error creating processing backup entity. Err: %s", err)
-		errMsg := fmt.Sprintf("could not handle request because of: %s", err)
-		prepareResponse(w, logMsg, errMsg, http.StatusPreconditionFailed)
-		return
-	}
-
-	responseBody, err := json.Marshal(result.CalculateResponse)
-	if err != nil {
-		logMsg := fmt.Sprintf("Error creating response body. Err: %s", err)
-		respMsg := "Could not handle request"
-		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(responseBody)
-	if err != nil {
-		logMsg := fmt.Sprintf("Error creating response body. Err: %s", err)
-		respMsg := "Could not handle request"
-		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
-		return
-	}
+	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForCalclating)
 }
 
 func validateCancelRequest(w http.ResponseWriter, request requestobjects.CalculateRequest, body string) bool {

@@ -1,15 +1,15 @@
 package actions
 
 import (
-	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"go.opencensus.io/trace"
-	"net/http"
-	"strconv"
 )
 
 type GettingBackupHandler struct {
@@ -52,52 +52,7 @@ func (dl *GettingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		request.Page.Number = i
 	}
 
-	principal, isValid := getPrincipalOrElsePrepareFailedResponse(w, r)
-	if !isValid {
-		return
-	}
-
-	// business logic
-	processor, err := dl.processorBuilder.ProcessorForRequestType(ctx, requestobjects.Getting)
-	if err != nil {
-		logMsg := fmt.Sprintf("Error creating new backup processor. Err: %s", err)
-		respMsg := "Could not handle request"
-		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
-		return
-	}
-
-	processorArguments := dl.processorBuilder.ProcessorArgumentsForRequest(&request, principal)
-	result, err := processor.Process(ctx, &processorArguments)
-	if err != nil {
-		logMsg := fmt.Sprintf("Error creating processing backup entity. Err: %s", err)
-		errMsg := fmt.Sprintf("could not handle request because of: %s", err)
-		prepareResponse(w, logMsg, errMsg, http.StatusPreconditionFailed)
-		return
-	}
-
-	backup := result.GetBackup()
-	if !checkBackupIsFound(w, backup, request.BackupID) {
-		return
-	}
-	backupResponse := mapBackupToResponse(backup, result.GetJobs())
-	backupResponse.JobsTotal = result.JobsTotal
-	responseBody, err := json.Marshal(&backupResponse)
-	if err != nil {
-		logMsg := fmt.Sprintf("Error creating response body. Err: %s", err)
-		respMsg := "Could not handle request"
-		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(responseBody)
-	if err != nil {
-		logMsg := fmt.Sprintf("Error creating response body. Err: %s", err)
-		respMsg := "Could not handle request"
-		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
-		return
-	}
+	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForGetting)
 }
 
 func BadRequestResponse(w http.ResponseWriter, r *http.Request) {
