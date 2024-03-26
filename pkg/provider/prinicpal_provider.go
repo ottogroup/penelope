@@ -3,13 +3,14 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/ottogroup/penelope/pkg/config"
 	authmodel "github.com/ottogroup/penelope/pkg/http/auth/model"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"path/filepath"
 )
 
 type PrincipalProvider interface {
@@ -45,7 +46,7 @@ func (p *defaultUserProvider) GetPrincipalForEmail(ctxIn context.Context, email 
 
 	if config.IsProviderLocal.GetBoolOrDefault(false) {
 		filePath := filepath.Join(bucketName, objectName)
-		object, err = ioutil.ReadFile(filePath)
+		object, err = os.ReadFile(filePath)
 	} else {
 		object, err = p.client.ReadObject(ctx, bucketName, objectName)
 	}

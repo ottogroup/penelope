@@ -3,6 +3,11 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/ottogroup/penelope/pkg/http/mock"
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -10,10 +15,6 @@ import (
 	service2 "github.com/ottogroup/penelope/pkg/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -32,7 +33,7 @@ func prepareBackupServiceBigQueryBackup() *repository.Backup {
 			TargetProject: "local-ability-backup",
 			Sink:          prepareBackupSink,
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},
@@ -51,7 +52,7 @@ func prepareBackupServiceBigQueryMirrorBackup() *repository.Backup {
 			TargetProject: "local-ability-backup",
 			Sink:          prepareBackupSink,
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},
@@ -70,7 +71,7 @@ func prepareBackupServiceCloudStorageBackup() *repository.Backup {
 			TargetProject: "local-ability-backup",
 			Sink:          prepareBackupSink,
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			CloudStorageOptions: repository.CloudStorageOptions{

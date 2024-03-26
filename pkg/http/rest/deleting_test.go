@@ -2,6 +2,10 @@ package rest
 
 import (
 	"context"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/http/auth/model"
 	"github.com/ottogroup/penelope/pkg/http/mock"
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -9,9 +13,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"testing"
-	"time"
 )
 
 const deletingBackupID = "test-backup-id"
@@ -132,7 +133,7 @@ func deletingBackup() *repository.Backup {
 			TargetProject: "local-ability-backup",
 			Sink:          "uuid-5678-123456",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},

@@ -1,10 +1,11 @@
 package mock
 
 import (
-	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHTTPMockHandler_Register_Multiple(t *testing.T) {
@@ -40,7 +41,7 @@ failed`,
 	response, err := http.DefaultClient.Do(request)
 	assert.NoError(t, err)
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		assert.NoError(t, err)
 	}

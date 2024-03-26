@@ -3,15 +3,16 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/http/mock"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -108,7 +109,7 @@ func TestJobStatusService_WithValidCloudStorageJob(t *testing.T) {
 					TargetProject: targetProjectID,
 					Sink:          "uuid-5678-123456",
 					Region:        "europe-west1",
-					StorageClass:  repository.Coldline.String(),
+					StorageClass:  "COLDLINE",
 				},
 				SnapshotOptions: repository.SnapshotOptions{
 					FrequencyInHours: 24,
@@ -191,7 +192,7 @@ func TestJobStatusService_WithValidJobValidBackup(t *testing.T) {
 			TargetProject: targetProjectID,
 			Sink:          "uuid-5678-123456",
 			Region:        "europe-west1",
-			StorageClass:  repository.Nearline.String(),
+			StorageClass:  "NEARLINE",
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},
