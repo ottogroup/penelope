@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+
+	"cloud.google.com/go/storage"
 )
 
 type MockGcsClient struct {
@@ -51,6 +53,10 @@ func (c *MockGcsClient) UpdateBucket(ctxIn context.Context, bucket string, lifet
 }
 
 func (c *MockGcsClient) DeleteBucket(ctxIn context.Context, bucket string) error {
+	panic("implement me")
+}
+
+func (c *MockGcsClient) GetBucketDetails(ctxIn context.Context, bucket string) (*storage.BucketAttrs, error) {
 	panic("implement me")
 }
 

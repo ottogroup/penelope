@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/auth"
@@ -226,6 +227,7 @@ func (c *baseCalculator) calculateCosts(request *requestobjects.CalculateRequest
 		minTTL                     int64
 		storagePricePerGBMonth     float64
 		earlyDeletePricePerGBMonth float64
+		writeCostsPerGB            float64
 		frequencyPerMonth          float64
 		periods                    []int64
 	)
@@ -247,6 +249,10 @@ func (c *baseCalculator) calculateCosts(request *requestobjects.CalculateRequest
 		if cost.MinTTL > minTTL {
 			minTTL = cost.MinTTL
 		}
+	}
+
+	if request.TargetOptions.DualRegion != "" || request.TargetOptions.Region == "eu" {
+		writeCostsPerGB, err = c.billingClient.PricePerGB("CB83-3C2D-160D") // cost for write with replication per GB
 	}
 
 	if repository.Snapshot.EqualTo(request.Strategy) && request.SnapshotOptions.LifetimeInDays != 0 {
@@ -271,18 +277,14 @@ func (c *baseCalculator) calculateCosts(request *requestobjects.CalculateRequest
 			SizeInBytes: int64(storageSizeInBytes),
 		}
 		if period < minTTL {
-			fmt.Printf("Period: %d Storage: %f, EarlyDelete: %f Min TTL %d\n", period, storagePricePerGBMonth, earlyDeletePricePerGBMonth, minTTL)
-			fmt.Println(float64(period))
-			fmt.Println(float64(minTTL - period))
-
-			costFraction += storagePricePerGBMonth * float64(period)
+			costFraction += storagePricePerGBMonth * math.Max(float64(period), float64(minTTL))
 			costFraction += earlyDeletePricePerGBMonth * float64(minTTL-period)
 		} else {
-			fmt.Printf("Period: %d Storage: %f, EalryDelete: %f\n", period, storagePricePerGBMonth, earlyDeletePricePerGBMonth)
 			costFraction += storagePricePerGBMonth * float64(period)
 		}
 
-		storageCost.Cost += costFraction * storageSizeInBytes / oneGigiByteInBytes * frequencyPerMonth
+		storageCost.Cost = costFraction*storageSizeInBytes/oneGigiByteInBytes*frequencyPerMonth + writeCostsPerGB*storageSizeInBytes/oneGigiByteInBytes
+
 		costs = append(costs, &storageCost)
 	}
 	return costs, err

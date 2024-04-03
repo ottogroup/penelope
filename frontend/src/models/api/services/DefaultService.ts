@@ -4,11 +4,13 @@
 /* eslint-disable */
 import type { Backup } from '../models/Backup';
 import type { BigQueryOptions } from '../models/BigQueryOptions';
+import type { CreateRequest } from '../models/CreateRequest';
 import type { GCSOptions } from '../models/GCSOptions';
 import type { MirrorOptions } from '../models/MirrorOptions';
 import type { RestoreResponse } from '../models/RestoreResponse';
 import type { SnapshotOptions } from '../models/SnapshotOptions';
 import type { TargetOptions } from '../models/TargetOptions';
+import type { UpdateRequest } from '../models/UpdateRequest';
 import type { UserResponse } from '../models/UserResponse';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -62,16 +64,7 @@ export class DefaultService {
      * @throws ApiError
      */
     public static postBackups(
-        requestBody: {
-            type?: string;
-            strategy?: string;
-            project?: string;
-            target?: TargetOptions;
-            snapshot_options?: SnapshotOptions;
-            mirror_options?: MirrorOptions;
-            bigquery_options?: BigQueryOptions;
-            gcs_options?: GCSOptions;
-        },
+        requestBody: CreateRequest,
     ): CancelablePromise<Backup> {
         return __request(OpenAPI, {
             method: 'POST',
@@ -91,17 +84,7 @@ export class DefaultService {
      * @throws ApiError
      */
     public static patchBackups(
-        requestBody: {
-            backup_id?: string;
-            status?: string;
-            mirror_ttl?: number;
-            snapshot_ttl?: number;
-            archive_ttm?: number;
-            include_path?: Array<string>;
-            exclude_path?: Array<string>;
-            table?: Array<string>;
-            excluded_tables?: Array<string>;
-        },
+        requestBody: UpdateRequest,
     ): CancelablePromise<Backup> {
         return __request(OpenAPI, {
             method: 'PATCH',
@@ -202,6 +185,7 @@ export class DefaultService {
             field?: string;
             passed?: boolean;
             description?: string;
+            details?: string;
         }>;
     }> {
         return __request(OpenAPI, {
@@ -235,6 +219,40 @@ export class DefaultService {
             query: {
                 'jobIDForTimestamp': jobIdForTimestamp,
             },
+            errors: {
+                400: `Bad Request`,
+            },
+        });
+    }
+
+    /**
+     * Get all available backup regions
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static getConfigRegions(): CancelablePromise<{
+        regions?: Array<string>;
+    }> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/config/regions',
+            errors: {
+                400: `Bad Request`,
+            },
+        });
+    }
+
+    /**
+     * Get all available backup storge classes
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static getConfigStorageClasses(): CancelablePromise<{
+        storage_classes?: Array<string>;
+    }> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/config/storage_classes',
             errors: {
                 400: `Bad Request`,
             },

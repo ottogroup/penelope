@@ -17,6 +17,7 @@ import (
 type Client interface {
 	GetServiceSkuBySKUId(ean string) (*gcpBilling.Sku, error)
 	PricePerMonth(skuid string) (float64, error)
+	PricePerGB(skuID string) (float64, error)
 }
 
 // defaultCloudBillingClient implements Client
@@ -70,7 +71,23 @@ func (c *defaultCloudBillingClient) PricePerMonth(skuID string) (float64, error)
 			nil != sku.PricingInfo[0].PricingExpression &&
 			0 < len(sku.PricingInfo[0].PricingExpression.TieredRates) &&
 			nil != sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice {
-			return float64(sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice.Nanos) * math.Pow(10, 9) / float64(sku.PricingInfo[0].PricingExpression.BaseUnitConversionFactor) / math.Pow(2, 30) * 60 * 60 * 24 * averageGregorianDaysInMonth, nil
+			return (float64(sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice.Nanos) * math.Pow(10, -9)) * (float64(sku.PricingInfo[0].PricingExpression.BaseUnitConversionFactor) * math.Pow(2, -30)) / (60 * 60 * 24 * averageGregorianDaysInMonth), nil
+		}
+	}
+	return 0, errors.New(fmt.Sprintf("sku for skuID %s not found", skuID))
+}
+
+func (c *defaultCloudBillingClient) PricePerGB(skuID string) (float64, error) {
+	sku, err := c.GetServiceSkuBySKUId(skuID)
+	if err != nil {
+		return 0, errors.Wrap(err, fmt.Sprintf("GetServiceSkuBySKUId failed for skuID %s", skuID))
+	}
+	if sku != nil {
+		if 0 < len(sku.PricingInfo) &&
+			nil != sku.PricingInfo[0].PricingExpression &&
+			0 < len(sku.PricingInfo[0].PricingExpression.TieredRates) &&
+			nil != sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice {
+			return (float64(sku.PricingInfo[0].PricingExpression.TieredRates[0].UnitPrice.Nanos) * math.Pow(10, -9)) * (float64(sku.PricingInfo[0].PricingExpression.BaseUnitConversionFactor) * math.Pow(2, -30)), nil
 		}
 	}
 	return 0, errors.New(fmt.Sprintf("sku for skuID %s not found", skuID))

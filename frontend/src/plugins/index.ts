@@ -1,8 +1,7 @@
 import router from "@/router";
 import { createPinia } from "pinia";
-import { URL } from "url";
-import { Environment } from "vitest";
 import type { App } from "vue";
+import VueApexCharts from "vue3-apexcharts";
 
 import registerConstants from "./constants";
 import vuetify from "./vuetify";
@@ -40,5 +39,5 @@ if (import.meta.env.VITE_ENV === "local" && import.meta.env.VITE_LOG_LEVEL === "
 
 export function registerPlugins(app: App) {
   registerConstants(app);
-  app.use(vuetify).use(router).use(createPinia());
+  app.use(vuetify).use(router).use(VueApexCharts).use(createPinia());
 }

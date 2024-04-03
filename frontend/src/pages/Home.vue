@@ -4,15 +4,16 @@ import { ref } from "vue";
 import { useNotificationsStore } from '@/stores';
 import Notification from "@/models/notification";
 import { DefaultService } from "@/models/api";
-import { onTestFailed } from "vitest";
+import BackupCreateDialog from "@/components/BackupCreateDialog.vue"
 
 const notificationsStore = useNotificationsStore();
 
 const tableKey = ref(0);
 const selectedItems = ref([]);
+const showCreateDialog = ref(false);
 
 const onAddBackup = () => {
-  console.log("Add Backup");
+  showCreateDialog.value = true;
 };
 
 const onRefreshTable = () => {
@@ -87,6 +88,8 @@ const onDelete = () => {
 </script>
 
 <template>
+  <BackupCreateDialog v-model="showCreateDialog" />
+
   <v-btn-group class="ma-2">
     <v-btn @click="onAddBackup">
       <v-icon>mdi-plus</v-icon>

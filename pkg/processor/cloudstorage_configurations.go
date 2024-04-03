@@ -21,6 +21,7 @@ type RegionConfigurationStorageClass struct {
 
 type RegionConfiguration struct {
 	Region         repository.Region
+	MultiRegion    bool
 	Location       Location
 	StorageClasses []RegionConfigurationStorageClass
 }
@@ -191,7 +192,8 @@ var RegionConfigurations = []RegionConfiguration{
 		},
 	},
 	{
-		Region: repository.Region("eu"),
+		Region:      repository.Region("eu"),
+		MultiRegion: true,
 		StorageClasses: []RegionConfigurationStorageClass{
 			{StorageClass: "REGIONAL", DualRegion: false, StorageSKU: "EC40-8747-D6FF"},
 			{StorageClass: "NEARLINE", DualRegion: false, StorageSKU: "4CF0-069A-15D9", EarlyDeleteSKU: "7BE5-EBE7-F791", MinTTL: 1},
@@ -245,12 +247,19 @@ var Regions []repository.Region = func() []repository.Region {
 }()
 
 func getStorageCost(storageClass string, region string, dualRegion bool) StorageConfiguration {
-	var costs = StorageConfigurations
-
-	for _, cost := range costs {
+	for _, cost := range StorageConfigurations {
 		if cost.StorageClass.EqualTo(storageClass) && cost.Region.EqualTo(region) && dualRegion == cost.DualRegion {
 			return cost
 		}
 	}
 	return StorageConfiguration{}
+}
+
+func getRegionConfiguration(region string) RegionConfiguration {
+	for _, conf := range RegionConfigurations {
+		if conf.Region.EqualTo(region) {
+			return conf
+		}
+	}
+	return RegionConfiguration{}
 }

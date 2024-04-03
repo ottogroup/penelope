@@ -22,4 +22,12 @@ export default class Principal {
 
     return "";
   }
+
+  getProjects(): string[] {
+    if (this.isValid()) {
+      return Array.from(new Set(this._principal.RoleBindings?.filter((rb) => rb.Project).map((roleBinding) => roleBinding.Project!))) || [];
+    }
+
+    return [];
+  }
 }

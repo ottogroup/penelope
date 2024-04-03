@@ -3,12 +3,14 @@ import { ref } from 'vue'
 import { Backup, DefaultService } from "@/models/api";
 import { useNotificationsStore } from '@/stores';
 import BackupViewDialog from "@/components/BackupViewDialog.vue";
+import BackupEditDialog from "@/components/BackupEditDialog.vue";
 
 const notificationsStore = useNotificationsStore();
 
 const selectedItems = defineModel()
 
 const viewDialogID = ref<string|undefined>(undefined);
+const editDialogID = ref<string|undefined>(undefined);
 
 const isLoading = ref(true);
 const items = ref<Backup[]>([]);
@@ -52,6 +54,7 @@ const bigqueryTableLink = (project: string, dataset: string, table: string) => {
 
 <template>
     <BackupViewDialog :id="viewDialogID" @close="viewDialogID = undefined" />
+    <BackupEditDialog :id="editDialogID" @close="editDialogID = undefined" />
     
     <v-data-table 
         :items="items"
@@ -59,9 +62,10 @@ const bigqueryTableLink = (project: string, dataset: string, table: string) => {
         show-select
         :loading="isLoading"
         v-model="selectedItems"
+        :items-per-page="25"
     >
         <template #[`item.edit`]="{ item }">
-            <v-icon @click="console.log(item)">mdi-wrench</v-icon>
+            <v-icon @click="editDialogID = item.id">mdi-wrench</v-icon>
         </template>
         <template #[`item.view`]="{ item }">
             <v-icon @click="viewDialogID = item.id;">mdi-view-list</v-icon>

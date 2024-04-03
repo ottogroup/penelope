@@ -18,6 +18,8 @@ const (
 	Restoring RequestType = "Restoring"
 	// Calculating - calculate prize for a backup
 	Calculating RequestType = "Calculating"
+	// Compliance - calculate compliance checks for a backup
+	Compliance RequestType = "Compliance"
 	// DatasetListing - list datasets avaiable for a User
 	DatasetListing RequestType = "DatasetListing"
 	// BucketListing - list buckets avaiable for a User

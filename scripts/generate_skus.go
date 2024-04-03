@@ -90,6 +90,7 @@ func main() {
 
 	fmt.Printf("{\n")
 	fmt.Printf("	Region: repository.Region(%q),\n", "eu")
+	fmt.Printf("	MultiRegion: true,\n")
 	fmt.Printf("	StorageClasses: []RegionConfigurationStorageClass{\n")
 	for _, class := range classes {
 		storageSku := ""

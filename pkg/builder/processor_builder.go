@@ -10,15 +10,17 @@ import (
 
 // ProcessorBuilder is responsible for creating Operations for each request type
 type ProcessorBuilder struct {
-	creatingProcessorFactory       processor.CreatingProcessorFactory
-	gettingProcessorFactory        processor.GettingProcessorFactory
-	listingProcessorFactory        processor.ListingProcessorFactory
-	updatingProcessorFactory       processor.UpdatingProcessorFactory
-	restoringProcessorFactory      processor.RestoringProcessorFactory
-	calculatingProcessorFactory    processor.CalculatingProcessorFactory
-	complianceProcessorFactory     processor.ComplianceProcessorFactory
-	bucketListingProcessorFactory  processor.BucketListingProcessorFactory
-	datasetListingProcessorFactory processor.DatasetListingProcessorFactory
+	creatingProcessorFactory             processor.CreatingProcessorFactory
+	gettingProcessorFactory              processor.GettingProcessorFactory
+	listingProcessorFactory              processor.ListingProcessorFactory
+	updatingProcessorFactory             processor.UpdatingProcessorFactory
+	restoringProcessorFactory            processor.RestoringProcessorFactory
+	calculatingProcessorFactory          processor.CalculatingProcessorFactory
+	complianceProcessorFactory           processor.ComplianceProcessorFactory
+	bucketListingProcessorFactory        processor.BucketListingProcessorFactory
+	datasetListingProcessorFactory       processor.DatasetListingProcessorFactory
+	configRegionsProcessorFactory        processor.ConfigRegionsProcessorFactory
+	configStorageClassesProcessorFactory processor.ConfigStorageClassesProcessorFactory
 }
 
 // NewProcessorBuilder created a new ProcessorBuilder
@@ -32,17 +34,21 @@ func NewProcessorBuilder(
 	complianceProcessorFactory processor.ComplianceProcessorFactory,
 	bucketListingProcessorFactory processor.BucketListingProcessorFactory,
 	datasetListingProcessorFactory processor.DatasetListingProcessorFactory,
+	configRegionsProcessorFactory processor.ConfigRegionsProcessorFactory,
+	configStorageClassesProcessorFactory processor.ConfigStorageClassesProcessorFactory,
 ) *ProcessorBuilder {
 	return &ProcessorBuilder{
-		creatingProcessorFactory:       creatingProcessorFactory,
-		gettingProcessorFactory:        gettingProcessorFactory,
-		listingProcessorFactory:        listingProcessorFactory,
-		updatingProcessorFactory:       updatingProcessorFactory,
-		restoringProcessorFactory:      restoringProcessorFactory,
-		calculatingProcessorFactory:    calculatingProcessorFactory,
-		complianceProcessorFactory:     complianceProcessorFactory,
-		bucketListingProcessorFactory:  bucketListingProcessorFactory,
-		datasetListingProcessorFactory: datasetListingProcessorFactory,
+		creatingProcessorFactory:             creatingProcessorFactory,
+		gettingProcessorFactory:              gettingProcessorFactory,
+		listingProcessorFactory:              listingProcessorFactory,
+		updatingProcessorFactory:             updatingProcessorFactory,
+		restoringProcessorFactory:            restoringProcessorFactory,
+		calculatingProcessorFactory:          calculatingProcessorFactory,
+		complianceProcessorFactory:           complianceProcessorFactory,
+		bucketListingProcessorFactory:        bucketListingProcessorFactory,
+		datasetListingProcessorFactory:       datasetListingProcessorFactory,
+		configRegionsProcessorFactory:        configRegionsProcessorFactory,
+		configStorageClassesProcessorFactory: configStorageClassesProcessorFactory,
 	}
 }
 
@@ -107,4 +113,18 @@ func (p *ProcessorBuilder) ProcessorForDatasetListing(ctx context.Context) (proc
 		return nil, errors.New("factory not found")
 	}
 	return p.datasetListingProcessorFactory.CreateProcessor(ctx)
+}
+
+func (p *ProcessorBuilder) ProcessorForConfigRegions(ctx context.Context) (processor.Operation[requestobjects.EmptyRequest, requestobjects.RegionsListResponse], error) {
+	if p.configRegionsProcessorFactory == nil {
+		return nil, errors.New("factory not found")
+	}
+	return p.configRegionsProcessorFactory.CreateProcessor(ctx)
+}
+
+func (p *ProcessorBuilder) ProcessorForConfigStorageClasses(ctx context.Context) (processor.Operation[requestobjects.EmptyRequest, requestobjects.StorageClassListResponse], error) {
+	if p.configStorageClassesProcessorFactory == nil {
+		return nil, errors.New("factory not found")
+	}
+	return p.configStorageClassesProcessorFactory.CreateProcessor(ctx)
 }
