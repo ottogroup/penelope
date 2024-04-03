@@ -24,6 +24,8 @@ const (
 	PrepareBackupJobs = "prepare_backup_jobs"
 	// CheckJobsStuck is handled by task that prepares check Jobs that are running to long
 	CheckJobsStuck = "check_jobs_stuck"
+	// CheckImmutableBackups is handled by task that checks if backups are still immutable
+	CheckImmutableBackups = "check_immutable_backups"
 )
 
 // TaskRunner runs tasks
@@ -78,6 +80,12 @@ func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProj
 		service.Run(ctx)
 	case RescheduleJobsWithQuotaError:
 		service, err := newRescheduleJobsWithQuotaError(ctx, credentialsProvider)
+		if err != nil {
+			glog.Errorf("could not instantiate new RescheduleJobsWithQuotaErrorService: %s", err)
+		}
+		service.Run(ctx)
+	case CheckImmutableBackups:
+		service, err := newCheckImmutableBackupsService(ctx, tokenSourceProvider, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new RescheduleJobsWithQuotaErrorService: %s", err)
 		}

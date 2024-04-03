@@ -37,6 +37,8 @@ func init() {
 	os.Setenv("PENELOPE_USE_DEFAULT_HTTP_CLIENT", "true")
 	os.Setenv("PENELOPE_USE_GRPC_WITHOUT_AUTHENTICATION", "true")
 
+	os.Setenv("DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT", "target-sa@example.de")
+
 	flag.Lookup("logtostderr").Value.Set("true")
 	flag.Parse()
 

@@ -13,6 +13,32 @@ type BackupRepository struct {
 	backups []*repository.Backup
 }
 
+func (r *BackupRepository) ListBackupSinkProjects(ctx context.Context) ([]string, error) {
+	var targetSinks []string
+	for _, backup := range r.backups {
+		targetSinks = append(targetSinks, backup.SinkOptions.TargetProject)
+	}
+	return targetSinks, nil
+}
+
+func (r *BackupRepository) MarkTargetSinksAsImmutable(ctx context.Context, sink string) error {
+	for _, backup := range r.backups {
+		if backup.SinkOptions.TargetProject == sink {
+			backup.SinkIsImmutable = true
+		}
+	}
+	return nil
+}
+
+func (r *BackupRepository) MarkTargetSinksAsMutable(ctx context.Context, sink string) error {
+	for _, backup := range r.backups {
+		if backup.SinkOptions.TargetProject == sink {
+			backup.SinkIsImmutable = false
+		}
+	}
+	return nil
+}
+
 // UpdateBackupStatus is not implemented
 func (r *BackupRepository) UpdateBackup(ctxIn context.Context, updateFields repository.UpdateFields) error {
 	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).UpdateBackupStatus")

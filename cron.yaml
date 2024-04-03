@@ -23,3 +23,6 @@ cron:
   -   description: "check app health status"
       url: /_ah/health
       schedule: every 1 minutes
+  -   description: "check immutable sink data"
+      url: /api/tasks/check_immutable_backups
+      schedule: every 10 minutes from 00:12 to 23:52

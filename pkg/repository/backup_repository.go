@@ -45,12 +45,65 @@ type BackupRepository interface {
 	GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*MirrorRevision, error)
 	GetBigQueryOneShotSnapshots(ctxIn context.Context, status BackupStatus) ([]*Backup, error)
 	GetScheduledBackups(context.Context, BackupType) ([]*Backup, error)
+	ListBackupSinkProjects(ctx context.Context) ([]string, error)
+	MarkTargetSinksAsImmutable(ctx context.Context, sink string) error
+	MarkTargetSinksAsMutable(ctx context.Context, sink string) error
 }
 
 // defaultBackupRepository implements BackupRepository
 type defaultBackupRepository struct {
 	storageService *service.Service
 	ctx            context.Context
+}
+
+func (d *defaultBackupRepository) MarkTargetSinksAsMutable(ctx context.Context, sink string) error {
+	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).MarkTargetSinksAsMutable")
+	defer span.End()
+
+	return d.markTargetSinkAsImmutable(ctx, sink, false)
+}
+
+func (d *defaultBackupRepository) MarkTargetSinksAsImmutable(ctx context.Context, sink string) error {
+	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).MarkTargetSinksAsImmutable")
+	defer span.End()
+
+	return d.markTargetSinkAsImmutable(ctx, sink, true)
+}
+
+func (d *defaultBackupRepository) markTargetSinkAsImmutable(ctx context.Context, sink string, isImmutable bool) error {
+	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).markTargetSinkAsImmutable")
+	defer span.End()
+
+	_, err := d.storageService.DB().
+		Model(&Backup{}).
+		Set("sink_is_immutable = ?", isImmutable).
+		Where("target_sink = ?", sink).
+		Update()
+
+	if err != nil {
+		logQueryError("markTargetSinkAsImmutable", err)
+		return fmt.Errorf("error during executing updating backup statemant: %s", err)
+	}
+
+	return nil
+}
+
+func (d *defaultBackupRepository) ListBackupSinkProjects(ctx context.Context) ([]string, error) {
+	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).ListBackupSinkProjects")
+	defer span.End()
+
+	var projects []string
+	err := d.storageService.
+		DB().
+		Model(&Backup{}).
+		ColumnExpr("DISTINCT target_sink").
+		Where("audit_deleted_timestamp IS NULL").
+		Select(&projects)
+	if err != nil {
+		logQueryError("ListBackupSinkProjects", err)
+		return nil, fmt.Errorf("error during executing get backup by status statement: %s", err)
+	}
+	return projects, nil
 }
 
 // NewBackupRepository return instance of BackupRepository
