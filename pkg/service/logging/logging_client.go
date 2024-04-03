@@ -3,6 +3,9 @@ package logging
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"time"
+
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
@@ -11,10 +14,8 @@ import (
 	"google.golang.org/genproto/googleapis/cloud/audit"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"regexp"
-	"time"
 
-	"cloud.google.com/go/logging/apiv2"
+	logging "cloud.google.com/go/logging/apiv2"
 	"github.com/pkg/errors"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"

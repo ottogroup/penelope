@@ -180,11 +180,15 @@ type ComplianceRequest struct {
 
 // ComplianceResponse response for a ComplianceRequest request
 type ComplianceResponse struct {
-	Checks []struct {
-		Field       string `json:"field"`
-		Passed      bool   `json:"passed"`
-		Description string `json:"description"`
-	} `json:"checks"`
+	Checks []ComplianceCheck `json:"checks"`
+}
+
+// ComplianceResponse response for a ComplianceRequest request
+type ComplianceCheck struct {
+	Field       string `json:"field"`
+	Passed      bool   `json:"passed"`
+	Description string `json:"description"`
+	Details     string `json:"details"`
 }
 
 // Cost represent backup data price in a given month
@@ -214,4 +218,18 @@ type BucketListRequest struct {
 // BucketListResponse response for a BucketListRequest request
 type BucketListResponse struct {
 	Buckets []string `json:"buckets"`
+}
+
+// EmptyRequest request without any parameters
+type EmptyRequest struct {
+}
+
+// RegionsListResponse response for a region list request
+type RegionsListResponse struct {
+	Regions []string `json:"regions"`
+}
+
+// StorageClassListResponse response for a storage class list request
+type StorageClassListResponse struct {
+	StorageClasses []string `json:"storage_classes"`
 }

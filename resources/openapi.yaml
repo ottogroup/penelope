@@ -51,24 +51,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                type:
-                  type: string
-                strategy:
-                  type: string
-                project:
-                  type: string
-                target:
-                  $ref: '#/components/schemas/TargetOptions'
-                snapshot_options:
-                  $ref: '#/components/schemas/SnapshotOptions'
-                mirror_options:
-                  $ref: '#/components/schemas/MirrorOptions'
-                bigquery_options:
-                  $ref: '#/components/schemas/BigQueryOptions'
-                gcs_options:
-                  $ref: '#/components/schemas/GCSOptions'
+              $ref: '#/components/schemas/CreateRequest'
       responses:
         '201':
           description: Created
@@ -85,34 +68,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                backup_id:
-                  type: string
-                status: 
-                  type: string
-                mirror_ttl:
-                  type: integer
-                snapshot_ttl:
-                  type: integer
-                archive_ttm:
-                  type: integer
-                include_path:
-                  type: array
-                  items:
-                    type: string
-                exclude_path:
-                  type: array
-                  items:
-                    type: string
-                table:
-                  type: array
-                  items:
-                    type: string
-                excluded_tables: 
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/UpdateRequest'
       responses:
         '200':
           description: OK
@@ -249,6 +205,8 @@ paths:
                           type: boolean
                         description:
                           type: string
+                        details:
+                          type: string
         '400':
           description: Bad Request
   /restore/{backupId}:
@@ -274,6 +232,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RestoreResponse'
+        '400':
+          description: Bad Request
+  /config/regions:
+    get:
+      summary: Get all available backup regions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  regions:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Bad Request
+  /config/storage_classes:
+    get:
+      summary: Get all available backup storge classes
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  storage_classes:
+                    type: array
+                    items:
+                      type: string
         '400':
           description: Bad Request
   /datasets/{projectId}:
@@ -490,4 +482,51 @@ components:
                 type: string
               type:
                 type: string
-          
+    CreateRequest:
+      type: object
+      properties:
+        type:
+          type: string
+        strategy:
+          type: string
+        project:
+          type: string
+        target:
+          $ref: '#/components/schemas/TargetOptions'
+        snapshot_options:
+          $ref: '#/components/schemas/SnapshotOptions'
+        mirror_options:
+          $ref: '#/components/schemas/MirrorOptions'
+        bigquery_options:
+          $ref: '#/components/schemas/BigQueryOptions'
+        gcs_options:
+          $ref: '#/components/schemas/GCSOptions'
+    UpdateRequest:
+      type: object
+      properties:
+        backup_id:
+          type: string
+        status: 
+          type: string
+        mirror_ttl:
+          type: integer
+        snapshot_ttl:
+          type: integer
+        archive_ttm:
+          type: integer
+        include_path:
+          type: array
+          items:
+            type: string
+        exclude_path:
+          type: array
+          items:
+            type: string
+        table:
+          type: array
+          items:
+            type: string
+        excluded_tables: 
+          type: array
+          items:
+            type: string

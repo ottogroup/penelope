@@ -40,6 +40,7 @@ type CloudStorageClient interface {
 	GetBuckets(ctxIn context.Context, project string) ([]string, error)
 	Close(ctxIn context.Context)
 	UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint) error
+	GetBucketDetails(ctxIn context.Context, bucket string) (*storage.BucketAttrs, error)
 }
 
 // CloudStorageClientFactory creates a CloudStorageClient with the credentails for a specified project
@@ -487,4 +488,12 @@ func (c *defaultGcsClient) GetBuckets(ctxIn context.Context, project string) (bu
 		buckets = append(buckets, b.Name)
 	}
 	return buckets, err
+}
+
+// GetBucketDetails get details of a bucket
+func (c *defaultGcsClient) GetBucketDetails(ctxIn context.Context, bucket string) (*storage.BucketAttrs, error) {
+	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).GetBucketDetails")
+	defer span.End()
+
+	return c.client.Bucket(bucket).Attrs(ctx)
 }

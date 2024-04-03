@@ -106,9 +106,11 @@ func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
 		processor.NewUpdatingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
 		processor.NewRestoringProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
 		processor.NewCalculatingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
-		processor.NewComplianceProcessorFactory(),
+		processor.NewComplianceProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SinkGCPProjectProvider),
 		processor.NewBucketListingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
 		processor.NewDatasetListingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
+		processor.NewConfigRegionsProcessorFactory(),
+		processor.NewConfigStorageClassesProcessorFactory(),
 	)
 }
 

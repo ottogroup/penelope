@@ -13,6 +13,7 @@ const datasetsPath = "datasets"
 const restorePath = "restore"
 const tasksPath = "tasks"
 const userPath = "users"
+const configPath = "config"
 
 // Endpoint for a HTTP requests
 type Endpoint struct {

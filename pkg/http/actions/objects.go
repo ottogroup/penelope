@@ -79,7 +79,7 @@ func handleRequestByProcessor[T, R any](ctx context.Context, w http.ResponseWrit
 	// business logic
 	p, err := processorBuilder(ctx)
 	if err != nil {
-		logMsg := fmt.Sprintf("Error creating new backup processor. Err: %s", err)
+		logMsg := fmt.Sprintf("Error creating new processor. Err: %s", err)
 		respMsg := "Could not handle request"
 		prepareResponse(w, logMsg, respMsg, http.StatusInternalServerError)
 		return
@@ -90,7 +90,7 @@ func handleRequestByProcessor[T, R any](ctx context.Context, w http.ResponseWrit
 	}
 	result, err := p.Process(ctx, &args)
 	if err != nil {
-		logMsg := fmt.Sprintf("Error dataset listing processing backup entity. Err: %s", err)
+		logMsg := fmt.Sprintf("Error processing action. Err: %s", err)
 		errMsg := fmt.Sprintf("could not handle request because of: %s", err)
 		prepareResponse(w, logMsg, errMsg, http.StatusPreconditionFailed)
 		return

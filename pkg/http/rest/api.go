@@ -79,6 +79,12 @@ func createEndpoints(processorBuilder *builder.ProcessorBuilder, tokenSourceProv
 			[]string{http.MethodPost},
 		),
 		newAPIEndpoint(
+			fmt.Sprintf("%s/compliance", backupPath),
+			true,
+			actions.NewComplianceBackupHandler(processorBuilder).ServeHTTP,
+			[]string{http.MethodPost},
+		),
+		newAPIEndpoint(
 			backupPath,
 			true,
 			actions.NewAddBackupHandler(processorBuilder).ServeHTTP,
@@ -124,6 +130,18 @@ func createEndpoints(processorBuilder *builder.ProcessorBuilder, tokenSourceProv
 			fmt.Sprintf("%s/{project_id}", bucketsPath),
 			true,
 			actions.NewBucketListingHandler(processorBuilder).ServeHTTP,
+			[]string{http.MethodGet},
+		),
+		newAPIEndpoint(
+			fmt.Sprintf("%s/regions", configPath),
+			true,
+			actions.NewConfigRegionsHandler(processorBuilder).ServeHTTP,
+			[]string{http.MethodGet},
+		),
+		newAPIEndpoint(
+			fmt.Sprintf("%s/storage_classes", configPath),
+			true,
+			actions.NewConfigStorageClassesHandler(processorBuilder).ServeHTTP,
 			[]string{http.MethodGet},
 		),
 		newCustomEndpoint(
