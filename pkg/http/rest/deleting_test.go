@@ -18,11 +18,22 @@ import (
 const deletingBackupID = "test-backup-id"
 
 func TestDeleting_WithNonExistingBackup(t *testing.T) {
-	defer httpMockHandler.Stop()
-	httpMockHandler.Start()
+	mockBackupProvider := &mockBackupProvider{
+		Backup: "gcp-project-backup",
+		Error:  nil,
+	}
 
-	s := restAPIFactoryWithStubFactory(nil, secret.NewEnvSecretProvider())
+	mockTokenConfigProvider := &MockImpersonatedTokenConfigProvider{
+		TargetPrincipal: "backup-project@local-test-prod.iam.gserviceaccount.com",
+		Error:           nil,
+	}
+
+	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
+		Role:    model.Viewer,
+		Project: defaultProjectID,
+	}}, mockBackupProvider, mockTokenConfigProvider)
 	defer s.Close()
+
 	httpMockHandler.RegisterLocalServer(s.URL)
 
 	body := requestobjects.UpdateRequest{
@@ -72,7 +83,7 @@ func TestDeleting_WithScheduledBackup(t *testing.T) {
 		BackupID: deletingBackupID,
 		Status:   repository.ToDelete.String(),
 	}
-	resp, _ := patch(t, s, buildBackupRequestPath()+"/"+deletingBackupID, body)
+	resp, _ := patch(t, s, buildBackupRequestPath(), body)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	backup, err = backupRepository.GetBackup(ctx, deletingBackupID)
@@ -114,7 +125,7 @@ func TestDeleting_WithNotScheduledBackup(t *testing.T) {
 		BackupID: deletingBackupID,
 		Status:   repository.ToDelete.String(),
 	}
-	resp, _ := patch(t, s, buildBackupRequestPath()+"/"+deletingBackupID, body)
+	resp, _ := patch(t, s, buildBackupRequestPath(), body)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	backup, err = backupRepository.GetBackup(ctx, deletingBackupID)

@@ -41,7 +41,7 @@ func (dl *AddBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForCreating)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusCreated, dl.processorBuilder.ProcessorForCreating)
 }
 
 func getUnsetMandatoryFields(request requestobjects.CreateRequest) []string {

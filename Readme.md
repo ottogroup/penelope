@@ -1,21 +1,27 @@
 # Penelope - GCP Backup Solution 
 
+- [Penelope - GCP Backup Solution](#penelope---gcp-backup-solution)
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
-  * [Migration](#migration)
-  * [Configuration](#configuration)
+  - [Migration](#migration)
+  - [Configuration](#configuration)
 - [Deploy Basic Setup](#deploy-basic-setup)
-  * [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
-  * [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
-  * [3. Step: Penelope Deployment](#3-step-penelope-deployment)
-  * [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
-  * [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
+  - [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
+  - [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
+  - [3. Step: Penelope Deployment](#3-step-penelope-deployment)
+  - [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
+  - [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
 - [Providers](#providers)
-  * [The Secret Provider](#the-secret-provider)
-  * [Backup Provider](#backup-provider)
-  * [Target Principal Provider](#target-principal-provider)
-  * [Principal Provider](#principal-provider)
+  - [The Secret Provider](#the-secret-provider)
+    - [Default](#default)
+  - [Backup Provider](#backup-provider)
+    - [Default](#default-1)
+  - [Target Principal Provider](#target-principal-provider)
+    - [Default](#default-2)
+  - [Principal Provider](#principal-provider)
+    - [Default](#default-3)
+- [Internal Data Model and Backup Mechanics](#internal-data-model-and-backup-mechanics)
     
 # Introduction
 Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery 
@@ -72,7 +78,7 @@ settings. If you not provide required settings, penelope will not run.
 | `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`  | required | Set the path to the `.yaml` file which contains the target backup project for `SinkGCPProjectProvider`.                             |
 | `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH`           | required | Set the path to the `.yaml` file which contains the user principal for `PrincipalProvider`.                                         |
 | `DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT` | required | Set default impersonated google service account for `TargetPrincipalForProjectProvider`.                                            |
-| `STATIC_FILES_PATH`                                   | required | Set the static files path to run Penelope locally.                                                                                  |
+| `DEV_MODE`                                            | required | Set Penelope to run locally in dev mode any skipping user authentification.                                                         |
 | `APP_JWT_AUDIENCE`                                    | required | Set the expected audience value of the jwt token.                                                                                   |
 | `COMPANY_DOMAINS`                                     | required | Set the company domains for validating user email. Value can be a comma separated list.                                             |
 | `DEFAULT_BUCKET_STORAGE_CLASS`                        | required | Set the default storage class for backup sinks.                                                                                     |

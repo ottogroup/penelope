@@ -32,5 +32,5 @@ func (dl *DatasetListingHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	var request requestobjects.DatasetListRequest
 	request.Project = projectID
 
-	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForDatasetListing)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, dl.processorBuilder.ProcessorForDatasetListing)
 }

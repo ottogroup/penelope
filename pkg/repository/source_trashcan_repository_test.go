@@ -2,9 +2,10 @@ package repository
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultSourceTrashcan_Add(t *testing.T) {
@@ -121,7 +122,7 @@ func TestDefaultSourceTrashcan_FilterExistingEntries_Multiple(t *testing.T) {
 }
 
 func TestDefaultSourceTrashcan_GetBefore(t *testing.T) {
-	beforeOneWeek := time.Now().AddDate(0, 0, -7)
+	beforeOneWeek := time.Now().AddDate(0, 0, -8) // needs to be older than a week to be filtered out
 	now := time.Now()
 
 	backupIDs := []string{"backup-id-1", "backup-id-2", "backup-id-3", "backup-id-4"}

@@ -17,13 +17,27 @@ func TestGetting_WithUnknownResponse(t *testing.T) {
 	defer httpMockHandler.Stop()
 	httpMockHandler.Start()
 
-	s := restAPIFactoryWithStubFactory(nil, secret.NewEnvSecretProvider())
+	mockBackupProvider := &mockBackupProvider{
+		Backup: "gcp-project-backup",
+		Error:  nil,
+	}
+
+	mockTokenConfigProvider := &MockImpersonatedTokenConfigProvider{
+		TargetPrincipal: "backup-project@local-test-prod.iam.gserviceaccount.com",
+		Error:           nil,
+	}
+
+	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
+		Role:    model.Viewer,
+		Project: defaultProjectID,
+	}}, mockBackupProvider, mockTokenConfigProvider)
 	defer s.Close()
+
 	httpMockHandler.RegisterLocalServer(s.URL)
 
 	resp, respString := get(t, s, buildBackupRequestPath()+"/noid")
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-	assert.Equal(t, `no backup with id "noid" found`, respString)
+	assert.Equal(t, `could not handle request because of: no backup with id "noid" found`, respString)
 }
 
 func TestGetting_WithKnownResponse(t *testing.T) {

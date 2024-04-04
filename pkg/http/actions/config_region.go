@@ -23,5 +23,5 @@ func (bl *ConfigRegionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	var request requestobjects.EmptyRequest
 
-	handleRequestByProcessor(ctx, w, r, request, bl.processorBuilder.ProcessorForConfigRegions)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, bl.processorBuilder.ProcessorForConfigRegions)
 }

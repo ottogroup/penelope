@@ -35,5 +35,5 @@ func (dl *ComplianceBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForCompliance)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, dl.processorBuilder.ProcessorForCompliance)
 }

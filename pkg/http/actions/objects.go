@@ -13,6 +13,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/http/auth/model"
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/repository"
+	"github.com/ottogroup/penelope/pkg/requestobjects"
 )
 
 func formatTime(t time.Time) string {
@@ -70,7 +71,7 @@ func prepareResponse(w http.ResponseWriter, logMsg string, responseMsg string, r
 	}
 }
 
-func handleRequestByProcessor[T, R any](ctx context.Context, w http.ResponseWriter, r *http.Request, request T, processorBuilder func(context.Context) (processor.Operation[T, R], error)) {
+func handleRequestByProcessor[T, R any](ctx context.Context, w http.ResponseWriter, r *http.Request, request T, okStatusCode int, processorBuilder func(context.Context) (processor.Operation[T, R], error)) {
 	principal, isValid := getPrincipalOrElsePrepareFailedResponse(w, r)
 	if !isValid {
 		return
@@ -90,6 +91,12 @@ func handleRequestByProcessor[T, R any](ctx context.Context, w http.ResponseWrit
 	}
 	result, err := p.Process(ctx, &args)
 	if err != nil {
+		if apiErr, ok := err.(requestobjects.ApiError); ok {
+			logMsg := fmt.Sprintf("Error processing action. Err: %s", apiErr)
+			errMsg := fmt.Sprintf("could not handle request because of: %s", apiErr)
+			prepareResponse(w, logMsg, errMsg, apiErr.Code)
+			return
+		}
 		logMsg := fmt.Sprintf("Error processing action. Err: %s", err)
 		errMsg := fmt.Sprintf("could not handle request because of: %s", err)
 		prepareResponse(w, logMsg, errMsg, http.StatusPreconditionFailed)
@@ -105,7 +112,7 @@ func handleRequestByProcessor[T, R any](ctx context.Context, w http.ResponseWrit
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(okStatusCode)
 	_, err = w.Write(responseBody)
 	if err != nil {
 		logMsg := fmt.Sprintf("Error creating response body. Err: %s", err)

@@ -32,5 +32,5 @@ func (bl *BucketListingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	var request requestobjects.BucketListRequest
 	request.Project = projectID
 
-	handleRequestByProcessor(ctx, w, r, request, bl.processorBuilder.ProcessorForBucketListing)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, bl.processorBuilder.ProcessorForBucketListing)
 }

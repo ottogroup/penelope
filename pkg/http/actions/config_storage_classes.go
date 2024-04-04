@@ -23,5 +23,5 @@ func (bl *ConfigStorageClassesHandler) ServeHTTP(w http.ResponseWriter, r *http.
 
 	var request requestobjects.EmptyRequest
 
-	handleRequestByProcessor(ctx, w, r, request, bl.processorBuilder.ProcessorForConfigStorageClasses)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, bl.processorBuilder.ProcessorForConfigStorageClasses)
 }

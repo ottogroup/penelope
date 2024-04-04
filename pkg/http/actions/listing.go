@@ -23,5 +23,5 @@ func (dl *ListingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	request := requestobjects.ListRequest{Project: r.URL.Query().Get("project")}
 
-	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForListing)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, dl.processorBuilder.ProcessorForListing)
 }
