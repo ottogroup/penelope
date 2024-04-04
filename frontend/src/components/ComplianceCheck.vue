@@ -18,7 +18,6 @@ const complianceChecks = ref<{
         }[]>([]);
 
 const updateData = () => {
-    console.log(props)
     if(props.backup === undefined) {
         isLoading.value = false;
         complianceChecks.value = [];
@@ -35,6 +34,7 @@ const updateData = () => {
     });
 };
 
+updateData();
 watch(() => props.backup, 
 () => {
     updateData();
