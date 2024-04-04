@@ -49,7 +49,6 @@ const pricePredictionOptions = ref<ApexOptions>({
 });
 
 const updateData = () => {
-    console.log(props)
     if(props.backup === undefined) {
         isLoading.value = false;
         pricePrediction.value = [];
@@ -66,6 +65,7 @@ const updateData = () => {
     });
 };
 
+updateData();
 watch(() => props.backup, 
 () => {
     updateData();

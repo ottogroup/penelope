@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Backup, DefaultService, Job } from "@/models/api";
+import { Backup, CreateRequest, DefaultService, Job } from "@/models/api";
 import { useNotificationsStore } from '@/stores';
 import { RestoreResponse } from '@/models/api/models/RestoreResponse';
+import PricePrediction from '@/components/PricePrediction.vue';
+import ComplianceCheck from '@/components/ComplianceCheck.vue';
 
 const props = defineProps({
     id: {
@@ -15,6 +17,7 @@ const viewDialog = ref(false);
 const isLoading = ref(true);
 const listIsLoading = ref(true);
 const backup = ref<Backup|undefined>(undefined);
+const backupForEval = ref<CreateRequest|undefined>(undefined);
 const jobItems = ref<{job: Job, restore: RestoreResponse|undefined}[]>([]);
 
 const updateData = () => {
@@ -22,6 +25,16 @@ const updateData = () => {
     if(props.id) {
         DefaultService.getBackups1(props.id!).then((response) => {
             backup.value = response;
+            backupForEval.value = {
+                type: response.type,
+                strategy: response.strategy,
+                project: response.project,
+                target: response.target,
+                snapshot_options: response.snapshot_options,
+                mirror_options: response.mirror_options,
+                bigquery_options: response.bigquery_options,
+                gcs_options: response.gcs_options,
+            };
         }).catch((err) => {
             useNotificationsStore().handleError(err);
         }).finally(() => {
@@ -80,6 +93,18 @@ const loadRestore = (item: {job: Job, restore: RestoreResponse|undefined}) => {
     });
 }
 
+const cloudStorageLink = (project: string, bucket: string) => {
+    return `https://console.cloud.google.com/storage/browser/${bucket}?project=${project}`;
+}
+
+const bigqueryDatasetLink = (project: string, dataset: string) => {
+    return `https://console.cloud.google.com/bigquery?project=${project}&p=${project}&d=${dataset}&page=dataset`;
+}
+
+const bigqueryTableLink = (project: string, dataset: string, table: string) => {
+    return `https://console.cloud.google.com/bigquery?project=${project}&p=${project}&d=${dataset}&t=${table}&page=table`;
+}
+
 watch(() => props.id, (id) => {
     viewDialog.value = !!id;
     updateData();
@@ -120,11 +145,55 @@ watch(() => props.id, (id) => {
                             <tr>
                                 <td>Source:</td>
                                 <td>
-                                    {{ backup?.gcs_options }}
-                                    {{ backup?.bigquery_options }}
+                                    <template v-if="backup?.type === 'BigQuery'">
+                                        BigQuery: <a :href="bigqueryDatasetLink(backup?.project ?? '', backup?.bigquery_options?.dataset ?? '')">{{ backup?.bigquery_options?.dataset }}</a>
+                                        
+                                    </template>
+                                    <template v-if="backup?.type === 'CloudStorage'">
+                                        Bucket: <a :href="cloudStorageLink(backup?.project ?? '', backup?.gcs_options?.bucket ?? '')">{{ backup?.gcs_options?.bucket }}</a>
+                                    </template>
                                 </td>
                             </tr>
-
+                            <tr v-if="backup?.type === 'BigQuery' && (backup?.bigquery_options?.table?.length ?? 0 > 0)">
+                                <td>Tables:</td>
+                                <td>
+                                    <ul>
+                                        <li v-for="table in backup?.bigquery_options?.table">
+                                            Table: <a :href="bigqueryTableLink(backup?.project ?? '', backup?.bigquery_options?.dataset ?? '', table)">{{ table }}</a>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr v-if="backup?.type === 'BigQuery' && (backup?.bigquery_options?.excluded_tables?.length ?? 0 > 0)">
+                                <td>Excluded tables:</td>
+                                <td>
+                                    <ul>
+                                        <li v-for="table in backup?.bigquery_options?.excluded_tables">
+                                            Table: <a :href="bigqueryTableLink(backup?.project ?? '', backup?.bigquery_options?.dataset ?? '', table)">{{ table }}</a>
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr v-if="backup?.type === 'CloudStorage' && (backup?.gcs_options?.include_prefixes?.length ?? 0 > 0)">
+                                <td>Included prefixes:</td>
+                                <td>
+                                    <ul>
+                                        <li v-for="prefix in backup?.gcs_options?.include_prefixes">
+                                            {{ prefix }}
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
+                            <tr v-if="backup?.type === 'CloudStorage' && (backup?.gcs_options?.exclude_prefixes?.length ?? 0 > 0)">
+                                <td>Excluded prefixes:</td>
+                                <td>
+                                    <ul>
+                                        <li v-for="prefix in backup?.gcs_options?.exclude_prefixes">
+                                            {{ prefix }}
+                                        </li>
+                                    </ul>
+                                </td>
+                            </tr>
                             <tr>
                                 <td colspan="2"><h4>Target</h4></td>
                             </tr>
@@ -136,7 +205,7 @@ watch(() => props.id, (id) => {
                                 <td>Storage region:</td>
                                 <td>{{ backup?.target?.region }}</td>
                             </tr>
-                            <tr>
+                            <tr v-if="backup?.target?.dual_region">
                                 <td>Secondary storage region:</td>
                                 <td>{{ backup?.target?.dual_region }}</td>
                             </tr>
@@ -156,14 +225,22 @@ watch(() => props.id, (id) => {
                                 <td>Strategy:</td>
                                 <td>{{ backup?.strategy }}</td>
                             </tr>
-                            <tr>
-                                <td>Snapshot Options:</td>
-                                <td>
-                                    {{ backup?.snapshot_options }}
-                                    {{ backup?.mirror_options }}
-                                </td>
+                            <tr v-if="backup?.snapshot_options?.frequency_in_hours !== undefined">
+                                <td>Snapshot frequency:</td>
+                                <td>{{ backup?.snapshot_options?.frequency_in_hours }}h</td>
                             </tr>
-
+                            <tr v-if="backup?.snapshot_options?.lifetime_in_days">
+                                <td>Lifetime:</td>
+                                <td>{{ backup?.snapshot_options?.lifetime_in_days }} days</td>
+                            </tr>
+                            <tr v-if="backup?.snapshot_options?.last_scheduled">
+                                <td>Snapshot last scheduled:</td>
+                                <td>{{ backup?.snapshot_options?.last_scheduled }}</td>
+                            </tr>
+                            <tr v-if="backup?.mirror_options?.lifetime_in_days">
+                                <td>Lifetime:</td>
+                                <td>{{ backup?.snapshot_options?.lifetime_in_days }} days</td>
+                            </tr>
                             <tr>
                                 <td colspan="2"><h4>Status</h4></td>
                             </tr>
@@ -182,6 +259,14 @@ watch(() => props.id, (id) => {
 
                         </tbody>
                     </v-table>
+                    <v-row>
+                        <v-col>
+                            <PricePrediction :backup="backupForEval" />
+                        </v-col>
+                        <v-col>
+                            <ComplianceCheck :backup="backupForEval" />
+                        </v-col>
+                    </v-row>
                 </v-window-item>
                 <v-window-item value="jobs">
                     <v-data-table-server
