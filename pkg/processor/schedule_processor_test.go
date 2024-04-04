@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/storage"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/repository/memory"
 	bq "github.com/ottogroup/penelope/pkg/service/bigquery"
@@ -434,6 +435,10 @@ func (t *testBigQueryClient) HasTablePartitions(c context.Context, project strin
 	return t.fDoesTableHasPartitions, nil
 }
 
+func (t *testBigQueryClient) GetDatasetDetails(ctxIn context.Context, datasetId string) (*bigquery.DatasetMetadata, error) {
+	panic("implement me")
+}
+
 type stubGcsClient struct {
 	fDeleteObjectsErr error
 }
@@ -487,6 +492,10 @@ func (*stubGcsClient) DeleteBucket(c context.Context, bucket string) error {
 }
 
 func (*stubGcsClient) ReadObject(c context.Context, bucketName, objectName string) ([]byte, error) {
+	panic("implement me")
+}
+
+func (*stubGcsClient) GetBucketDetails(ctxIn context.Context, bucket string) (*storage.BucketAttrs, error) {
 	panic("implement me")
 }
 

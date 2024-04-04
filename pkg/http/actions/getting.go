@@ -52,7 +52,7 @@ func (dl *GettingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		request.Page.Number = i
 	}
 
-	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForGetting)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, dl.processorBuilder.ProcessorForGetting)
 }
 
 func BadRequestResponse(w http.ResponseWriter, r *http.Request) {

@@ -69,7 +69,11 @@ func (l datasetListingProcessor) Process(ctxIn context.Context, args *Argument[r
 		return requestobjects.DatasetListResponse{}, errors.Wrap(err, "GetDatasets failed")
 	}
 	var datasetListResponse = requestobjects.DatasetListResponse{}
-	datasetListResponse.Datasets = dataSets
+	if dataSets != nil {
+		datasetListResponse.Datasets = dataSets
+	} else {
+		datasetListResponse.Datasets = []string{}
+	}
 
 	return datasetListResponse, err
 }

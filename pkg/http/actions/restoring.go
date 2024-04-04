@@ -33,5 +33,5 @@ func (rb *RestoringBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	request.BackupID = backupID
 	request.JobIDForTimestamp = r.URL.Query().Get("jobIDForTimestamp")
 
-	handleRequestByProcessor(ctx, w, r, request, rb.processorBuilder.ProcessorForRestoring)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, rb.processorBuilder.ProcessorForRestoring)
 }

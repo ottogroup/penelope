@@ -39,7 +39,7 @@ func (dl *CalculateBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForCalclating)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, dl.processorBuilder.ProcessorForCalclating)
 }
 
 func validateCancelRequest(w http.ResponseWriter, request requestobjects.CalculateRequest, body string) bool {

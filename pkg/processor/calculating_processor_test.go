@@ -88,6 +88,10 @@ func (t *testBillingClient) PricePerMonth(skuid string) (float64, error) {
 	return 0.017618, nil
 }
 
+func (t *testBillingClient) PricePerGB(skuID string) (float64, error) {
+	return 0, nil
+}
+
 type contextBigQueryCalculator struct {
 	BigQuery testBigQueryClient
 	Billing  testBillingClient

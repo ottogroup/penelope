@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
@@ -68,6 +69,12 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 	var request requestobjects.UpdateRequest = args.Request
 	backup, err := c.BackupRepository.GetBackup(ctx, request.BackupID)
 	if err != nil {
+		if err == pg.ErrNoRows {
+			return requestobjects.UpdateResponse{}, requestobjects.ApiError{
+				Code:    404,
+				Message: fmt.Sprintf("no backup with id %q found", request.BackupID),
+			}
+		}
 		return requestobjects.UpdateResponse{}, fmt.Errorf("backup with id %s not found: %s", request.BackupID, err)
 	}
 

@@ -38,5 +38,5 @@ func (dl *UpdateBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	handleRequestByProcessor(ctx, w, r, request, dl.processorBuilder.ProcessorForUpdating)
+	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, dl.processorBuilder.ProcessorForUpdating)
 }

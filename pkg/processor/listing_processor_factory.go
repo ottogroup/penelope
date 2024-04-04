@@ -67,6 +67,10 @@ func (l listingProcessor) Process(ctxIn context.Context, args *Argument[requesto
 		}
 	}
 
+	if filteredBackups == nil {
+		filteredBackups = []requestobjects.BackupResponse{}
+	}
+
 	return requestobjects.ListingResponse{
 		Backups: filteredBackups,
 	}, nil

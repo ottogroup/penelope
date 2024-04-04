@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
@@ -61,6 +62,12 @@ func (l restoringProcessor) Process(ctxIn context.Context, args *Argument[reques
 
 	backup, err := l.BackupRepository.GetBackup(ctx, request.BackupID)
 	if err != nil {
+		if err == pg.ErrNoRows {
+			return requestobjects.RestoreResponse{}, requestobjects.ApiError{
+				Code:    404,
+				Message: fmt.Sprintf("no backup with id %q found", request.BackupID),
+			}
+		}
 		return requestobjects.RestoreResponse{}, errors.Wrapf(err, "get backup failed %s", request.BackupID)
 	}
 	jobs, err := l.JobRepository.GetBackupRestoreJobs(ctx, backup.ID, request.JobIDForTimestamp)
