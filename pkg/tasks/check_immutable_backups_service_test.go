@@ -14,57 +14,37 @@ func TestCheckImmutableBackupsService_Run_Unsafe(t *testing.T) {
 	httpMockHandler.Start()
 	defer httpMockHandler.Stop()
 
-	httpMockHandler.Register(mock.ListPoliciesUnsafeHTTPMock)
+	httpMockHandler.Register(mock.ListPoliciesUnsafeHTTPMock, mock.ListServiceUsageHTTPMock)
 
 	ctx := context.Background()
-	backupRepository := &memory.BackupRepository{}
+	complianceRepository := &memory.ComplianceRepository{
+		SinkProjects: []string{"test-example-unsafe"},
+		InMemory:     []*repository.SinkComplianceCheck{},
+	}
 	impersonatedTokenConfigProvider := provider.NewDefaultImpersonatedTokenConfigProvider()
-	service := &checkImmutableBackupsService{
-		backupRepository:    backupRepository,
-		tokenSourceProvider: impersonatedTokenConfigProvider,
-	}
-
-	backup := &repository.Backup{
-		ID:              testBackupID,
-		Status:          repository.NotStarted,
-		Type:            repository.BigQuery,
-		SnapshotOptions: repository.SnapshotOptions{},
-		SinkOptions: repository.SinkOptions{
-			TargetProject: "test-example-unsafe",
-		},
-	}
-	_, _ = backupRepository.AddBackup(ctx, backup)
+	service, err := newSinkProjectComplianceCheckService(complianceRepository, impersonatedTokenConfigProvider)
+	assert.NoError(t, err)
 
 	service.Run(ctx)
-	assert.False(t, backup.SinkIsImmutable, "target sink should be unsafe: %s", backup.TargetProject)
+	assert.Len(t, complianceRepository.InMemory, 1, "should have one sink compliance check")
+	assert.False(t, complianceRepository.InMemory[0].SingleWriter, "target sink should be safe: %s", complianceRepository.InMemory[0].ProjectSink)
 }
 
 func TestCheckImmutableBackupsService_Run_Safe(t *testing.T) {
 	httpMockHandler.Start()
 	defer httpMockHandler.Stop()
 
-	httpMockHandler.Register(mock.ListPoliciesSafeHTTPMock)
+	httpMockHandler.Register(mock.ListPoliciesSafeHTTPMock, mock.ListServiceUsageHTTPMock)
 
 	ctx := context.Background()
-	backupRepository := &memory.BackupRepository{}
+	complianceRepository := &memory.ComplianceRepository{
+		SinkProjects: []string{"test-example-safe"},
+	}
 	impersonatedTokenConfigProvider := provider.NewDefaultImpersonatedTokenConfigProvider()
-	service := &checkImmutableBackupsService{
-		backupRepository:    backupRepository,
-		tokenSourceProvider: impersonatedTokenConfigProvider,
-	}
-
-	backup := &repository.Backup{
-		ID:              testBackupID,
-		Status:          repository.NotStarted,
-		Type:            repository.BigQuery,
-		SnapshotOptions: repository.SnapshotOptions{},
-		SinkOptions: repository.SinkOptions{
-			TargetProject: "test-example-safe",
-		},
-	}
-
-	_, _ = backupRepository.AddBackup(ctx, backup)
+	service, err := newSinkProjectComplianceCheckService(complianceRepository, impersonatedTokenConfigProvider)
+	assert.NoError(t, err)
 
 	service.Run(ctx)
-	assert.True(t, backup.SinkIsImmutable, "target sink should be safe: %s", backup.TargetProject)
+	assert.Len(t, complianceRepository.InMemory, 1, "should have one sink compliance check")
+	assert.True(t, complianceRepository.InMemory[0].SingleWriter, "target sink should be safe: %s", complianceRepository.InMemory[0].ProjectSink)
 }

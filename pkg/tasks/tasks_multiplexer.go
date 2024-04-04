@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"go.opencensus.io/trace"
 )
@@ -24,8 +25,8 @@ const (
 	PrepareBackupJobs = "prepare_backup_jobs"
 	// CheckJobsStuck is handled by task that prepares check Jobs that are running to long
 	CheckJobsStuck = "check_jobs_stuck"
-	// CheckImmutableBackups is handled by task that checks if backups are still immutable
-	CheckImmutableBackups = "check_immutable_backups"
+	// CheckSinkProjectCompliance is handled by task that checks if backups are still immutable
+	CheckSinkProjectCompliance = "check_sink_project_compliance"
 )
 
 // TaskRunner runs tasks
@@ -41,53 +42,67 @@ func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProj
 
 	glog.Infof("Running task for action %s", task)
 
+	complianceRepository, err := repository.NewComplianceRepository(ctx, credentialsProvider)
+	if err != nil {
+		glog.Errorf("could not instantiate new ComplianceRepository: %s", err)
+		return
+	}
+
 	switch task {
 	case RunNewJobs:
 		service, err := newJobScheduleService(ctx, tokenSourceProvider, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new JobScheduleService: %s", err)
+			return
 		}
 		service.Run(ctx)
 	case CheckJobsStatus:
 		service, err := newJobStatusService(ctx, tokenSourceProvider, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new JobStatusService: %s", err)
+			return
 		}
 		service.Run(ctx)
 	case CheckOneShotBackupsStatus:
 		service, err := newOneShotBackupStatusService(ctx, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new BackupStatusService: %s", err)
+			return
 		}
 		service.Run(ctx)
 	case CleanupExpiredSinks:
 		service, err := newCleanupExpiredSinkService(ctx, tokenSourceProvider, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new CleanupBackupService: %s", err)
+			return
 		}
 		service.Run(ctx)
 	case PrepareBackupJobs:
 		service, err := newPrepareBackupJobsService(ctx, tokenSourceProvider, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new PrepareBackupJobsService: %s", err)
+			return
 		}
 		service.Run(ctx)
 	case CheckJobsStuck:
 		service, err := newJobsStuckService(ctx, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new JobStuckService: %s", err)
+			return
 		}
 		service.Run(ctx)
 	case RescheduleJobsWithQuotaError:
 		service, err := newRescheduleJobsWithQuotaError(ctx, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new RescheduleJobsWithQuotaErrorService: %s", err)
+			return
 		}
 		service.Run(ctx)
-	case CheckImmutableBackups:
-		service, err := newCheckImmutableBackupsService(ctx, tokenSourceProvider, credentialsProvider)
+	case CheckSinkProjectCompliance:
+		service, err := newSinkProjectComplianceCheckService(complianceRepository, tokenSourceProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new RescheduleJobsWithQuotaErrorService: %s", err)
+			return
 		}
 		service.Run(ctx)
 	default:

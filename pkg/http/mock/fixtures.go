@@ -58,6 +58,8 @@ var (
 
 	ListPoliciesUnsafeHTTPMock = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-unsafe/denypolicies", emptyListPoliciesResultResponse)
 	ListPoliciesSafeHTTPMock   = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-safe/denypolicies", listPoliciesResultResponse)
+
+	ListServiceUsageHTTPMock = NewMockedHTTPRequest("GET", "projects/.*/services", listServiceUsageOkResponse)
 )
 
 const (
@@ -193,6 +195,11 @@ Content-Type: application/xml; charset=UTF-8
 Content-Type: application/json; charset=UTF-8
 
 {}`
+
+	listServiceUsageOkResponse = `HTTP/1.1 200
+Content-Type: application/json; charset=UTF-8
+
+{"services": [],"nextPageToken": null}`
 
 	listPoliciesResultResponse = `HTTP/1.1 200
 Content-Type: application/json; charset=UTF-8
