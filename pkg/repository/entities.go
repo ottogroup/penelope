@@ -217,5 +217,5 @@ type SinkComplianceCheck struct {
 	ProjectSink string    `pg:"project_sink,pk"`
 	Compliant   bool      `pg:"compliant"`
 	Reasons     []string  `pg:"reasons"`
-	LastCheck   time.Time `pg:"last_check"`
+	LastCheck   time.Time `pg:"last_checked"`
 }
