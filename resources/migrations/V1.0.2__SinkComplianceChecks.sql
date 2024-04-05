@@ -1,7 +1,7 @@
 CREATE TABLE sink_compliance_checks
 (
-    project_sink  TEXT    NOT NULL PRIMARY KEY,
-    backup_only   BOOLEAN NOT NULL,
-    single_writer BOOLEAN NOT NULL,
-    last_checked  TIMESTAMP
+    project_sink TEXT    NOT NULL PRIMARY KEY,
+    compliant    BOOLEAN NOT NULL DEFAULT FALSE,
+    reasons      TEXT,
+    last_checked TIMESTAMP
 );

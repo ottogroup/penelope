@@ -7,8 +7,10 @@ import (
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opencensus.io/trace"
+	"time"
 )
 
+// sink_project_compliance_check_service
 type sinkProjectComplianceCheckService struct {
 	complianceRepository repository.ComplianceRepository
 	compliance           compliance.Compliance
@@ -32,9 +34,18 @@ func (c *sinkProjectComplianceCheckService) Run(ctxIn context.Context) {
 	}
 
 	for _, sink := range sinkProjects {
-		sinkComplianceCheck := c.compliance.CheckSinkProject(ctx, sink)
+		sinkComplianceCheck, err := c.compliance.CheckCompliance(ctx, sink)
+		if err != nil {
+			glog.Errorf("could not check compliance for sink %s: %s", sink, err)
+			continue
+		}
 
-		err = c.complianceRepository.UpsertSinkComplianceCheck(ctx, sinkComplianceCheck)
+		err = c.complianceRepository.UpsertSinkComplianceCheck(ctx, &repository.SinkComplianceCheck{
+			ProjectSink: sink,
+			Compliant:   sinkComplianceCheck.Compliant,
+			Reasons:     sinkComplianceCheck.Reasons,
+			LastCheck:   time.Time{},
+		})
 		if err != nil {
 			glog.Errorf("could not upsert target sink %s: %s", sink, err)
 		}

@@ -214,8 +214,8 @@ type SinkComplianceCheck struct {
 	//lint:ignore U1000 makes sure to have correct table name
 	tableName struct{} `pg:"sink_compliance_checks,alias:scc"`
 
-	ProjectSink  string    `pg:"project_sink,pk"`
-	BackupOnly   bool      `pg:"backup_only"`
-	SingleWriter bool      `pg:"single_writer"`
-	LastCheck    time.Time `pg:"last_check"`
+	ProjectSink string    `pg:"project_sink,pk"`
+	Compliant   bool      `pg:"compliant"`
+	Reasons     []string  `pg:"reasons"`
+	LastCheck   time.Time `pg:"last_check"`
 }

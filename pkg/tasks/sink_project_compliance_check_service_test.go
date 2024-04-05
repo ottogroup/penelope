@@ -27,7 +27,7 @@ func TestCheckImmutableBackupsService_Run_Unsafe(t *testing.T) {
 
 	service.Run(ctx)
 	assert.Len(t, complianceRepository.InMemory, 1, "should have one sink compliance check")
-	assert.False(t, complianceRepository.InMemory[0].SingleWriter, "target sink should be safe: %s", complianceRepository.InMemory[0].ProjectSink)
+	assert.False(t, complianceRepository.InMemory[0].Compliant, "target sink should be safe: %s", complianceRepository.InMemory[0].ProjectSink)
 }
 
 func TestCheckImmutableBackupsService_Run_Safe(t *testing.T) {
@@ -46,5 +46,6 @@ func TestCheckImmutableBackupsService_Run_Safe(t *testing.T) {
 
 	service.Run(ctx)
 	assert.Len(t, complianceRepository.InMemory, 1, "should have one sink compliance check")
-	assert.True(t, complianceRepository.InMemory[0].SingleWriter, "target sink should be safe: %s", complianceRepository.InMemory[0].ProjectSink)
+	assert.True(t, complianceRepository.InMemory[0].Compliant, "target sink should be safe: %s", complianceRepository.InMemory[0].ProjectSink)
+	assert.Len(t, complianceRepository.InMemory[0].Reasons, 0, "should have no reasons")
 }

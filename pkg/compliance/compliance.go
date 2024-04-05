@@ -2,48 +2,67 @@ package compliance
 
 import (
 	"context"
-	"github.com/golang/glog"
+	"errors"
+	"fmt"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
-	"github.com/ottogroup/penelope/pkg/repository"
-	"time"
 )
 
-type Check interface {
-	Check(ctx context.Context, check *repository.SinkComplianceCheck) error
+type Result struct {
+	Compliant bool
+	Reasons   []string
 }
 
+type CheckName string
+
+const (
+	singleWriter CheckName = "SingleWriter"
+	backupOnly   CheckName = "BackupOnly"
+)
+
+type CheckError struct {
+	CheckName CheckName `json:"checkName"`
+	Reason    string    `json:"reason"`
+}
+
+func (e *CheckError) Error() string {
+	return fmt.Sprintf("Compliance check failed: %s - %s", e.CheckName, e.Reason)
+}
+
+type CheckFunc func(ctxIn context.Context, sinkProject string) error
+
 type Compliance interface {
-	// CheckSinkProject runs various checks on the sink project and returns the result
-	CheckSinkProject(ctx context.Context, sinkProject string) *repository.SinkComplianceCheck
+	// CheckCompliance runs various checks on the sink project and returns the result
+	CheckCompliance(ctx context.Context, sinkProject string) (Result, error)
 }
 
 func NewCompliance(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider) Compliance {
 	return &defaultCompliance{
-		checks: []Check{
-			NewSinkProjectWithSinglerWriterCheck(tokenSourceProvider),
-			NewSinkProjectOnlyForBackupCheck(tokenSourceProvider),
+		checks: []CheckFunc{
+			NewSinkProjectWithSinglerWriterCheckFunc(tokenSourceProvider),
+			NewSinkProjectOnlyForBackupCheckFunc(tokenSourceProvider),
 		},
 	}
 }
 
 type defaultCompliance struct {
-	checks []Check
+	checks []CheckFunc
 }
 
-func (c *defaultCompliance) CheckSinkProject(ctx context.Context, sinkProject string) *repository.SinkComplianceCheck {
-	check := &repository.SinkComplianceCheck{
-		ProjectSink:  sinkProject,
-		BackupOnly:   false,
-		SingleWriter: false,
-		LastCheck:    time.Now(),
-	}
-
-	for _, checker := range c.checks {
-		err := checker.Check(ctx, check)
-		if err != nil {
-			glog.Errorf("Error checking compliance for sink %s: %s", sinkProject, err)
+func (c *defaultCompliance) CheckCompliance(ctx context.Context, sinkProject string) (Result, error) {
+	var reasons []string
+	for _, check := range c.checks {
+		if err := check(ctx, sinkProject); err != nil {
+			var checkError *CheckError
+			if errors.As(err, &checkError) {
+				reasons = append(reasons, checkError.Reason)
+			} else {
+				return Result{}, err
+			}
 		}
 	}
 
-	return check
+	return Result{
+		Compliant: len(reasons) == 0,
+		Reasons:   reasons,
+	}, nil
 }

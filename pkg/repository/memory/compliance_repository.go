@@ -19,7 +19,8 @@ func (r *ComplianceRepository) UpsertSinkComplianceCheck(_ context.Context, sink
 	for i, datum := range r.InMemory {
 		if datum.ProjectSink == sinkComplianceCheck.ProjectSink {
 			r.InMemory[i].LastCheck = sinkComplianceCheck.LastCheck
-			r.InMemory[i].BackupOnly = sinkComplianceCheck.BackupOnly
+			r.InMemory[i].Compliant = sinkComplianceCheck.Compliant
+			r.InMemory[i].Reasons = sinkComplianceCheck.Reasons
 			found = true
 			return nil
 		}
