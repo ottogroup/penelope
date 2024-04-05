@@ -48,8 +48,6 @@ type Backup struct {
 	LastScheduledTime time.Time `pg:"last_scheduled_timestamp"`
 	LastCleanupTime   time.Time `pg:"last_cleanup_timestamp"`
 
-	SinkIsImmutable bool `pg:"sink_is_immutable"`
-
 	SinkOptions
 	SnapshotOptions
 	BackupOptions
