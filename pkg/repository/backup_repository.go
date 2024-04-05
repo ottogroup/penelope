@@ -45,7 +45,6 @@ type BackupRepository interface {
 	GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*MirrorRevision, error)
 	GetBigQueryOneShotSnapshots(ctxIn context.Context, status BackupStatus) ([]*Backup, error)
 	GetScheduledBackups(context.Context, BackupType) ([]*Backup, error)
-	ListBackupSinkProjects(ctx context.Context) ([]string, error)
 }
 
 // defaultBackupRepository implements BackupRepository
@@ -64,24 +63,6 @@ func NewBackupRepository(ctxIn context.Context, credentialsProvider secret.Secre
 	}
 
 	return &defaultBackupRepository{storageService: storageService, ctx: ctx}, nil
-}
-
-func (d *defaultBackupRepository) ListBackupSinkProjects(ctx context.Context) ([]string, error) {
-	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).ListBackupSinkProjects")
-	defer span.End()
-
-	var projects []string
-	err := d.storageService.
-		DB().
-		Model(&Backup{}).
-		ColumnExpr("DISTINCT target_sink").
-		Where("audit_deleted_timestamp IS NULL").
-		Select(&projects)
-	if err != nil {
-		logQueryError("ListBackupSinkProjects", err)
-		return nil, fmt.Errorf("error during executing get backup by status statement: %s", err)
-	}
-	return projects, nil
 }
 
 // AddBackup create new backup
