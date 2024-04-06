@@ -53,7 +53,7 @@ func (r *defaultComplianceRepository) ListActiveSinkProjects(ctx context.Context
 	err := r.storageService.
 		DB().
 		Model(&Backup{}).
-		ColumnExpr("DISTINCT target_sink").
+		ColumnExpr("DISTINCT target_project").
 		Where("audit_deleted_timestamp IS NULL").
 		Select(&projects)
 	if err != nil {
