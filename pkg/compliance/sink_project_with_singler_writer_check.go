@@ -9,7 +9,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"go.opencensus.io/trace"
-	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"net/http"
@@ -33,22 +32,12 @@ func NewSinkProjectWithSinglerWriterCheckFunc(tokenSourceProvider impersonate.Ta
 
 		compliant := false
 
-		targetPrincipal, delegates, err := tokenSourceProvider.GetTargetPrincipalForProject(ctx, sinkProject)
+		targetPrincipal, _, err := tokenSourceProvider.GetTargetPrincipalForProject(ctx, sinkProject)
 		if err != nil {
 			return fmt.Errorf("could not get target principal for project %s: %s", sinkProject, err)
 		}
 
-		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
-			TargetPrincipal: targetPrincipal,
-			Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform.read-only"},
-			Delegates:       delegates,
-		})
-		if err != nil {
-			return fmt.Errorf("could not create token source: %s", err)
-		}
-
 		options := []option.ClientOption{
-			option.WithTokenSource(tokenSource),
 			option.WithHTTPClient(http.DefaultClient),
 		}
 
