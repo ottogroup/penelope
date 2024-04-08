@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import BackupCreateDialog from "@/components/BackupCreateDialog.vue";
 import BackupTable from "@/components/BackupTable.vue";
-import { ref } from "vue";
-import { useNotificationsStore } from '@/stores';
+import { BackupStatus, DefaultService } from "@/models/api";
 import Notification from "@/models/notification";
-import { DefaultService } from "@/models/api";
-import BackupCreateDialog from "@/components/BackupCreateDialog.vue"
+import { useNotificationsStore } from "@/stores";
+import { ref } from "vue";
 
 const notificationsStore = useNotificationsStore();
 
@@ -21,66 +21,78 @@ const onRefreshTable = () => {
 };
 
 const onPlay = () => {
-  for(const backup of selectedItems.value) {
+  for (const backup of selectedItems.value) {
     notificationsStore.addNotification(
       new Notification({
         message: `Resuming backup ${backup}`,
         color: "info",
-      }));
-      DefaultService.patchBackups({
-        backup_id: backup,
-        status: "NotStarted",
-      }).then(() => {
+      }),
+    );
+    DefaultService.patchBackups({
+      backup_id: backup,
+      status: BackupStatus.NOT_STARTED,
+    })
+      .then(() => {
         notificationsStore.addNotification(
           new Notification({
             message: `Backup ${backup} resumed`,
             color: "success",
-          }));
-      }).catch((err) => {
+          }),
+        );
+      })
+      .catch((err) => {
         notificationsStore.handleError(err);
       });
   }
 };
 
 const onPause = () => {
-  for(const backup of selectedItems.value) {
+  for (const backup of selectedItems.value) {
     notificationsStore.addNotification(
       new Notification({
         message: `Pausing backup ${backup}`,
         color: "info",
-      }));
-      DefaultService.patchBackups({
-        backup_id: backup,
-        status: "Paused",
-      }).then(() => {
+      }),
+    );
+    DefaultService.patchBackups({
+      backup_id: backup,
+      status: BackupStatus.PAUSED,
+    })
+      .then(() => {
         notificationsStore.addNotification(
           new Notification({
             message: `Backup ${backup} paused`,
             color: "success",
-          }));
-      }).catch((err) => {
+          }),
+        );
+      })
+      .catch((err) => {
         notificationsStore.handleError(err);
       });
   }
 };
 
 const onDelete = () => {
-  for(const backup of selectedItems.value) {
+  for (const backup of selectedItems.value) {
     notificationsStore.addNotification(
       new Notification({
         message: `Deleting backup ${backup}`,
         color: "info",
-      }));
-      DefaultService.patchBackups({
-        backup_id: backup,
-        status: "ToDelete",
-      }).then(() => {
+      }),
+    );
+    DefaultService.patchBackups({
+      backup_id: backup,
+      status: BackupStatus.TO_DELETE,
+    })
+      .then(() => {
         notificationsStore.addNotification(
           new Notification({
             message: `Backup ${backup} deleted`,
             color: "success",
-          }));
-      }).catch((err) => {
+          }),
+        );
+      })
+      .catch((err) => {
         notificationsStore.handleError(err);
       });
   }

@@ -25,7 +25,11 @@ export default class Principal {
 
   getProjects(): string[] {
     if (this.isValid()) {
-      return Array.from(new Set(this._principal.RoleBindings?.filter((rb) => rb.Project).map((roleBinding) => roleBinding.Project!))) || [];
+      return (
+        Array.from(
+          new Set(this._principal.RoleBindings?.filter((rb) => rb.Project).map((roleBinding) => roleBinding.Project!)),
+        ) || []
+      );
     }
 
     return [];

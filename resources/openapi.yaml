@@ -347,7 +347,7 @@ components:
             type: object
             properties:
               Role: 
-                type: string
+                $ref: '#/components/schemas/Role'
               Project:
                 type: string
     Backup:
@@ -356,9 +356,9 @@ components:
         id:
           type: string
         type:
-          type: string
+          $ref: '#/components/schemas/BackupType'
         strategy:
-          type: string
+          $ref: '#/components/schemas/BackupStrategy'
         project:
           type: string
         target:
@@ -372,7 +372,7 @@ components:
         gcs_options:
           $ref: '#/components/schemas/GCSOptions'
         status:
-          type: string
+          $ref: '#/components/schemas/BackupStatus'
         sink:
           type: string
         sink_project:
@@ -402,7 +402,7 @@ components:
         foreign_job_id:
           type: string
         status:
-          type: string
+          $ref: '#/components/schemas/JobStatus'
         source:
           type: string
         created:
@@ -486,9 +486,9 @@ components:
       type: object
       properties:
         type:
-          type: string
+          $ref: '#/components/schemas/BackupType'
         strategy:
-          type: string
+          $ref: '#/components/schemas/BackupStrategy'
         project:
           type: string
         target:
@@ -507,7 +507,7 @@ components:
         backup_id:
           type: string
         status: 
-          type: string
+          $ref: '#/components/schemas/BackupStatus'
         mirror_ttl:
           type: integer
         snapshot_ttl:
@@ -530,3 +530,40 @@ components:
           type: array
           items:
             type: string
+    BackupType:
+      type: string
+      enum:
+        - BigQuery
+        - CloudStorage
+    BackupStrategy:
+      type: string
+      enum:
+        - Snapshot
+        - Mirror
+        - Oneshot
+    BackupStatus:
+      type: string
+      enum: 
+        - NotStarted
+        - Prepared
+        - Finished
+        - Paused
+        - ToDelete
+        - BackupDeleted
+    JobStatus:
+      type: string
+      enum:
+        - NotScheduled
+        - Scheduled
+        - Pending
+        - Error
+        - FinishedOk
+        - FinishedError
+        - FinishedQuotaError
+        - JobDeleted
+    Role:
+      type: string
+      enum:
+        - none
+        - viewer
+        - owner

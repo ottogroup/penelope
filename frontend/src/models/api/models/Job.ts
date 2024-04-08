@@ -3,11 +3,13 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { JobStatus } from './JobStatus';
+
 export type Job = {
     id?: string;
     backup_id?: string;
     foreign_job_id?: string;
-    status?: string;
+    status?: JobStatus;
     source?: string;
     created?: string;
     updated?: string;

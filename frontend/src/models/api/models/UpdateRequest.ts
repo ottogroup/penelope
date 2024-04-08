@@ -3,9 +3,11 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { BackupStatus } from './BackupStatus';
+
 export type UpdateRequest = {
     backup_id?: string;
-    status?: string;
+    status?: BackupStatus;
     mirror_ttl?: number;
     snapshot_ttl?: number;
     archive_ttm?: number;
