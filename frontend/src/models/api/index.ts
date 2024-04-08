@@ -8,12 +8,17 @@ export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
 export type { Backup } from './models/Backup';
+export { BackupStatus } from './models/BackupStatus';
+export { BackupStrategy } from './models/BackupStrategy';
+export { BackupType } from './models/BackupType';
 export type { BigQueryOptions } from './models/BigQueryOptions';
 export type { CreateRequest } from './models/CreateRequest';
 export type { GCSOptions } from './models/GCSOptions';
 export type { Job } from './models/Job';
+export { JobStatus } from './models/JobStatus';
 export type { MirrorOptions } from './models/MirrorOptions';
 export type { RestoreResponse } from './models/RestoreResponse';
+export { Role } from './models/Role';
 export type { SnapshotOptions } from './models/SnapshotOptions';
 export type { TargetOptions } from './models/TargetOptions';
 export type { UpdateRequest } from './models/UpdateRequest';

@@ -3,6 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { BackupStrategy } from './BackupStrategy';
+import type { BackupType } from './BackupType';
 import type { BigQueryOptions } from './BigQueryOptions';
 import type { GCSOptions } from './GCSOptions';
 import type { MirrorOptions } from './MirrorOptions';
@@ -10,8 +12,8 @@ import type { SnapshotOptions } from './SnapshotOptions';
 import type { TargetOptions } from './TargetOptions';
 
 export type CreateRequest = {
-    type?: string;
-    strategy?: string;
+    type?: BackupType;
+    strategy?: BackupStrategy;
     project?: string;
     target?: TargetOptions;
     snapshot_options?: SnapshotOptions;

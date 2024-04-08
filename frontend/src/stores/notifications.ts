@@ -3,7 +3,7 @@ import Notification from "@/models/notification";
 import { ref, Ref } from "vue";
 import { ApiError } from "@/models/api";
 
-type genericError = { error: Error };
+type genericError = { error: { code: number, message: string} };
 const isGenericError = (err: unknown): err is genericError =>
   <genericError>err &&
   !!err &&

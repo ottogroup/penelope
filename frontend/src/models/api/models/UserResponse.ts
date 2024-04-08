@@ -3,12 +3,14 @@
 /* tslint:disable */
 /* eslint-disable */
 
+import type { Role } from './Role';
+
 export type UserResponse = {
     User?: {
         Email?: string;
     };
     RoleBindings?: Array<{
-        Role?: string;
+        Role?: Role;
         Project?: string;
     }>;
 };

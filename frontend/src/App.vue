@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import logo from "@/assets/penelope_32.png";
 import Sandbox from "@/views/Sandbox.vue";
-import {  ref } from "vue";
+import { ref } from "vue";
+
 import { usePrincipalStore } from "./stores";
 
 const principalStore = usePrincipalStore();
 
-const title = ref("")
+const title = ref("");
 if (import.meta.env.VITE_ENV !== "prod") {
   title.value = `${import.meta.env.VITE_APP_TITLE} (${import.meta.env.VITE_ENV})`;
 } else {
@@ -30,7 +31,13 @@ document.title = title.value;
       <template #append>
         <v-tooltip text="Documentation" location="bottom">
           <template #activator="{ props }">
-            <v-btn v-bind="props" href="https://github.com/ottogroup/penelope/wiki" target="_blank" icon="mdi-school-outline" class="mr-2" />
+            <v-btn
+              v-bind="props"
+              href="https://github.com/ottogroup/penelope/wiki"
+              target="_blank"
+              icon="mdi-school-outline"
+              class="mr-2"
+            />
           </template>
         </v-tooltip>
         {{ principalStore.principal.getEmail() }}
