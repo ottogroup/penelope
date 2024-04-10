@@ -166,6 +166,6 @@ func (c *backupEncryptionCheck) Check(ctx context.Context, request requestobject
 	return requestobjects.ComplianceCheck{
 		Field:       "request.Project",
 		Passed:      true, // Google Cloud Storage Buckets are encrypted by default
-		Description: "Backup and source project should be different",
+		Description: "Backup should be encrypted",
 	}, nil
 }
