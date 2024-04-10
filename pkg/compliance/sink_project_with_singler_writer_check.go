@@ -11,7 +11,6 @@ import (
 	"go.opencensus.io/trace"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"net/http"
 	"strings"
 )
 
@@ -37,9 +36,7 @@ func NewSinkProjectWithSinglerWriterCheckFunc(tokenSourceProvider impersonate.Ta
 			return fmt.Errorf("could not get target principal for project %s: %s", sinkProject, err)
 		}
 
-		options := []option.ClientOption{
-			option.WithHTTPClient(http.DefaultClient),
-		}
+		options := []option.ClientOption{}
 
 		policiesClient, err := iam.NewPoliciesRESTClient(ctx, options...)
 		if err != nil {

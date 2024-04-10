@@ -50,13 +50,13 @@ func NewSinkProjectOnlyForBackupCheckFunc(tokenSourceProvider impersonate.Target
 		project := fmt.Sprintf("projects/%s", sinkProject)
 		listServicesResponse, err := service.Services.List(project).Do()
 		if err != nil {
-			return err
+			return fmt.Errorf("could not list services for project %s: %s", sinkProject, err)
 		}
 
 		var enabledServices []string
 		for _, s := range listServicesResponse.Services {
-			if s.State != "ENABLED" {
-				return fmt.Errorf("project %s has enabled services", sinkProject)
+			if s.State == "ENABLED" {
+				enabledServices = append(enabledServices, s.Name)
 			}
 		}
 
