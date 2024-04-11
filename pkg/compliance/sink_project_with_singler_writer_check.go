@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/golang/glog"
+	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"go.opencensus.io/trace"
 	gimpersonate "google.golang.org/api/impersonate"
@@ -49,7 +50,10 @@ func NewSinkProjectWithSinglerWriterCheckFunc(tokenSourceProvider impersonate.Ta
 
 		options := []option.ClientOption{
 			option.WithTokenSource(tokenSource),
-			option.WithHTTPClient(http.DefaultClient),
+		}
+
+		if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
+			options = append(options, option.WithHTTPClient(http.DefaultClient))
 		}
 
 		policiesClient, err := iam.NewPoliciesRESTClient(ctx, options...)
