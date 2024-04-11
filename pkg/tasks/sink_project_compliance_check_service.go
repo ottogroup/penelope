@@ -50,4 +50,6 @@ func (c *sinkProjectComplianceCheckService) Run(ctxIn context.Context) {
 			glog.Errorf("could not upsert target sink %s: %s", sink, err)
 		}
 	}
+
+	glog.Infof("Finished checking compliance for sink projects")
 }

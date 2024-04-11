@@ -74,7 +74,7 @@ func NewSinkProjectOnlyForBackupCheckFunc(tokenSourceProvider impersonate.Target
 		if len(invalidServices) > 0 {
 			return &CheckError{
 				CheckName: backupOnly,
-				Reason:    fmt.Sprintf("project %s has invalid services enabled: [%v]", sinkProject, strings.Join(invalidServices, ", ")),
+				Reason:    fmt.Sprintf("project %s has invalid services enabled: %s", sinkProject, strings.Join(invalidServices, ", ")),
 			}
 		}
 
