@@ -31,7 +31,7 @@ func NewSinkProjectOnlyForBackupCheckFunc(tokenSourceProvider impersonate.Target
 
 		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
 			TargetPrincipal: targetPrincipal,
-			Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+			Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform.read-only"},
 			Delegates:       delegates,
 		})
 		if err != nil {

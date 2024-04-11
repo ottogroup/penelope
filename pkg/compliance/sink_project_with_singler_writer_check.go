@@ -41,7 +41,7 @@ func NewSinkProjectWithSinglerWriterCheckFunc(tokenSourceProvider impersonate.Ta
 
 		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
 			TargetPrincipal: targetPrincipal,
-			Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform.read-only"},
+			Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
 			Delegates:       delegates,
 		})
 		if err != nil {
