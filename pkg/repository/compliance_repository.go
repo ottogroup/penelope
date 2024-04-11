@@ -8,6 +8,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
 	"go.opencensus.io/trace"
+	"time"
 )
 
 type ComplianceRepository interface {
@@ -54,6 +55,8 @@ func (r *defaultComplianceRepository) GetSinkComplianceCheck(ctx context.Context
 func (r *defaultComplianceRepository) UpsertSinkComplianceCheck(ctx context.Context, sinkComplianceCheck *SinkComplianceCheck) error {
 	_, span := trace.StartSpan(ctx, "(*defaultComplianceRepository).UpsertSinkComplianceCheck")
 	defer span.End()
+
+	sinkComplianceCheck.LastCheck = time.Now()
 
 	_, err := r.storageService.
 		DB().
