@@ -25,4 +25,4 @@ cron:
       schedule: every 1 minutes
   -   description: "check compliance of sink project"
       url: /api/tasks/check_sink_project_compliance
-      schedule: every 10 minutes from 00:12 to 23:52
+      schedule: every 60 minutes from 00:12 to 23:52
