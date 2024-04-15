@@ -23,8 +23,6 @@ import (
 	loggingpb "google.golang.org/genproto/googleapis/logging/v2"
 )
 
-const defaultAPIScope = "https://www.googleapis.com/auth/logging.read"
-
 // DefaultLoggingClient represent logging client
 type DefaultLoggingClient struct {
 	client          *logging.Client

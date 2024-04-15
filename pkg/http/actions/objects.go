@@ -4,24 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"reflect"
-	"time"
-
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/auth/model"
 	"github.com/ottogroup/penelope/pkg/processor"
-	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
+	"net/http"
 )
-
-func formatTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.Format(time.RFC3339)
-}
 
 func checkRequestBodyIsValid(w http.ResponseWriter, err error) bool {
 	if err != nil {
@@ -41,15 +30,6 @@ func getPrincipalOrElsePrepareFailedResponse(w http.ResponseWriter, r *http.Requ
 		return nil, false
 	}
 	return principal, true
-}
-
-func checkBackupIsFound(w http.ResponseWriter, backup *repository.Backup, backupID string) bool {
-	if backup == nil || reflect.ValueOf(backup).IsNil() {
-		logMsg := fmt.Sprintf("no backup with id %q found", backupID)
-		prepareResponse(w, logMsg, logMsg, http.StatusNotFound)
-		return false
-	}
-	return true
 }
 
 func checkParsingBodyIsValid(w http.ResponseWriter, err error, body string) bool {

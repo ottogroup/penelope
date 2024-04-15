@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
-	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"go.opencensus.io/trace"
 )
@@ -41,12 +40,6 @@ func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProj
 	defer span.End()
 
 	glog.Infof("Running task for action %s", task)
-
-	complianceRepository, err := repository.NewComplianceRepository(ctx, credentialsProvider)
-	if err != nil {
-		glog.Errorf("could not instantiate new ComplianceRepository: %s", err)
-		return
-	}
 
 	switch task {
 	case RunNewJobs:
@@ -93,13 +86,6 @@ func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProj
 		service.Run(ctx)
 	case RescheduleJobsWithQuotaError:
 		service, err := newRescheduleJobsWithQuotaError(ctx, credentialsProvider)
-		if err != nil {
-			glog.Errorf("could not instantiate new RescheduleJobsWithQuotaErrorService: %s", err)
-			return
-		}
-		service.Run(ctx)
-	case CheckSinkProjectCompliance:
-		service, err := newSinkProjectComplianceCheckService(complianceRepository, tokenSourceProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new RescheduleJobsWithQuotaErrorService: %s", err)
 			return

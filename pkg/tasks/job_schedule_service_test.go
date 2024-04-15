@@ -628,15 +628,6 @@ func dropSourceMetadata(backupID string) error {
 	return err
 }
 
-var cloudStorageTransferGetResponse404Tpl = `{
-  "error": {
-    "code": 404,
-    "message": "Getting the transfer job transferJobs/0123456789012345678 encountered error: NOT_FOUND",
-    "status": "NOT_FOUND"
-  }
-}
-`
-
 var cloudStorageGetResponseTpl = `{
   "name": "{{ .TransferJobID }}",
   "description": "Job to transfer oghub-acme-b-d:demo_deleteme to oghub-acme-backup:bkp_gcs_1290eef2-b3cf-4609-84e0-13ad4c523d1b. Triggered by BackupApp in project oghub-backup",
