@@ -1,5 +1,7 @@
 package requestobjects
 
+import "time"
+
 // Page is used for a subset selection
 type Page struct {
 	Size   int
@@ -232,4 +234,18 @@ type RegionsListResponse struct {
 // StorageClassListResponse response for a storage class list request
 type StorageClassListResponse struct {
 	StorageClasses []string `json:"storage_classes"`
+}
+
+type ProjectSinkComplianceCheck struct {
+	Project   string    `json:"project"`
+	Compliant bool      `json:"compliant"`
+	Reasons   []string  `json:"reasons"`
+	LastCheck time.Time `json:"last_check"`
+}
+
+type ProjectSinkComplianceRequest struct {
+}
+
+type ProjectSinkComplianceResponse struct {
+	Checks []ProjectSinkComplianceCheck `json:"checks"`
 }

@@ -55,6 +55,11 @@ var (
 	TablePartitionResultHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/queries", getTablePartitionsQueryResponse)
 	// ExtractJobResultOkHTTPMock request
 	ExtractJobResultOkHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/jobs/.*", getExtractJobResultOkResponse)
+
+	ListPoliciesUnsafeHTTPMock = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-unsafe/denypolicies", emptyListPoliciesResultResponse)
+	ListPoliciesSafeHTTPMock   = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-safe/denypolicies", listPoliciesResultResponse)
+
+	ListServiceUsageHTTPMock = NewMockedHTTPRequest("GET", "projects/.*/services", listServiceUsageOkResponse)
 )
 
 const (
@@ -186,6 +191,39 @@ Content-Type: application/json; charset=UTF-8
 Content-Type: application/xml; charset=UTF-8
 
 `
+	emptyListPoliciesResultResponse = `HTTP/1.1 200
+Content-Type: application/json; charset=UTF-8
+
+{}`
+
+	listServiceUsageOkResponse = `HTTP/1.1 200
+Content-Type: application/json; charset=UTF-8
+
+{"services": [],"nextPageToken": null}`
+
+	listPoliciesResultResponse = `HTTP/1.1 200
+Content-Type: application/json; charset=UTF-8
+
+{"policies": [{
+  "displayName": "My deny policy.",
+  "rules": [
+    {
+      "denyRule": {
+        "deniedPrincipals": [
+          "principalSet://goog/public:all"
+        ],
+        "deniedPermissions": [
+          "storage.googleapis.com/objects.update",
+          "storage.googleapis.com/objects.delete",
+          "storage.googleapis.com/objects.create"
+        ],
+        "exceptionPrincipals": [
+          "principal://iam.googleapis.com/projects/-/serviceAccounts/target-sa@example.de"
+        ]
+      }
+    }
+  ]
+}]}`
 )
 
 func SimpleResponseBodyFromTemplate(bodyTemplate string, values map[string]string, statusCode int) (string, error) {

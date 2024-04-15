@@ -1,9 +1,13 @@
 package processor
 
 import (
+	iam "cloud.google.com/go/iam/apiv2"
+	"cloud.google.com/go/iam/apiv2/iampb"
 	"context"
+	"errors"
 	"fmt"
-
+	"github.com/golang/glog"
+	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/auth"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/provider"
@@ -12,6 +16,12 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
+	gimpersonate "google.golang.org/api/impersonate"
+	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
+	"google.golang.org/api/serviceusage/v1"
+	"net/http"
+	"strings"
 )
 
 type ComplianceProcessorFactory interface {
@@ -45,6 +55,14 @@ func (c complianceProcessorFactory) CreateProcessor(ctxIn context.Context) (Oper
 			&backupEncryptionCheck{},
 			&backupProjectCheck{
 				backupProvider: c.backupProvider,
+			},
+			&backupOnlySinkProjectCheck{
+				tokenSourceProvider: c.tokenSourceProvider,
+				backupProvider:      c.backupProvider,
+			},
+			&backupWithSingleWriterCheck{
+				backupProvider:      c.backupProvider,
+				tokenSourceProvider: c.tokenSourceProvider,
 			},
 		},
 	}, nil
@@ -168,4 +186,229 @@ func (c *backupEncryptionCheck) Check(ctx context.Context, request requestobject
 		Passed:      true, // Google Cloud Storage Buckets are encrypted by default
 		Description: "Backup should be encrypted",
 	}, nil
+}
+
+var allowedServices = []string{
+	"bigquery.googleapis.com",
+	"storage.googleapis.com",
+	"storagetransfer.googleapis.com",
+}
+
+type backupOnlySinkProjectCheck struct {
+	backupProvider      provider.SinkGCPProjectProvider
+	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
+}
+
+func (c *backupOnlySinkProjectCheck) Check(ctx context.Context, request requestobjects.ComplianceRequest) (requestobjects.ComplianceCheck, error) {
+	targetProject, err := c.backupProvider.GetSinkGCPProjectID(ctx, request.Project)
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, err
+	}
+
+	targetPrincipal, delegates, err := c.tokenSourceProvider.GetTargetPrincipalForProject(ctx, targetProject)
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, fmt.Errorf("could not get target principal for project %s: %s", targetProject, err)
+	}
+
+	tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+		TargetPrincipal: targetPrincipal,
+		Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform.read-only"},
+		Delegates:       delegates,
+	})
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, fmt.Errorf("could not create token source: %s", err)
+	}
+
+	options := []option.ClientOption{
+		option.WithTokenSource(tokenSource),
+	}
+
+	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
+		options = append(options, option.WithHTTPClient(http.DefaultClient))
+	}
+
+	service, err := serviceusage.NewService(ctx, options...)
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, err
+	}
+
+	project := fmt.Sprintf("projects/%s", targetProject)
+	listServicesResponse, err := service.Services.List(project).Do()
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, fmt.Errorf("could not list services for project %s: %s", targetProject, err)
+	}
+
+	var enabledServices []string
+	for _, s := range listServicesResponse.Services {
+		if s.State == "ENABLED" {
+			enabledServices = append(enabledServices, s.Name)
+		}
+	}
+
+	var invalidServices []string
+	for _, enabledService := range enabledServices {
+		if !contains(allowedServices, enabledService) {
+			invalidServices = append(invalidServices, enabledService)
+		}
+	}
+
+	if len(invalidServices) > 0 {
+		return requestobjects.ComplianceCheck{
+			Field:       "request.Target",
+			Passed:      false,
+			Description: "Backup project should have only allowed services enabled",
+		}, nil
+	}
+
+	return requestobjects.ComplianceCheck{
+		Field:       "request.Target",
+		Passed:      true,
+		Description: "Backup project is only used as sink project",
+	}, nil
+}
+
+func contains(services []string, service string) bool {
+	for _, s := range services {
+		if s == service {
+			return true
+		}
+	}
+	return false
+}
+
+type backupWithSingleWriterCheck struct {
+	backupProvider      provider.SinkGCPProjectProvider
+	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
+}
+
+func (c *backupWithSingleWriterCheck) Check(ctx context.Context, request requestobjects.ComplianceRequest) (requestobjects.ComplianceCheck, error) {
+	targetProject, err := c.backupProvider.GetSinkGCPProjectID(ctx, request.Project)
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, err
+	}
+
+	compliant := false
+
+	targetPrincipal, delegates, err := c.tokenSourceProvider.GetTargetPrincipalForProject(ctx, targetProject)
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, fmt.Errorf("could not get target principal for project %s: %s", targetProject, err)
+	}
+
+	tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+		TargetPrincipal: targetPrincipal,
+		Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+		Delegates:       delegates,
+	})
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, fmt.Errorf("could not create token source: %s", err)
+	}
+
+	options := []option.ClientOption{
+		option.WithTokenSource(tokenSource),
+	}
+
+	if config.UseDefaultHttpClient.GetBoolOrDefault(false) {
+		options = append(options, option.WithHTTPClient(http.DefaultClient))
+	}
+
+	policiesClient, err := iam.NewPoliciesRESTClient(ctx, options...)
+	if err != nil {
+		return requestobjects.ComplianceCheck{}, fmt.Errorf("could not create new IAM policies client: %s", err)
+	}
+
+	attachmentPoint := fmt.Sprintf("cloudresourcemanager.googleapis.com%%2Fprojects%%2F%s", targetProject)
+
+	it := policiesClient.ListPolicies(ctx, &iampb.ListPoliciesRequest{
+		Parent: fmt.Sprintf("policies/%s/denypolicies", attachmentPoint),
+	})
+
+	for {
+		policy, err := it.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			glog.Errorf("could not get next policy: %s", err)
+			break
+		}
+
+		// We need to check if deny edit permission for cloud storage is set for all principals except for the
+		// target backup service account.
+		for _, rule := range policy.Rules {
+			deniedPermissions := rule.GetDenyRule().GetDeniedPermissions()
+			deniedPrincipals := rule.GetDenyRule().GetDeniedPrincipals()
+			exceptionPrincipals := rule.GetDenyRule().GetExceptionPrincipals()
+
+			if !containsAllEditPermissions(deniedPermissions) {
+				continue
+			}
+
+			if !containsAllPrincipals(deniedPrincipals) {
+				continue
+			}
+
+			if !containsOnlyBackupServiceAccountAsException(targetPrincipal, exceptionPrincipals) {
+				continue
+			}
+
+			compliant = true
+		}
+	}
+
+	if err := policiesClient.Close(); err != nil {
+		glog.Errorf("could not close IAM policies client: %s", err)
+	}
+
+	if compliant {
+		return requestobjects.ComplianceCheck{
+			Field:       "request.Target",
+			Passed:      true,
+			Description: "Backup project has single writer",
+		}, nil
+	}
+
+	return requestobjects.ComplianceCheck{
+		Field:       "request.Target",
+		Passed:      false,
+		Description: "Backup project should have single writer",
+	}, nil
+}
+
+var cloudStorageEditPermissions = []string{
+	"storage.googleapis.com/objects.update",
+	"storage.googleapis.com/objects.delete",
+	"storage.googleapis.com/objects.create",
+}
+
+const (
+	allPrincipals = "principalSet://goog/public:all"
+)
+
+func containsOnlyBackupServiceAccountAsException(targetPrincipal string, principals []string) bool {
+	return len(principals) == 1 && strings.EqualFold(principals[0], fmt.Sprintf("principal://iam.googleapis.com/projects/-/serviceAccounts/%s", targetPrincipal))
+}
+
+func containsAllPrincipals(principals []string) bool {
+	for _, item := range principals {
+		if strings.EqualFold(item, allPrincipals) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsAllEditPermissions(permissions []string) bool {
+	for _, item := range cloudStorageEditPermissions {
+		found := false
+		for _, element := range permissions {
+			if item == element {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
