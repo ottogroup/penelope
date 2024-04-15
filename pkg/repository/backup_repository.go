@@ -18,15 +18,17 @@ type BackupFilter struct {
 
 // UpdateFields what is changing
 type UpdateFields struct {
-	BackupID       string
-	Status         BackupStatus
-	IncludePath    []string
-	ExcludePath    []string
-	Table          []string
-	ExcludedTables []string
-	MirrorTTL      uint
-	SnapshotTTL    uint
-	ArchiveTTM     uint
+	BackupID               string
+	Status                 BackupStatus
+	IncludePath            []string
+	ExcludePath            []string
+	Table                  []string
+	ExcludedTables         []string
+	MirrorTTL              uint
+	SnapshotTTL            uint
+	ArchiveTTM             uint
+	RecoveryPointObjective int
+	RecoveryTimeObjective  int
 }
 
 // BackupRepository defines operations for a Backup
@@ -201,6 +203,8 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 		SinkOptions: SinkOptions{
 			ArchiveTTM: fields.ArchiveTTM,
 		},
+		RecoveryPointObjective: fields.RecoveryPointObjective,
+		RecoveryTimeObjective:  fields.RecoveryTimeObjective,
 	}
 
 	if fields.Status.EqualTo(BackupDeleted.String()) {
@@ -217,6 +221,8 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 		"audit_deleted_timestamp",
 		"mirror_lifetime_in_days",
 		"archive_ttm",
+		"recovery_point_objective",
+		"recovery_time_objective",
 	}
 
 	if fields.Status != "" {

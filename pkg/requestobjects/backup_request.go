@@ -2,6 +2,20 @@ package requestobjects
 
 import "time"
 
+type AvailabilityClass string
+
+const (
+	A0Invalid    AvailabilityClass = ""
+	A1Irrelevant AvailabilityClass = "A1"
+	A2Aimed      AvailabilityClass = "A2"
+	A3Guaranteed AvailabilityClass = "A3"
+	A4Resilient  AvailabilityClass = "A4"
+)
+
+func (AvailabilityClass) ValidValues() []AvailabilityClass {
+	return []AvailabilityClass{A1Irrelevant, A2Aimed, A3Guaranteed, A4Resilient}
+}
+
 // Page is used for a subset selection
 type Page struct {
 	Size   int
@@ -35,11 +49,13 @@ type RestoreRequest struct {
 
 // UpdateRequest change backup
 type UpdateRequest struct {
-	BackupID    string `json:"backup_id"`
-	Status      string `json:"status,omitempty"`
-	MirrorTTL   uint   `json:"mirror_ttl,omitempty"`
-	SnapshotTTL uint   `json:"snapshot_ttl,omitempty"`
-	ArchiveTTM  uint   `json:"archive_ttm"`
+	BackupID               string `json:"backup_id"`
+	Status                 string `json:"status,omitempty"`
+	MirrorTTL              uint   `json:"mirror_ttl,omitempty"`
+	SnapshotTTL            uint   `json:"snapshot_ttl,omitempty"`
+	ArchiveTTM             uint   `json:"archive_ttm"`
+	RecoveryPointObjective int    `json:"recovery_point_objective,omitempty"`
+	RecoveryTimeObjective  int    `json:"recovery_time_objective,omitempty"`
 	// only for GCS backups
 	IncludePath []string `json:"include_path,omitempty"`
 	ExcludePath []string `json:"exclude_path,omitempty"`
@@ -50,10 +66,12 @@ type UpdateRequest struct {
 
 // CreateRequest make a new backup
 type CreateRequest struct {
-	Type          string        `json:"type,omitempty"`
-	Strategy      string        `json:"strategy,omitempty"`
-	Project       string        `json:"project,omitempty"`
-	TargetOptions TargetOptions `json:"target,omitempty"`
+	Type                   string        `json:"type,omitempty"`
+	Strategy               string        `json:"strategy,omitempty"`
+	Project                string        `json:"project,omitempty"`
+	RecoveryPointObjective int           `json:"recovery_point_objective"`
+	RecoveryTimeObjective  int           `json:"recovery_time_objective"`
+	TargetOptions          TargetOptions `json:"target,omitempty"`
 
 	SnapshotOptions SnapshotOptions `json:"snapshot_options,omitempty"`
 	MirrorOptions   MirrorOptions   `json:"mirror_options,omitempty"`
@@ -106,9 +124,11 @@ type BackupResponse struct {
 	ID string `json:"id"`
 	CreateRequest
 
-	Status      string `json:"status"`
-	Sink        string `json:"sink"`
-	SinkProject string `json:"sink_project"`
+	Status                string            `json:"status"`
+	Sink                  string            `json:"sink"`
+	SinkProject           string            `json:"sink_project"`
+	DataOwner             string            `json:"data_owner"`
+	DataAvailabilityClass AvailabilityClass `json:"data_availability_class"`
 
 	CreatedTimestamp string `json:"created,omitempty"`
 	UpdatedTimestamp string `json:"updated,omitempty"`

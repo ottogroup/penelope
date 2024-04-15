@@ -201,6 +201,8 @@ func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, requ
 		EntityAudit: repository.EntityAudit{
 			CreatedTimestamp: time.Now(),
 		},
+		RecoveryPointObjective: request.RecoveryPointObjective,
+		RecoveryTimeObjective:  request.RecoveryTimeObjective,
 	}
 
 	return &backup, nil

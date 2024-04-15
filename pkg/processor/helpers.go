@@ -60,9 +60,11 @@ func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job) requ
 		UpdatedTimestamp: formatTime(backup.UpdatedTimestamp),
 		DeletedTimestamp: formatTime(backup.DeletedTimestamp),
 		CreateRequest: requestobjects.CreateRequest{
-			Type:     backup.Type.String(),
-			Strategy: backup.Strategy.String(),
-			Project:  backup.SourceProject,
+			Type:                   backup.Type.String(),
+			Strategy:               backup.Strategy.String(),
+			Project:                backup.SourceProject,
+			RecoveryPointObjective: backup.RecoveryPointObjective,
+			RecoveryTimeObjective:  backup.RecoveryTimeObjective,
 			TargetOptions: requestobjects.TargetOptions{
 				StorageClass: backup.StorageClass,
 				Region:       backup.Region,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Backup, BackupStrategy, DefaultService, UpdateRequest } from "@/models/api";
-import { BackupType } from "@/models/api/models/BackupType";
+import {Backup, BackupStrategy, DefaultService, UpdateRequest} from "@/models/api";
+import {BackupType} from "@/models/api/models/BackupType";
 import Notification from "@/models/notification";
-import { useNotificationsStore } from "@/stores";
-import { ref, watch } from "vue";
+import {useNotificationsStore} from "@/stores";
+import {ref, watch} from "vue";
 
 const notificationsStore = useNotificationsStore();
 
@@ -28,6 +28,8 @@ const backup = ref<Backup>({
     archive_ttm: 0,
   },
   snapshot_options: {},
+  recovery_point_objective: 0,
+  recovery_time_objective: 0,
 });
 
 const isValid = ref(false);
@@ -55,13 +57,15 @@ const saveBackup = () => {
   isLoading.value = true;
   const req: UpdateRequest = {
     backup_id: props.id!,
-    mirror_ttl: backup.value.snapshot_options?.lifetime_in_days,
-    snapshot_ttl: backup.value.snapshot_options?.lifetime_in_days,
-    archive_ttm: backup.value.target?.archive_ttm,
+    mirror_ttl: Number(backup.value.snapshot_options?.lifetime_in_days),
+    snapshot_ttl: Number(backup.value.snapshot_options?.lifetime_in_days),
+    archive_ttm: Number(backup.value.target?.archive_ttm),
     include_path: backup.value.gcs_options?.include_prefixes,
     exclude_path: backup.value.gcs_options?.exclude_prefixes,
     table: backup.value.bigquery_options?.table,
     excluded_tables: backup.value.bigquery_options?.excluded_tables,
+    recovery_point_objective: Number(backup.value.recovery_point_objective),
+    recovery_time_objective: Number(backup.value.recovery_time_objective),
   };
 
   DefaultService.patchBackups(req)
@@ -78,6 +82,10 @@ const saveBackup = () => {
     .finally(() => {
       isLoading.value = false;
     });
+};
+
+const integerRequiredRule = (fieldName: string) => {
+  return (v: number) => (!!v && v > 0) || `${fieldName} is required and must be bigger than 0`;
 };
 
 watch(
@@ -97,6 +105,20 @@ watch(
           <v-row>
             <v-col>
               <h3>Source</h3>
+              <v-text-field
+                label="Recovery point objective (hours)"
+                type="number"
+                hint="Minimal frequency a backup must be conducted."
+                v-model="backup!.recovery_point_objective"
+                :rules="[integerRequiredRule('Recovery point objective (hours)')]"
+              ></v-text-field>
+              <v-text-field
+                label="Recovery time objective (minutes)"
+                type="number"
+                hint="The recovery process time duration needed to restore data from backup storage to project/service."
+                v-model="backup!.recovery_time_objective"
+                :rules="[integerRequiredRule('Recovery time objective (minutes)')]"
+              ></v-text-field>
               <template v-if="backup?.type == BackupType.CLOUD_STORAGE">
                 <v-combobox
                   chips

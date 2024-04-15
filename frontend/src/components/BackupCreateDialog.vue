@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
-import { capitalize } from "@/helpers/filters";
-import { BackupStrategy, DefaultService } from "@/models/api";
-import { BackupType } from "@/models/api/models/BackupType";
-import { CreateRequest } from "@/models/api/models/CreateRequest";
+import {capitalize} from "@/helpers/filters";
+import {BackupStrategy, DefaultService} from "@/models/api";
+import {BackupType} from "@/models/api/models/BackupType";
+import {CreateRequest} from "@/models/api/models/CreateRequest";
 import Notification from "@/models/notification";
-import { useNotificationsStore, usePrincipalStore } from "@/stores";
-import { ref, watch } from "vue";
+import {useNotificationsStore, usePrincipalStore} from "@/stores";
+import {ref, watch} from "vue";
 
 const principalStore = usePrincipalStore();
 const notificationsStore = useNotificationsStore();
@@ -19,8 +19,8 @@ const sourceProjects = ref<string[]>([]);
 const storageClasses = ref<{ title: string; value: string }[]>([]);
 const storageRegions = ref<string[]>([]);
 const backupTypes = ref([
-  { title: "Cloud Storage", value: BackupType.CLOUD_STORAGE },
-  { title: "BigQuery", value: BackupType.BIG_QUERY },
+  {title: "Cloud Storage", value: BackupType.CLOUD_STORAGE},
+  {title: "BigQuery", value: BackupType.BIG_QUERY},
 ]);
 const strategies = ref(Object.values(BackupStrategy));
 
@@ -107,6 +107,8 @@ const updateSourceFields = () => {
 const apiRequestBody = () => {
   const req: CreateRequest = {
     project: request.value.project,
+    recovery_point_objective: Number(request.value.recovery_point_objective),
+    recovery_time_objective: Number(request.value.recovery_time_objective),
     type: request.value.type,
     strategy: request.value.strategy,
     target: request.value.target,
@@ -156,6 +158,10 @@ const requiredRule = (fieldName: string) => {
   return (v: string) => (!!v && v.length > 0) || `${fieldName} is required`;
 };
 
+const integerRequiredRule = (fieldName: string) => {
+  return (v: number) => (!!v && v > 0) || `${fieldName} is required and must be bigger than 0`;
+};
+
 watch(
   () => model.value,
   (value) => {
@@ -188,6 +194,20 @@ watch(
                 @update:model-value="updateSourceFields()"
                 :rules="[requiredRule('Backup type')]"
               ></v-select>
+              <v-text-field
+                label="Recovery point objective (hours)"
+                type="number"
+                hint="Minimal frequency a backup must be conducted."
+                v-model="request.recovery_point_objective"
+                :rules="[integerRequiredRule('Recovery point objective (hours)')]"
+              ></v-text-field>
+              <v-text-field
+                label="Recovery time objective (minutes)"
+                type="number"
+                hint="The recovery process time duration needed to restore data from backup storage to project/service."
+                :rules="[integerRequiredRule('Recovery time objective (minutes)')]"
+                v-model="request.recovery_time_objective"
+              ></v-text-field>
               <template v-if="request.type == BackupType.CLOUD_STORAGE">
                 <v-select
                   label="Bucket name*"
@@ -307,10 +327,10 @@ watch(
         </v-form>
         <v-row>
           <v-col>
-            <PricePrediction :backup="evalutingBackup" />
+            <PricePrediction :backup="evalutingBackup"/>
           </v-col>
           <v-col>
-            <ComplianceCheck :backup="evalutingBackup" />
+            <ComplianceCheck :backup="evalutingBackup"/>
           </v-col>
         </v-row>
       </v-card-text>

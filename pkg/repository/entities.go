@@ -39,9 +39,11 @@ type Backup struct {
 	//lint:ignore U1000 makes sure to have correct table name
 	tableName struct{} `pg:"backups,alias:b"`
 
-	ID     string       `pg:"id,pk"`
-	Status BackupStatus `pg:"status"`
-	Type   BackupType   `pg:"type"`
+	ID                     string       `pg:"id,pk"`
+	Status                 BackupStatus `pg:"status"`
+	Type                   BackupType   `pg:"type"`
+	RecoveryPointObjective int          `pg:"recovery_point_objective"`
+	RecoveryTimeObjective  int          `pg:"recovery_time_objective"`
 
 	Strategy          Strategy
 	SourceProject     string    `pg:"project"`

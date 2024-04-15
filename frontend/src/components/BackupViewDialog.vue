@@ -153,6 +153,22 @@ watch(
                   <td>{{ backup?.type }}</td>
                 </tr>
                 <tr>
+                  <td>Data owner:</td>
+                  <td>{{ backup?.data_owner || "n/a"}}</td>
+                </tr>
+                <tr>
+                  <td>Data availability class:</td>
+                  <td>{{ backup?.data_availability_class || "n/a"}}</td>
+                </tr>
+                <tr>
+                  <td>Recovery Point Objective (hours):</td>
+                  <td>{{ backup?.recovery_point_objective || "n/a"}}</td>
+                </tr>
+                <tr>
+                  <td>Recovery Time Objective (minutes):</td>
+                  <td>{{ backup?.recovery_time_objective || "n/a"}}</td>
+                </tr>
+                <tr>
                   <td>Source:</td>
                   <td>
                     <template v-if="backup?.type === BackupType.BIG_QUERY">

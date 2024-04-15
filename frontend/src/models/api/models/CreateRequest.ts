@@ -8,6 +8,8 @@ import type { BackupType } from './BackupType';
 import type { BigQueryOptions } from './BigQueryOptions';
 import type { GCSOptions } from './GCSOptions';
 import type { MirrorOptions } from './MirrorOptions';
+import type { RecoveryPointObjective } from './RecoveryPointObjective';
+import type { RecoveryTimeObjective } from './RecoveryTimeObjective';
 import type { SnapshotOptions } from './SnapshotOptions';
 import type { TargetOptions } from './TargetOptions';
 
@@ -20,5 +22,7 @@ export type CreateRequest = {
     mirror_options?: MirrorOptions;
     bigquery_options?: BigQueryOptions;
     gcs_options?: GCSOptions;
+    recovery_point_objective?: RecoveryPointObjective;
+    recovery_time_objective?: RecoveryTimeObjective;
 };
 
