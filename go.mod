@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/monitoring v1.18.1
 	cloud.google.com/go/storage v1.40.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
-	github.com/aws/aws-sdk-go v1.51.15
+	github.com/aws/aws-sdk-go v1.51.21
 	github.com/go-pg/pg/extra/pgdebug v0.2.0
 	github.com/go-pg/pg/v10 v10.12.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
