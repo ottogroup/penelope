@@ -10,6 +10,16 @@ type ComplianceRepository struct {
 	InMemory     []*repository.SinkComplianceCheck
 }
 
+func (r *ComplianceRepository) GetSinkComplianceCheck(ctx context.Context, projectSink string) (*repository.SinkComplianceCheck, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *ComplianceRepository) ListSinkProjectsComplianceChecks(ctx context.Context) ([]repository.SinkComplianceCheck, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (r *ComplianceRepository) ListActiveSinkProjects(_ context.Context) ([]string, error) {
 	return r.SinkProjects, nil
 }
