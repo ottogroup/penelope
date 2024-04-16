@@ -1,6 +1,9 @@
 package requestobjects
 
-import "time"
+import (
+	"github.com/ottogroup/penelope/pkg/provider"
+	"time"
+)
 
 type AvailabilityClass string
 
@@ -124,11 +127,11 @@ type BackupResponse struct {
 	ID string `json:"id"`
 	CreateRequest
 
-	Status                string            `json:"status"`
-	Sink                  string            `json:"sink"`
-	SinkProject           string            `json:"sink_project"`
-	DataOwner             string            `json:"data_owner"`
-	DataAvailabilityClass AvailabilityClass `json:"data_availability_class"`
+	Status                string                     `json:"status"`
+	Sink                  string                     `json:"sink"`
+	SinkProject           string                     `json:"sink_project"`
+	DataOwner             string                     `json:"data_owner"`
+	DataAvailabilityClass provider.AvailabilityClass `json:"data_availability_class"`
 
 	CreatedTimestamp string `json:"created,omitempty"`
 	UpdatedTimestamp string `json:"updated,omitempty"`
@@ -205,7 +208,7 @@ type ComplianceResponse struct {
 	Checks []ComplianceCheck `json:"checks"`
 }
 
-// ComplianceResponse response for a ComplianceRequest request
+// ComplianceCheck response for a ComplianceRequest request
 type ComplianceCheck struct {
 	Field       string `json:"field"`
 	Passed      bool   `json:"passed"`
@@ -240,6 +243,16 @@ type BucketListRequest struct {
 // BucketListResponse response for a BucketListRequest request
 type BucketListResponse struct {
 	Buckets []string `json:"buckets"`
+}
+
+// SourceProjectGetRequest request source project get
+type SourceProjectGetRequest struct {
+	Project string `json:"project"`
+}
+
+// SourceProjectGetResponse response for a SourceProjectGetRequest request
+type SourceProjectGetResponse struct {
+	provider.SourceGCPProject
 }
 
 // EmptyRequest request without any parameters

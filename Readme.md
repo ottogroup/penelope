@@ -21,6 +21,8 @@
     - [Default](#default-2)
   - [Principal Provider](#principal-provider)
     - [Default](#default-3)
+  - [Source Project Provider](#source-project-provider)
+    - [Default](#default-4)
 - [Internal Data Model and Backup Mechanics](#internal-data-model-and-backup-mechanics)
     
 # Introduction
@@ -301,13 +303,40 @@ be impersonated. This is done by setting the `DEFAULT_PROVIDER_IMPERSONATE_GOOGL
 
 ## Principal Provider
 
-The final provider provides the users principal. What is meant by user principal? Lets find out
-by looking at the `Principal` data type. The Principal consist of the users email (which is a string) and a list 
-of role bindings. The role bindings, in turn, consist of project id and users role for this project. A user can have
-one of three roles for a project `None`, `Viewer` or `Owner`.  Let's take a step back and look what `PrincipalProvider` 
-actually does. It returns the users roles for each project. Why is this important? Because a user can only do a backup,
-if he is the `Owner` of a project. Without the user has no right to edit any data of the project. The `PrincipalProvider`
-interface consist of one method, which receives an email address and returns the users principal data.
+This section explains the concept of a user principal and the role of the `PrincipalProvider` interface.
+
+### User Principal:
+
+* A `Principal` data type represents a user's identity and access rights within the system.
+* It contains two components:
+  * `email`: A string representing the user's email address (unique identifier).
+  * `role_bindings`: A list of role bindings, which define a user's role within each project.
+
+### Role Binding:
+
+* A role binding associates a project ID with a user's role for that specific project.
+* Possible roles are:
+  * `None`: User has no access to the project.
+  * `Viewer`: User can view project data but cannot modify it.
+  * `Owner`: User has full access to the project, including editing and backup privileges.
+  
+### PrincipalProvider Interface:
+
+* The `PrincipalProvider interface defines a single method:
+  * `GetPrincipal(email: string) -> Principal`: This method takes a user's email address and returns their corresponding Principal data type.
+  
+### Importance of PrincipalProvider:
+
+* The `PrincipalProvider` plays a crucial role in access control.
+* By retrieving a user's principal data, the system can determine their roles for specific projects.
+* This information is critical for authorizing actions:
+  * Only `Owner` users can perform backups.
+  * Users without the appropriate role (e.g., `None` or `Viewer`) cannot edit project data.
+
+### In summary:
+
+* The Principal data type stores user identity and project access levels.
+* The PrincipalProvider interface provides access to this information for authorization purposes.
 
 
 ```go
@@ -374,6 +403,36 @@ The content can look like this.
       project: 'project-one'
     - role: viewer
       project: 'project-two'
+```
+
+## Source Project Provider
+
+source project orincipal is used to retrieve additioanl information about the source project. The `SourceGCPProjectProvider`
+represents the interface for this provider. It contains only one method, which returns the `SourceGCPProject` for a given
+project id.
+
+```go
+package provider
+
+import (
+	"context"
+)
+
+type SourceGCPProjectProvider interface {
+  GetSourceGCPProject(ctxIn context.Context, gcpProjectID string) (SourceGCPProject, error)
+}
+```
+
+### Default
+
+Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It 
+also needs the path to a `.yaml` file. Therefore `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH` needs to be set.
+The content can look like this. 
+
+```yaml
+- project: local-account
+  availability_class: A1
+  data_owner: john.doe
 ```
 
 # Internal Data Model and Backup Mechanics

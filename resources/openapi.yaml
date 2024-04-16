@@ -316,6 +316,28 @@ paths:
                       type: string
         '400':
           description: Bad Request
+  /sourceProject/{projectId}:
+    get:
+      summary: Get source project
+      parameters:
+        - in: path
+          name: projectId
+          schema:
+            type: string
+          required: true
+          description: Project ID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sourceProject:
+                    $ref: '#/components/schemas/SourceProject'
+        '400':
+          description: Bad Request
   /tasks/{task}:
     get:
       summary: Run a task
@@ -545,7 +567,7 @@ components:
         recovery_point_objective:
           $ref: '#/components/schemas/RecoveryPointObjective'
         recovery_time_objective:
-            $ref: '#/components/schemas/RecoveryTimeObjective'
+          $ref: '#/components/schemas/RecoveryTimeObjective'
     BackupType:
       type: string
       enum:
@@ -602,3 +624,10 @@ components:
     RecoveryTimeObjective:
       type: integer
       description: RTO - the recovery process time duration needed to restore data from backup storage to project/service (minutes)
+    SourceProject:
+      type: object
+      properties:
+        data_owner:
+          type: string
+        availability_class:
+          $ref: '#/components/schemas/AvailabilityClass'

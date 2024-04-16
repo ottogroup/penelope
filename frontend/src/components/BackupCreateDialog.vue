@@ -2,7 +2,7 @@
 import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
 import {capitalize} from "@/helpers/filters";
-import {BackupStrategy, DefaultService} from "@/models/api";
+import {BackupStrategy, DefaultService, SourceProject} from "@/models/api";
 import {BackupType} from "@/models/api/models/BackupType";
 import {CreateRequest} from "@/models/api/models/CreateRequest";
 import Notification from "@/models/notification";
@@ -16,6 +16,7 @@ const model = defineModel<boolean>();
 
 const isLoading = ref(true);
 const sourceProjects = ref<string[]>([]);
+const sourceProject = ref<SourceProject | undefined>(undefined);
 const storageClasses = ref<{ title: string; value: string }[]>([]);
 const storageRegions = ref<string[]>([]);
 const backupTypes = ref([
@@ -24,6 +25,7 @@ const backupTypes = ref([
 ]);
 const strategies = ref(Object.values(BackupStrategy));
 
+const loadingSourceProject = ref(false);
 const loadingBucketNames = ref(false);
 const bucketNames = ref<string[]>([]);
 const loadingDatasetNames = ref(false);
@@ -96,12 +98,27 @@ const updateDatasetNames = () => {
   }
 };
 
+function updateSourceProject() {
+  if (request.value.project) {
+    loadingSourceProject.value = true;
+    DefaultService.getSourceProject(request.value.project)
+      .then((response) => {
+        sourceProject.value = response.sourceProject;
+      })
+      .catch((err) => notificationsStore.handleError(err))
+      .finally(() => {
+        loadingSourceProject.value = false;
+      });
+  }
+}
+
 const updateSourceFields = () => {
   if (request.value.type == BackupType.CLOUD_STORAGE) {
     updateBucketNames();
   } else if (request.value.type == BackupType.BIG_QUERY) {
     updateDatasetNames();
   }
+  updateSourceProject();
 };
 
 const apiRequestBody = () => {
@@ -187,6 +204,10 @@ watch(
                 @update:model-value="updateSourceFields()"
                 :rules="[requiredRule('Project')]"
               ></v-select>
+              <v-text-field v-if="sourceProject?.data_owner" label="Data owner" v-model="sourceProject.data_owner"
+                            readonly></v-text-field>
+              <v-text-field v-if="sourceProject?.availability_class" label="Availability class" v-model="sourceProject.availability_class"
+                            readonly></v-text-field>
               <v-select
                 label="Backup type*"
                 :items="backupTypes"

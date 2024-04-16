@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"github.com/ottogroup/penelope/pkg/provider"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/golang/glog"
@@ -21,12 +22,13 @@ type GettingProcessorFactory interface {
 
 // GettingProcessorFactory create Process for Getting
 type gettingProcessorFactory struct {
-	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
-	credentialProvider  secret.SecretProvider
+	tokenSourceProvider      impersonate.TargetPrincipalForProjectProvider
+	credentialProvider       secret.SecretProvider
+	sourceGCPProjectProvider provider.SourceGCPProjectProvider
 }
 
-func NewGettingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider) GettingProcessorFactory {
-	return &gettingProcessorFactory{tokenSourceProvider, credentialProvider}
+func NewGettingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider, sourceGCPProjectProvider provider.SourceGCPProjectProvider) GettingProcessorFactory {
+	return &gettingProcessorFactory{tokenSourceProvider, credentialProvider, sourceGCPProjectProvider}
 }
 
 // CreateProcessor return instance of Operations for Getting
@@ -45,12 +47,13 @@ func (c gettingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operati
 		return &gettingProcessor{}, err
 	}
 
-	return &gettingProcessor{BackupRepository: backupRepository, JobRepository: jobRepository}, nil
+	return &gettingProcessor{BackupRepository: backupRepository, JobRepository: jobRepository, sourceGCPProjectProvider: c.sourceGCPProjectProvider}, nil
 }
 
 type gettingProcessor struct {
-	BackupRepository repository.BackupRepository
-	JobRepository    repository.JobRepository
+	BackupRepository         repository.BackupRepository
+	JobRepository            repository.JobRepository
+	sourceGCPProjectProvider provider.SourceGCPProjectProvider
 }
 
 // Process request
@@ -94,8 +97,12 @@ func (l gettingProcessor) Process(ctxIn context.Context, args *Argument[requesto
 	for _, status := range repository.JobStatutses {
 		countedJobs += jobsStats[status]
 	}
+	sourceProject, err := l.sourceGCPProjectProvider.GetSourceGCPProject(ctx, backup.SourceProject)
+	if err != nil {
+		return requestobjects.BackupResponse{}, errors.Wrapf(err, "sourceGCPProjectProvider GetSourceGCPProject failed  %s", backup.SourceProject)
+	}
 
-	res := mapBackupToResponse(backup, jobs)
+	res := mapBackupToResponse(backup, jobs, sourceProject)
 	res.JobsTotal = countedJobs
 	return res, err
 }

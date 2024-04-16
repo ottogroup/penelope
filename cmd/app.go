@@ -29,6 +29,7 @@ var envKeys = []config.EnvKey{
 
 // AppStartArguments holds the necessary arguments to start the app
 type AppStartArguments struct {
+	SourceGCPProjectProvider          provider.SourceGCPProjectProvider
 	SinkGCPProjectProvider            provider.SinkGCPProjectProvider
 	TargetPrincipalForProjectProvider impersonate.TargetPrincipalForProjectProvider
 	SecretProvider                    secret.SecretProvider
@@ -100,9 +101,9 @@ func validateEnvironmentVariables() {
 
 func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
 	return builder.NewProcessorBuilder(
-		processor.NewCreatingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
-		processor.NewGettingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
-		processor.NewListingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
+		processor.NewCreatingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider, provider.SecretProvider, provider.SourceGCPProjectProvider),
+		processor.NewGettingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider, provider.SourceGCPProjectProvider),
+		processor.NewListingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider, provider.SourceGCPProjectProvider),
 		processor.NewUpdatingProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
 		processor.NewRestoringProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
 		processor.NewCalculatingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider),

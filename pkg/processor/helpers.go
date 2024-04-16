@@ -2,6 +2,7 @@ package processor
 
 import (
 	"fmt"
+	"github.com/ottogroup/penelope/pkg/provider"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,7 +26,7 @@ func formatTime(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
 
-func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job) requestobjects.BackupResponse {
+func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job, sourceGCPProject provider.SourceGCPProject) requestobjects.BackupResponse {
 	var jobResponse []requestobjects.JobResponse
 	for _, job := range jobs {
 		var foreignJobID string
@@ -52,13 +53,15 @@ func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job) requ
 	}
 
 	return requestobjects.BackupResponse{
-		ID:               backup.ID,
-		Sink:             backup.SinkOptions.Sink,
-		Status:           status.String(),
-		SinkProject:      backup.SinkOptions.TargetProject,
-		CreatedTimestamp: formatTime(backup.CreatedTimestamp),
-		UpdatedTimestamp: formatTime(backup.UpdatedTimestamp),
-		DeletedTimestamp: formatTime(backup.DeletedTimestamp),
+		ID:                    backup.ID,
+		Sink:                  backup.SinkOptions.Sink,
+		Status:                status.String(),
+		SinkProject:           backup.SinkOptions.TargetProject,
+		CreatedTimestamp:      formatTime(backup.CreatedTimestamp),
+		UpdatedTimestamp:      formatTime(backup.UpdatedTimestamp),
+		DeletedTimestamp:      formatTime(backup.DeletedTimestamp),
+		DataOwner:             sourceGCPProject.DataOwner,
+		DataAvailabilityClass: sourceGCPProject.AvailabilityClass,
 		CreateRequest: requestobjects.CreateRequest{
 			Type:                   backup.Type.String(),
 			Strategy:               backup.Strategy.String(),

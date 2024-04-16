@@ -24,6 +24,8 @@ const (
 	DatasetListing RequestType = "DatasetListing"
 	// BucketListing - list buckets avaiable for a User
 	BucketListing RequestType = "BuckeListing"
+	// SourceProjectGet - get Source Project for given project ID
+	SourceProjectGet RequestType = "SourceProjectGet"
 )
 
 func (s RequestType) String() string {

@@ -26,16 +26,18 @@ type CreatingProcessorFactory interface {
 
 // creatingProcessorFactory create Process for Creating
 type creatingProcessorFactory struct {
-	backupProvider      provider.SinkGCPProjectProvider
-	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
-	credentialsProvider secret.SecretProvider
+	backupProvider           provider.SinkGCPProjectProvider
+	tokenSourceProvider      impersonate.TargetPrincipalForProjectProvider
+	credentialsProvider      secret.SecretProvider
+	sourceGCPProjectProvider provider.SourceGCPProjectProvider
 }
 
-func NewCreatingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) CreatingProcessorFactory {
+func NewCreatingProcessorFactory(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider, sourceGCPProjectProvider provider.SourceGCPProjectProvider) CreatingProcessorFactory {
 	return &creatingProcessorFactory{
-		backupProvider:      backupProvider,
-		tokenSourceProvider: tokenSourceProvider,
-		credentialsProvider: credentialsProvider,
+		backupProvider:           backupProvider,
+		tokenSourceProvider:      tokenSourceProvider,
+		credentialsProvider:      credentialsProvider,
+		sourceGCPProjectProvider: sourceGCPProjectProvider,
 	}
 }
 
@@ -56,18 +58,20 @@ func (c *creatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Opera
 	}
 
 	return &creatingProcessor{
-		BackupRepository:    backupRepository,
-		JobRepository:       jobRepository,
-		backupProvider:      c.backupProvider,
-		tokenSourceProvider: c.tokenSourceProvider,
+		BackupRepository:         backupRepository,
+		JobRepository:            jobRepository,
+		backupProvider:           c.backupProvider,
+		tokenSourceProvider:      c.tokenSourceProvider,
+		sourceGCPProjectProvider: c.sourceGCPProjectProvider,
 	}, nil
 }
 
 type creatingProcessor struct {
-	BackupRepository    repository.BackupRepository
-	JobRepository       repository.JobRepository
-	backupProvider      provider.SinkGCPProjectProvider
-	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
+	BackupRepository         repository.BackupRepository
+	JobRepository            repository.JobRepository
+	backupProvider           provider.SinkGCPProjectProvider
+	sourceGCPProjectProvider provider.SourceGCPProjectProvider
+	tokenSourceProvider      impersonate.TargetPrincipalForProjectProvider
 }
 
 func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.CreateRequest]) (requestobjects.BackupResponse, error) {
@@ -77,7 +81,7 @@ func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[reques
 	var request requestobjects.CreateRequest = args.Request
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.Creating, request.Project) {
-		return requestobjects.BackupResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Creating.String(), args.Principal.User.Email, request.Project)
+		return requestobjects.BackupResponse{}, fmt.Errorf("%sourceGCPProject is not allowed for user %q on project %q", requestobjects.Creating.String(), args.Principal.User.Email, request.Project)
 	}
 
 	backup, err := b.prepareBackupFromRequest(ctx, request)
@@ -103,7 +107,11 @@ func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[reques
 	if err != nil {
 		return requestobjects.BackupResponse{}, err
 	}
-	return mapBackupToResponse(processedBackup, nil), nil
+	sourceGCPProject, err := b.sourceGCPProjectProvider.GetSourceGCPProject(ctx, request.Project)
+	if err != nil {
+		return requestobjects.BackupResponse{}, err
+	}
+	return mapBackupToResponse(processedBackup, nil, sourceGCPProject), nil
 }
 
 func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, request requestobjects.CreateRequest) (*repository.Backup, error) {

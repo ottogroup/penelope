@@ -23,6 +23,7 @@ export type { RecoveryTimeObjective } from './models/RecoveryTimeObjective';
 export type { RestoreResponse } from './models/RestoreResponse';
 export { Role } from './models/Role';
 export type { SnapshotOptions } from './models/SnapshotOptions';
+export type { SourceProject } from './models/SourceProject';
 export type { TargetOptions } from './models/TargetOptions';
 export type { UpdateRequest } from './models/UpdateRequest';
 export type { UserResponse } from './models/UserResponse';

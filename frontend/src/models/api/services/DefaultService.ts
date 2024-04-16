@@ -9,6 +9,7 @@ import type { GCSOptions } from '../models/GCSOptions';
 import type { MirrorOptions } from '../models/MirrorOptions';
 import type { RestoreResponse } from '../models/RestoreResponse';
 import type { SnapshotOptions } from '../models/SnapshotOptions';
+import type { SourceProject } from '../models/SourceProject';
 import type { TargetOptions } from '../models/TargetOptions';
 import type { UpdateRequest } from '../models/UpdateRequest';
 import type { UserResponse } from '../models/UserResponse';
@@ -296,6 +297,29 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/buckets/{projectId}',
+            path: {
+                'projectId': projectId,
+            },
+            errors: {
+                400: `Bad Request`,
+            },
+        });
+    }
+
+    /**
+     * Get source project
+     * @param projectId Project ID
+     * @returns any OK
+     * @throws ApiError
+     */
+    public static getSourceProject(
+        projectId: string,
+    ): CancelablePromise<{
+        sourceProject?: SourceProject;
+    }> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/sourceProject/{projectId}',
             path: {
                 'projectId': projectId,
             },
