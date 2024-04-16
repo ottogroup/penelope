@@ -153,15 +153,17 @@ func TestDefaultBackupRepository_UpdateBackup(t *testing.T) {
 	excludedTables := []string{"table-excluded-1", "table-excluded-1"}
 
 	err = backupRepository.UpdateBackup(ctx, UpdateFields{
-		BackupID:       simpleBackupId,
-		Status:         backupStatus,
-		IncludePath:    backupIncludePath,
-		ExcludePath:    backupExcludePath,
-		Table:          table,
-		ExcludedTables: excludedTables,
-		MirrorTTL:      1000,
-		SnapshotTTL:    1001,
-		ArchiveTTM:     1002,
+		BackupID:               simpleBackupId,
+		Status:                 backupStatus,
+		IncludePath:            backupIncludePath,
+		ExcludePath:            backupExcludePath,
+		Table:                  table,
+		ExcludedTables:         excludedTables,
+		MirrorTTL:              1000,
+		SnapshotTTL:            1001,
+		ArchiveTTM:             1002,
+		RecoveryPointObjective: 23,
+		RecoveryTimeObjective:  23,
 	})
 	assert.NoError(t, err)
 
@@ -190,8 +192,10 @@ func TestDefaultBackupRepository_UpdateBackup_ToDeletedAndNotStarted(t *testing.
 	require.NoError(t, err)
 
 	err = backupRepository.UpdateBackup(ctx, UpdateFields{
-		BackupID: "simple-backup-id",
-		Status:   NotStarted,
+		BackupID:               "simple-backup-id",
+		Status:                 NotStarted,
+		RecoveryPointObjective: 23,
+		RecoveryTimeObjective:  23,
 	})
 	require.NoError(t, err)
 
@@ -200,8 +204,10 @@ func TestDefaultBackupRepository_UpdateBackup_ToDeletedAndNotStarted(t *testing.
 	assert.True(t, backup.DeletedTimestamp.IsZero())
 
 	err = backupRepository.UpdateBackup(ctx, UpdateFields{
-		BackupID: "simple-backup-id",
-		Status:   BackupDeleted,
+		BackupID:               "simple-backup-id",
+		Status:                 BackupDeleted,
+		RecoveryPointObjective: 23,
+		RecoveryTimeObjective:  23,
 	})
 	require.NoError(t, err)
 
@@ -228,15 +234,17 @@ func TestDefaultBackupRepository_UpdateBackupOnlyOneRowShouldBeAffected(t *testi
 	tables := []string{"table-one", "table-two"}
 
 	err = backupRepository.UpdateBackup(ctx, UpdateFields{
-		BackupID:       simpleBackupId,
-		Status:         backupStatus,
-		IncludePath:    backupIncludePath,
-		ExcludePath:    backupExcludePath,
-		Table:          tables,
-		ExcludedTables: nil,
-		MirrorTTL:      0,
-		SnapshotTTL:    0,
-		ArchiveTTM:     0,
+		BackupID:               simpleBackupId,
+		Status:                 backupStatus,
+		IncludePath:            backupIncludePath,
+		ExcludePath:            backupExcludePath,
+		Table:                  tables,
+		ExcludedTables:         nil,
+		MirrorTTL:              0,
+		SnapshotTTL:            0,
+		ArchiveTTM:             0,
+		RecoveryPointObjective: 23,
+		RecoveryTimeObjective:  23,
 	})
 	assert.NoError(t, err)
 
@@ -454,17 +462,19 @@ func setUpAndGetBackupRepository(t *testing.T) *defaultBackupRepository {
 
 func createBackup(id string, status BackupStatus, typ BackupType) *Backup {
 	return &Backup{
-		ID:                id,
-		Status:            status,
-		Type:              typ,
-		Strategy:          "",
-		SourceProject:     "",
-		LastScheduledTime: time.Time{},
-		LastCleanupTime:   time.Time{},
-		SinkOptions:       SinkOptions{},
-		SnapshotOptions:   SnapshotOptions{},
-		BackupOptions:     BackupOptions{},
-		EntityAudit:       EntityAudit{},
-		MirrorOptions:     MirrorOptions{},
+		ID:                     id,
+		Status:                 status,
+		Type:                   typ,
+		Strategy:               "",
+		SourceProject:          "",
+		LastScheduledTime:      time.Time{},
+		LastCleanupTime:        time.Time{},
+		SinkOptions:            SinkOptions{},
+		SnapshotOptions:        SnapshotOptions{},
+		BackupOptions:          BackupOptions{},
+		EntityAudit:            EntityAudit{},
+		MirrorOptions:          MirrorOptions{},
+		RecoveryPointObjective: 22,
+		RecoveryTimeObjective:  22,
 	}
 }

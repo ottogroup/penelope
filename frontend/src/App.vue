@@ -25,6 +25,7 @@ document.title = title.value;
             <v-img :src="logo" />
           </v-avatar>
         </router-link>
+        &nbsp;
         {{ title }}
       </template>
 

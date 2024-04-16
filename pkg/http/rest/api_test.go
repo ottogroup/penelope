@@ -21,11 +21,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createBuilder(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider) *builder.ProcessorBuilder {
+type mockSourceGCPProjectProvider struct {
+	Error             error
+	AvailabilityClass provider.AvailabilityClass
+	DataOwner         string
+}
+
+var mockSourceTokenProvider = &mockSourceGCPProjectProvider{
+	Error:             nil,
+	AvailabilityClass: provider.A2Aimed,
+	DataOwner:         "john.doe",
+}
+
+func (m *mockSourceGCPProjectProvider) GetSourceGCPProject(ctxIn context.Context, gcpProjectID string) (provider.SourceGCPProject, error) {
+	return provider.SourceGCPProject{
+		AvailabilityClass: m.AvailabilityClass,
+		DataOwner:         m.DataOwner,
+	}, m.Error
+}
+
+func createBuilder(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider, sourceGCPProjectProvider provider.SourceGCPProjectProvider) *builder.ProcessorBuilder {
 	return builder.NewProcessorBuilder(
-		processor.NewCreatingProcessorFactory(backupProvider, tokenSourceProvider, credentialProvider),
-		processor.NewGettingProcessorFactory(tokenSourceProvider, credentialProvider),
-		processor.NewListingProcessorFactory(tokenSourceProvider, credentialProvider),
+		processor.NewCreatingProcessorFactory(backupProvider, tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
+		processor.NewGettingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
+		processor.NewListingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
 		processor.NewUpdatingProcessorFactory(tokenSourceProvider, credentialProvider),
 		nil,
 		nil,
