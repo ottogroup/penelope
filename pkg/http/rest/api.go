@@ -109,6 +109,12 @@ func createEndpoints(processorBuilder *builder.ProcessorBuilder, tokenSourceProv
 			[]string{http.MethodGet},
 		),
 		newAPIEndpoint(
+			fmt.Sprintf("%s/{project_id}", sourceProjectPath),
+			true,
+			actions.NewSourceProjectHandler(processorBuilder).ServeHTTP,
+			[]string{http.MethodGet},
+		),
+		newAPIEndpoint(
 			fmt.Sprintf("%s/me", userPath),
 			true,
 			actions.NewGetUserMeHandler().ServeHTTP,

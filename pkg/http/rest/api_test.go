@@ -53,6 +53,7 @@ func createBuilder(backupProvider provider.SinkGCPProjectProvider, tokenSourcePr
 		nil,
 		nil,
 		nil,
+		nil,
 	)
 }
 
@@ -74,6 +75,7 @@ func restAPIFactoryWithStubFactory(tokenSourceProvider impersonate.TargetPrincip
 		&StubFactory[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse]{DefaultValue: requestobjects.DatasetListResponse{}},
 		&StubFactory[requestobjects.EmptyRequest, requestobjects.RegionsListResponse]{DefaultValue: requestobjects.RegionsListResponse{}},
 		&StubFactory[requestobjects.EmptyRequest, requestobjects.StorageClassListResponse]{DefaultValue: requestobjects.StorageClassListResponse{}},
+		&StubFactory[requestobjects.SourceProjectGetRequest, requestobjects.SourceProjectGetResponse]{DefaultValue: requestobjects.SourceProjectGetResponse{}},
 	), authenticationMiddleware, tokenSourceProvider, credentialProvider)
 	return httptest.NewServer(authenticationMiddleware.AddAuthentication(app.ServeHTTP))
 }

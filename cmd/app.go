@@ -112,6 +112,7 @@ func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
 		processor.NewDatasetListingProcessorFactory(provider.SinkGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
 		processor.NewConfigRegionsProcessorFactory(),
 		processor.NewConfigStorageClassesProcessorFactory(),
+		processor.NewSourceProjectGetProcessorFactory(provider.SourceGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
 	)
 }
 

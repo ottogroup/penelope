@@ -14,6 +14,7 @@ const restorePath = "restore"
 const tasksPath = "tasks"
 const userPath = "users"
 const configPath = "config"
+const sourceProjectPath = "sourceProject"
 
 // Endpoint for a HTTP requests
 type Endpoint struct {

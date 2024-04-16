@@ -46,7 +46,7 @@ func (l sourceProjectGetProcessor) Process(ctxIn context.Context, args *Argument
 	ctx, span := trace.StartSpan(ctxIn, "(sourceProjectGetProcessor).Process")
 	defer span.End()
 
-	var request *requestobjects.SourceProjectGetRequest = &args.Request
+	var request = &args.Request
 
 	sourceProject, err := l.sourceGCPProjectProvider.GetSourceGCPProject(ctx, request.Project)
 	if err != nil {
@@ -58,7 +58,7 @@ func (l sourceProjectGetProcessor) Process(ctxIn context.Context, args *Argument
 	}
 
 	var sourceProjectGetResponse = requestobjects.SourceProjectGetResponse{
-		provider.SourceGCPProject{
+		SourceProject: provider.SourceGCPProject{
 			AvailabilityClass: sourceProject.AvailabilityClass,
 			DataOwner:         sourceProject.DataOwner,
 		},

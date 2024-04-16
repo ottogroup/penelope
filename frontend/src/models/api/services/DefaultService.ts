@@ -315,7 +315,7 @@ export class DefaultService {
     public static getSourceProject(
         projectId: string,
     ): CancelablePromise<{
-        sourceProject?: SourceProject;
+        source_project?: SourceProject;
     }> {
         return __request(OpenAPI, {
             method: 'GET',

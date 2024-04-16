@@ -252,7 +252,7 @@ type SourceProjectGetRequest struct {
 
 // SourceProjectGetResponse response for a SourceProjectGetRequest request
 type SourceProjectGetResponse struct {
-	provider.SourceGCPProject
+	SourceProject provider.SourceGCPProject `json:"source_project"`
 }
 
 // EmptyRequest request without any parameters

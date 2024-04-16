@@ -334,7 +334,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  sourceProject:
+                  source_project:
                     $ref: '#/components/schemas/SourceProject'
         '400':
           description: Bad Request

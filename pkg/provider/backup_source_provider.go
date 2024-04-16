@@ -25,8 +25,8 @@ func (AvailabilityClass) ValidValues() []AvailabilityClass {
 }
 
 type SourceGCPProject struct {
-	AvailabilityClass AvailabilityClass
-	DataOwner         string
+	AvailabilityClass AvailabilityClass `json:"availability_class"`
+	DataOwner         string            `json:"data_owner"`
 }
 
 type SourceGCPProjectProvider interface {
