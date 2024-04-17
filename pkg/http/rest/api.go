@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"html"
 	"net/http"
 	"net/http/httputil"
 
@@ -173,8 +174,9 @@ func (a *API) Register() {
 func notImplementedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotImplemented)
-		if _, err := fmt.Fprintf(w, "Unkown api endpoint %s", r.URL.Path); err != nil {
-			glog.Warningf("Error writing response for %s: %s", r.URL.Path, err)
+		escapedPath := html.EscapeString(r.URL.Path)
+		if _, err := fmt.Fprintf(w, "Unkown api endpoint %s", escapedPath); err != nil {
+			glog.Warningf("Error writing response for %s: %s", escapedPath, err)
 		}
 	})
 }

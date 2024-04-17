@@ -3,6 +3,7 @@ module github.com/ottogroup/penelope
 require (
 	cloud.google.com/go v0.112.2
 	cloud.google.com/go/bigquery v1.60.0
+	cloud.google.com/go/iam v1.1.7
 	cloud.google.com/go/logging v1.9.0
 	cloud.google.com/go/monitoring v1.18.1
 	cloud.google.com/go/storage v1.40.0
@@ -24,12 +25,12 @@ require (
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/dc0d/tinykv.v4 v4.0.1
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	cloud.google.com/go/compute v1.25.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	cloud.google.com/go/iam v1.1.7 // indirect
 	cloud.google.com/go/longrunning v0.5.6 // indirect
 	cloud.google.com/go/trace v1.10.6 // indirect
 	github.com/apache/arrow/go/v14 v14.0.2 // indirect
@@ -78,7 +79,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240401170217-c3f982113cda // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	mellium.im/sasl v0.3.1 // indirect
 )
 
