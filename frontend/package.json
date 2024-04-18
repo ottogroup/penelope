@@ -15,7 +15,7 @@
     "test:unit": "vitest && vue-tsc"
   },
   "dependencies": {
-    "@fontsource/roboto": "^5.0.8",
+    "@fontsource/roboto": "^5.0.12",
     "@mdi/font": "^7.4.47",
     "core-js": "^3.29.0",
     "moment": "^2.30.1",
