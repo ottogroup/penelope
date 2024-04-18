@@ -190,6 +190,21 @@ func checkSourceOptionsAreValid(w http.ResponseWriter, request requestobjects.Cr
 
 	return true
 }
+func checkRecoveryPointsAreValid(w http.ResponseWriter, recoveryPointObjective, recoveryTimeObjective int) bool {
+	if recoveryPointObjective <= 0 {
+		logMsg := "Error recovery point objective must be greater than 0"
+		respMsg := "Recovery point objective must be greater than 0"
+		prepareResponse(w, logMsg, respMsg, http.StatusBadRequest)
+		return false
+	} else if recoveryTimeObjective <= 0 {
+		logMsg := "Error recovery time objective must be greater than 0"
+		respMsg := "Recovery time objective must be greater than 0"
+		prepareResponse(w, logMsg, respMsg, http.StatusBadRequest)
+		return false
+	}
+
+	return true
+}
 
 func validateCreateRequest(w http.ResponseWriter, request requestobjects.CreateRequest, body string) bool {
 	if !checkMandatoryFieldsAreSet(w, getUnsetMandatoryFields(request), body) {
@@ -217,6 +232,10 @@ func validateCreateRequest(w http.ResponseWriter, request requestobjects.CreateR
 	}
 
 	if !checkSourceOptionsAreValid(w, request) {
+		return false
+	}
+
+	if !checkRecoveryPointsAreValid(w, request.RecoveryPointObjective, request.RecoveryTimeObjective) {
 		return false
 	}
 	return true

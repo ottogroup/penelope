@@ -66,7 +66,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 	ctx, span := trace.StartSpan(ctxIn, "(updatingProcessor).Process")
 	defer span.End()
 
-	var request requestobjects.UpdateRequest = args.Request
+	var request = args.Request
 	backup, err := c.BackupRepository.GetBackup(ctx, request.BackupID)
 	if err != nil {
 		if err == pg.ErrNoRows {
@@ -114,15 +114,17 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 		}
 	}
 	fields := repository.UpdateFields{
-		BackupID:       request.BackupID,
-		Status:         repository.BackupStatus(request.Status),
-		IncludePath:    request.IncludePath,
-		ExcludePath:    request.ExcludePath,
-		Table:          request.Table,
-		ExcludedTables: request.ExcludedTables,
-		MirrorTTL:      request.MirrorTTL,
-		SnapshotTTL:    request.SnapshotTTL,
-		ArchiveTTM:     request.ArchiveTTM,
+		BackupID:               request.BackupID,
+		Status:                 repository.BackupStatus(request.Status),
+		IncludePath:            request.IncludePath,
+		ExcludePath:            request.ExcludePath,
+		Table:                  request.Table,
+		ExcludedTables:         request.ExcludedTables,
+		MirrorTTL:              request.MirrorTTL,
+		SnapshotTTL:            request.SnapshotTTL,
+		ArchiveTTM:             request.ArchiveTTM,
+		RecoveryPointObjective: request.RecoveryPointObjective,
+		RecoveryTimeObjective:  request.RecoveryTimeObjective,
 	}
 	err = c.BackupRepository.UpdateBackup(ctx, fields)
 

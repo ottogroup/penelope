@@ -4,6 +4,8 @@
 /* eslint-disable */
 
 import type { BackupStatus } from './BackupStatus';
+import type { RecoveryPointObjective } from './RecoveryPointObjective';
+import type { RecoveryTimeObjective } from './RecoveryTimeObjective';
 
 export type UpdateRequest = {
     backup_id?: string;
@@ -15,5 +17,7 @@ export type UpdateRequest = {
     exclude_path?: Array<string>;
     table?: Array<string>;
     excluded_tables?: Array<string>;
+    recovery_point_objective?: RecoveryPointObjective;
+    recovery_time_objective?: RecoveryTimeObjective;
 };
 

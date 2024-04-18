@@ -18,14 +18,14 @@ import (
 	"testing"
 )
 
-func restAPIFactoryWithRealFactory(t *testing.T, principalRoleBindings []model.ProjectRoleBinding, backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider) *httptest.Server {
+func restAPIFactoryWithRealFactory(t *testing.T, principalRoleBindings []model.ProjectRoleBinding, backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, sourceGCPProjectProvider provider.SourceGCPProjectProvider) *httptest.Server {
 	emptyTokenValidator := auth.NewEmptyTokenValidator()
 	authenticationMiddleware, err := auth.NewAuthenticationMiddleware(emptyTokenValidator, givenDefaultPrincipalRetrieverWithRoles(principalRoleBindings))
 	if err != nil {
 		t.Error("expected", "instance of AuthenticationMiddleware can be created", "got", fmt.Sprintf("error: %s", err))
 		os.Exit(1)
 	}
-	app := NewRestAPI(createBuilder(backupProvider, tokenSourceProvider, secret.NewEnvSecretProvider()), authenticationMiddleware, nil, secret.NewEnvSecretProvider())
+	app := NewRestAPI(createBuilder(backupProvider, tokenSourceProvider, secret.NewEnvSecretProvider(), sourceGCPProjectProvider), authenticationMiddleware, nil, secret.NewEnvSecretProvider())
 	return httptest.NewServer(authenticationMiddleware.AddAuthentication(app.ServeHTTP))
 }
 
@@ -46,7 +46,7 @@ func TestCreateSnapshotRequestOneShot(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Owner,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, tokenConfigProvider)
+	}}, mockBackupProvider, tokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 	httpMockHandler.RegisterLocalServer(s.URL)
 
@@ -61,6 +61,8 @@ func TestCreateSnapshotRequestOneShot(t *testing.T) {
 			Dataset: "demo_delete_me_backup_target",
 			Table:   []string{"bq_tables_storage_statistics"},
 		},
+		RecoveryPointObjective: 22,
+		RecoveryTimeObjective:  22,
 	}
 
 	resp, responseBody := post(t, s, buildBackupRequestPath(), body)
@@ -97,7 +99,7 @@ func TestCreateSnapshotRequest_WithTTL(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Owner,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 	httpMockHandler.RegisterLocalServer(s.URL)
 
@@ -115,6 +117,8 @@ func TestCreateSnapshotRequest_WithTTL(t *testing.T) {
 			Dataset: "demo_delete_me_backup_target",
 			Table:   []string{"bq_tables_storage_statistics"},
 		},
+		RecoveryPointObjective: 22,
+		RecoveryTimeObjective:  22,
 	}
 
 	resp, responseBody := post(t, s, buildBackupRequestPath(), body)
@@ -156,7 +160,7 @@ func TestCreateSnapshotRequestOneShot_DatasetNotExisting(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Owner,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 	httpMockHandler.RegisterLocalServer(s.URL)
 
@@ -171,6 +175,8 @@ func TestCreateSnapshotRequestOneShot_DatasetNotExisting(t *testing.T) {
 			Dataset: "unknown-dataset",
 			Table:   []string{"bq_tables_storage_statistics"},
 		},
+		RecoveryPointObjective: 22,
+		RecoveryTimeObjective:  22,
 	}
 
 	resp, _ := post(t, s, buildBackupRequestPath(), body)
@@ -198,7 +204,7 @@ func TestCreateSnapshotRequestOneShot_InsufficientPermissions(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Viewer,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 	httpMockHandler.RegisterLocalServer(s.URL)
 
@@ -213,6 +219,8 @@ func TestCreateSnapshotRequestOneShot_InsufficientPermissions(t *testing.T) {
 			Dataset: "not-allowed-dataset",
 			Table:   []string{"bq_tables_storage_statistics"},
 		},
+		RecoveryPointObjective: 22,
+		RecoveryTimeObjective:  22,
 	}
 
 	resp, _ := post(t, s, buildBackupRequestPath(), body)

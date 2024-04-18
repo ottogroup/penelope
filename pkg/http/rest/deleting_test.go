@@ -31,14 +31,16 @@ func TestDeleting_WithNonExistingBackup(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Viewer,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 
 	httpMockHandler.RegisterLocalServer(s.URL)
 
 	body := requestobjects.UpdateRequest{
-		BackupID: "NonExistingBackupID",
-		Status:   repository.ToDelete.String(),
+		BackupID:               "NonExistingBackupID",
+		Status:                 repository.ToDelete.String(),
+		RecoveryPointObjective: 23,
+		RecoveryTimeObjective:  23,
 	}
 	resp, _ := patch(t, s, buildBackupRequestPath(), body)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
@@ -75,13 +77,15 @@ func TestDeleting_WithScheduledBackup(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Owner,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 	httpMockHandler.RegisterLocalServer(s.URL)
 
 	body := requestobjects.UpdateRequest{
-		BackupID: deletingBackupID,
-		Status:   repository.ToDelete.String(),
+		BackupID:               deletingBackupID,
+		Status:                 repository.ToDelete.String(),
+		RecoveryPointObjective: 23,
+		RecoveryTimeObjective:  23,
 	}
 	resp, _ := patch(t, s, buildBackupRequestPath(), body)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -109,7 +113,7 @@ func TestDeleting_WithNotScheduledBackup(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Owner,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 	httpMockHandler.RegisterLocalServer(s.URL)
 
@@ -122,8 +126,10 @@ func TestDeleting_WithNotScheduledBackup(t *testing.T) {
 
 	defer func() { deleteBackup(deletingBackupID) }()
 	body := requestobjects.UpdateRequest{
-		BackupID: deletingBackupID,
-		Status:   repository.ToDelete.String(),
+		BackupID:               deletingBackupID,
+		Status:                 repository.ToDelete.String(),
+		RecoveryPointObjective: 23,
+		RecoveryTimeObjective:  23,
 	}
 	resp, _ := patch(t, s, buildBackupRequestPath(), body)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -135,11 +141,13 @@ func TestDeleting_WithNotScheduledBackup(t *testing.T) {
 
 func deletingBackup() *repository.Backup {
 	return &repository.Backup{
-		ID:            deletingBackupID,
-		Status:        repository.NotStarted,
-		SourceProject: defaultProjectID,
-		Strategy:      repository.Snapshot,
-		Type:          repository.BigQuery,
+		ID:                     deletingBackupID,
+		Status:                 repository.NotStarted,
+		SourceProject:          defaultProjectID,
+		Strategy:               repository.Snapshot,
+		Type:                   repository.BigQuery,
+		RecoveryPointObjective: 22,
+		RecoveryTimeObjective:  22,
 		SinkOptions: repository.SinkOptions{
 			TargetProject: "local-ability-backup",
 			Sink:          "uuid-5678-123456",

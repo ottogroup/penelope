@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"github.com/ottogroup/penelope/pkg/provider"
 
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/auth"
@@ -18,12 +19,13 @@ type ListingProcessorFactory interface {
 
 // ListingProcessorFactory create Process for Listing
 type listingProcessorFactory struct {
-	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
-	credentialsProvider secret.SecretProvider
+	tokenSourceProvider      impersonate.TargetPrincipalForProjectProvider
+	credentialsProvider      secret.SecretProvider
+	sourceGCPProjectProvider provider.SourceGCPProjectProvider
 }
 
-func NewListingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) ListingProcessorFactory {
-	return &listingProcessorFactory{tokenSourceProvider, credentialsProvider}
+func NewListingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider, sourceGCPProjectProvider provider.SourceGCPProjectProvider) ListingProcessorFactory {
+	return &listingProcessorFactory{tokenSourceProvider, credentialsProvider, sourceGCPProjectProvider}
 }
 
 // CreateProcessor return instance of Operations for Listing
@@ -37,12 +39,13 @@ func (c listingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operati
 		return &listingProcessor{}, err
 	}
 
-	return &listingProcessor{BackupRepository: backupRepository}, nil
+	return &listingProcessor{BackupRepository: backupRepository, sourceGCPProjectProvider: c.sourceGCPProjectProvider}, nil
 }
 
 type listingProcessor struct {
-	BackupRepository repository.BackupRepository
-	Context          context.Context
+	BackupRepository         repository.BackupRepository
+	Context                  context.Context
+	sourceGCPProjectProvider provider.SourceGCPProjectProvider
 }
 
 // Process request
@@ -61,7 +64,11 @@ func (l listingProcessor) Process(ctxIn context.Context, args *Argument[requesto
 	var filteredBackups []requestobjects.BackupResponse
 	for _, backup := range backups {
 		if auth.CheckRequestIsAllowed(args.Principal, requestobjects.Listing, backup.SourceProject) {
-			filteredBackups = append(filteredBackups, mapBackupToResponse(backup, nil))
+			sourceProject, err := l.sourceGCPProjectProvider.GetSourceGCPProject(ctx, backup.SourceProject)
+			if err != nil {
+				return requestobjects.ListingResponse{}, err
+			}
+			filteredBackups = append(filteredBackups, mapBackupToResponse(backup, nil, sourceProject))
 		} else {
 			glog.V(2).Infof("%s is not allowed for user %q on project %q", requestobjects.Listing.String(), args.Principal.User.Email, backup.TargetProject)
 		}

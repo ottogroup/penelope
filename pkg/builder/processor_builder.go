@@ -18,6 +18,7 @@ type ProcessorBuilder struct {
 	calculatingProcessorFactory          processor.CalculatingProcessorFactory
 	complianceProcessorFactory           processor.ComplianceProcessorFactory
 	bucketListingProcessorFactory        processor.BucketListingProcessorFactory
+	sourceProjectGetProcessorFactory     processor.SourceProjectGetProcessorFactory
 	datasetListingProcessorFactory       processor.DatasetListingProcessorFactory
 	configRegionsProcessorFactory        processor.ConfigRegionsProcessorFactory
 	configStorageClassesProcessorFactory processor.ConfigStorageClassesProcessorFactory
@@ -36,6 +37,7 @@ func NewProcessorBuilder(
 	datasetListingProcessorFactory processor.DatasetListingProcessorFactory,
 	configRegionsProcessorFactory processor.ConfigRegionsProcessorFactory,
 	configStorageClassesProcessorFactory processor.ConfigStorageClassesProcessorFactory,
+	sourceProjectGetProcessorFactory processor.SourceProjectGetProcessorFactory,
 ) *ProcessorBuilder {
 	return &ProcessorBuilder{
 		creatingProcessorFactory:             creatingProcessorFactory,
@@ -49,6 +51,7 @@ func NewProcessorBuilder(
 		datasetListingProcessorFactory:       datasetListingProcessorFactory,
 		configRegionsProcessorFactory:        configRegionsProcessorFactory,
 		configStorageClassesProcessorFactory: configStorageClassesProcessorFactory,
+		sourceProjectGetProcessorFactory:     sourceProjectGetProcessorFactory,
 	}
 }
 
@@ -87,7 +90,7 @@ func (p *ProcessorBuilder) ProcessorForRestoring(ctx context.Context) (processor
 	return p.restoringProcessorFactory.CreateProcessor(ctx)
 }
 
-func (p *ProcessorBuilder) ProcessorForCalclating(ctx context.Context) (processor.Operation[requestobjects.CalculateRequest, requestobjects.CalculatedResponse], error) {
+func (p *ProcessorBuilder) ProcessorForCalculating(ctx context.Context) (processor.Operation[requestobjects.CalculateRequest, requestobjects.CalculatedResponse], error) {
 	if p.calculatingProcessorFactory == nil {
 		return nil, errors.New("factory not found")
 	}
@@ -106,6 +109,13 @@ func (p *ProcessorBuilder) ProcessorForBucketListing(ctx context.Context) (proce
 		return nil, errors.New("factory not found")
 	}
 	return p.bucketListingProcessorFactory.CreateProcessor(ctx)
+}
+
+func (p *ProcessorBuilder) ProcessorForSourceProjectGet(ctx context.Context) (processor.Operation[requestobjects.SourceProjectGetRequest, requestobjects.SourceProjectGetResponse], error) {
+	if p.sourceProjectGetProcessorFactory == nil {
+		return nil, errors.New("factory not found")
+	}
+	return p.sourceProjectGetProcessorFactory.CreateProcessor(ctx)
 }
 
 func (p *ProcessorBuilder) ProcessorForDatasetListing(ctx context.Context) (processor.Operation[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse], error) {

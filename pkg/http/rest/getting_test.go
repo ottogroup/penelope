@@ -30,7 +30,7 @@ func TestGetting_WithUnknownResponse(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Viewer,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 
 	httpMockHandler.RegisterLocalServer(s.URL)
@@ -57,7 +57,7 @@ func TestGetting_WithKnownResponse(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Viewer,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 
 	httpMockHandler.RegisterLocalServer(s.URL)

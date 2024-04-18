@@ -37,6 +37,8 @@ func (dl *UpdateBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		prepareResponse(w, logMsg, respMsg, http.StatusBadRequest)
 		return
 	}
-
+	if !checkRecoveryPointsAreValid(w, request.RecoveryPointObjective, request.RecoveryTimeObjective) {
+		return
+	}
 	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, dl.processorBuilder.ProcessorForUpdating)
 }

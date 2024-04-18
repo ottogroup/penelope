@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
-import { capitalize } from "@/helpers/filters";
-import { BackupStrategy, DefaultService } from "@/models/api";
-import { BackupType } from "@/models/api/models/BackupType";
-import { CreateRequest } from "@/models/api/models/CreateRequest";
+import {capitalize} from "@/helpers/filters";
+import {BackupStrategy, DefaultService, SourceProject} from "@/models/api";
+import {BackupType} from "@/models/api/models/BackupType";
+import {CreateRequest} from "@/models/api/models/CreateRequest";
 import Notification from "@/models/notification";
-import { useNotificationsStore, usePrincipalStore } from "@/stores";
-import { ref, watch } from "vue";
+import {useNotificationsStore, usePrincipalStore} from "@/stores";
+import {ref, watch} from "vue";
 
 const principalStore = usePrincipalStore();
 const notificationsStore = useNotificationsStore();
@@ -16,14 +16,16 @@ const model = defineModel<boolean>();
 
 const isLoading = ref(true);
 const sourceProjects = ref<string[]>([]);
+const sourceProject = ref<SourceProject>();
 const storageClasses = ref<{ title: string; value: string }[]>([]);
 const storageRegions = ref<string[]>([]);
 const backupTypes = ref([
-  { title: "Cloud Storage", value: BackupType.CLOUD_STORAGE },
-  { title: "BigQuery", value: BackupType.BIG_QUERY },
+  {title: "Cloud Storage", value: BackupType.CLOUD_STORAGE},
+  {title: "BigQuery", value: BackupType.BIG_QUERY},
 ]);
 const strategies = ref(Object.values(BackupStrategy));
 
+const loadingSourceProject = ref(false);
 const loadingBucketNames = ref(false);
 const bucketNames = ref<string[]>([]);
 const loadingDatasetNames = ref(false);
@@ -50,20 +52,20 @@ const updateData = async () => {
   isLoading.value = true;
   sourceProjects.value = principalStore.principal.getProjects();
   Promise.all([DefaultService.getConfigRegions(), DefaultService.getConfigStorageClasses()])
-    .then(([regionResponse, storageClassResponse]) => {
-      storageClasses.value =
-        storageClassResponse.storage_classes?.map((c) => {
-          return {
-            title: capitalize(c.toLowerCase()),
-            value: c,
-          };
-        }) ?? [];
-      storageRegions.value = regionResponse.regions ?? [];
-    })
-    .catch((err) => notificationsStore.handleError(err))
-    .finally(() => {
-      isLoading.value = false;
-    });
+      .then(([regionResponse, storageClassResponse]) => {
+        storageClasses.value =
+            storageClassResponse.storage_classes?.map((c) => {
+              return {
+                title: capitalize(c.toLowerCase()),
+                value: c,
+              };
+            }) ?? [];
+        storageRegions.value = regionResponse.regions ?? [];
+      })
+      .catch((err) => notificationsStore.handleError(err))
+      .finally(() => {
+        isLoading.value = false;
+      });
 };
 
 const updateBucketNames = () => {
@@ -71,13 +73,13 @@ const updateBucketNames = () => {
   if (request.value.project) {
     loadingBucketNames.value = true;
     DefaultService.getBuckets(request.value.project)
-      .then((response) => {
-        bucketNames.value = response.buckets ?? [];
-      })
-      .catch((err) => notificationsStore.handleError(err))
-      .finally(() => {
-        loadingBucketNames.value = false;
-      });
+        .then((response) => {
+          bucketNames.value = response.buckets ?? [];
+        })
+        .catch((err) => notificationsStore.handleError(err))
+        .finally(() => {
+          loadingBucketNames.value = false;
+        });
   }
 };
 
@@ -86,15 +88,29 @@ const updateDatasetNames = () => {
   if (request.value.project) {
     loadingDatasetNames.value = true;
     DefaultService.getDatasets(request.value.project)
-      .then((response) => {
-        datasetNames.value = response.datasets ?? [];
-      })
-      .catch((err) => notificationsStore.handleError(err))
-      .finally(() => {
-        loadingDatasetNames.value = false;
-      });
+        .then((response) => {
+          datasetNames.value = response.datasets ?? [];
+        })
+        .catch((err) => notificationsStore.handleError(err))
+        .finally(() => {
+          loadingDatasetNames.value = false;
+        });
   }
 };
+
+function updateSourceProject() {
+  if (request.value.project) {
+    loadingSourceProject.value = true;
+    DefaultService.getSourceProject(request.value.project)
+        .then((response) => {
+          sourceProject.value = response.source_project ?? {};
+        })
+        .catch((err) => notificationsStore.handleError(err))
+        .finally(() => {
+          loadingSourceProject.value = false;
+        });
+  }
+}
 
 const updateSourceFields = () => {
   if (request.value.type == BackupType.CLOUD_STORAGE) {
@@ -102,11 +118,14 @@ const updateSourceFields = () => {
   } else if (request.value.type == BackupType.BIG_QUERY) {
     updateDatasetNames();
   }
+  updateSourceProject();
 };
 
 const apiRequestBody = () => {
   const req: CreateRequest = {
     project: request.value.project,
+    recovery_point_objective: Number(request.value.recovery_point_objective),
+    recovery_time_objective: Number(request.value.recovery_time_objective),
     type: request.value.type,
     strategy: request.value.strategy,
     target: request.value.target,
@@ -137,32 +156,36 @@ const saveBackup = () => {
   const req = apiRequestBody();
 
   DefaultService.postBackups(req)
-    .then(() => {
-      notificationsStore.addNotification(
-        new Notification({
-          message: "Backup created",
-          color: "success",
-        }),
-      );
-      model.value = false;
-    })
-    .catch((err) => notificationsStore.handleError(err))
-    .finally(() => {
-      isLoading.value = false;
-    });
+      .then(() => {
+        notificationsStore.addNotification(
+            new Notification({
+              message: "Backup created",
+              color: "success",
+            }),
+        );
+        model.value = false;
+      })
+      .catch((err) => notificationsStore.handleError(err))
+      .finally(() => {
+        isLoading.value = false;
+      });
 };
 
 const requiredRule = (fieldName: string) => {
   return (v: string) => (!!v && v.length > 0) || `${fieldName} is required`;
 };
 
+const integerRequiredRule = (fieldName: string) => {
+  return (v: number) => (!!v && v > 0) || `${fieldName} is required and must be bigger than 0`;
+};
+
 watch(
-  () => model.value,
-  (value) => {
-    if (value) {
-      updateData();
-    }
-  },
+    () => model.value,
+    (value) => {
+      if (value) {
+        updateData();
+      }
+    },
 );
 </script>
 
@@ -175,131 +198,152 @@ watch(
             <v-col>
               <h3>Source</h3>
               <v-select
-                label="Project*"
-                :items="sourceProjects"
-                v-model="request.project"
-                @update:model-value="updateSourceFields()"
-                :rules="[requiredRule('Project')]"
+                  label="Project*"
+                  :items="sourceProjects"
+                  v-model="request.project"
+                  @update:model-value="updateSourceFields()"
+                  :rules="[requiredRule('Project')]"
               ></v-select>
+              <v-text-field v-if="sourceProject"
+                            label="Data owner"
+                            v-model="sourceProject.data_owner"
+                            readonly></v-text-field>
+              <v-text-field v-if="sourceProject" label="Availability class"
+                            v-model="sourceProject.availability_class"
+                            readonly></v-text-field>
               <v-select
-                label="Backup type*"
-                :items="backupTypes"
-                v-model="request.type"
-                @update:model-value="updateSourceFields()"
-                :rules="[requiredRule('Backup type')]"
+                  label="Backup type*"
+                  :items="backupTypes"
+                  v-model="request.type"
+                  @update:model-value="updateSourceFields()"
+                  :rules="[requiredRule('Backup type')]"
               ></v-select>
+              <v-text-field
+                  label="Recovery point objective (hours)*"
+                  type="number"
+                  hint="Minimal frequency a backup must be conducted."
+                  v-model="request.recovery_point_objective"
+                  :rules="[integerRequiredRule('Recovery point objective (hours)')]"
+              ></v-text-field>
+              <v-text-field
+                  label="Recovery time objective (minutes)*"
+                  type="number"
+                  hint="The recovery process time duration needed to restore data from backup storage to project/service."
+                  :rules="[integerRequiredRule('Recovery time objective (minutes)')]"
+                  v-model="request.recovery_time_objective"
+              ></v-text-field>
               <template v-if="request.type == BackupType.CLOUD_STORAGE">
                 <v-select
-                  label="Bucket name*"
-                  :items="bucketNames"
-                  :loading="loadingBucketNames"
-                  v-model="request.gcs_options!.bucket"
+                    label="Bucket name*"
+                    :items="bucketNames"
+                    :loading="loadingBucketNames"
+                    v-model="request.gcs_options!.bucket"
                 ></v-select>
                 <v-combobox
-                  chips
-                  multiple
-                  clearable
-                  label="Include paths"
-                  v-model="request.gcs_options!.include_prefixes"
+                    chips
+                    multiple
+                    clearable
+                    label="Include paths"
+                    v-model="request.gcs_options!.include_prefixes"
                 ></v-combobox>
                 <v-combobox
-                  chips
-                  multiple
-                  clearable
-                  label="Exclude paths"
-                  v-model="request.gcs_options!.exclude_prefixes"
+                    chips
+                    multiple
+                    clearable
+                    label="Exclude paths"
+                    v-model="request.gcs_options!.exclude_prefixes"
                 ></v-combobox>
               </template>
               <template v-if="request.type == BackupType.BIG_QUERY">
                 <v-select
-                  label="Dataset*"
-                  :items="datasetNames"
-                  :loading="loadingDatasetNames"
-                  v-model="request.bigquery_options!.dataset"
+                    label="Dataset*"
+                    :items="datasetNames"
+                    :loading="loadingDatasetNames"
+                    v-model="request.bigquery_options!.dataset"
                 ></v-select>
                 <v-combobox
-                  chips
-                  multiple
-                  clearable
-                  label="BigQuery tables"
-                  hint="When empty will take all tables."
-                  v-model="request.bigquery_options!.table"
+                    chips
+                    multiple
+                    clearable
+                    label="BigQuery tables"
+                    hint="When empty will take all tables."
+                    v-model="request.bigquery_options!.table"
                 ></v-combobox>
                 <v-combobox
-                  chips
-                  multiple
-                  clearable
-                  label="BigQuery excluded tables"
-                  hint="When present will ignore given tables."
-                  v-model="request.bigquery_options!.excluded_tables"
+                    chips
+                    multiple
+                    clearable
+                    label="BigQuery excluded tables"
+                    hint="When present will ignore given tables."
+                    v-model="request.bigquery_options!.excluded_tables"
                 ></v-combobox>
               </template>
             </v-col>
             <v-col>
               <h3>Target</h3>
               <v-select
-                label="Storage class*"
-                :items="storageClasses"
-                hint="Bucket storage class for data"
-                v-model="request.target!.storage_class"
-                :rules="[requiredRule('Storage class')]"
+                  label="Storage class*"
+                  :items="storageClasses"
+                  hint="Bucket storage class for data"
+                  v-model="request.target!.storage_class"
+                  :rules="[requiredRule('Storage class')]"
               ></v-select>
               <v-select
-                label="Storage region*"
-                :items="storageRegions"
-                v-model="request.target!.region"
-                :rules="[requiredRule('Storage region')]"
+                  label="Storage region*"
+                  :items="storageRegions"
+                  v-model="request.target!.region"
+                  :rules="[requiredRule('Storage region')]"
               ></v-select>
               <v-select
-                label="Secondary storage region"
-                :items="storageRegions"
-                clearable
-                v-model="request.target!.dual_region"
+                  label="Secondary storage region"
+                  :items="storageRegions"
+                  clearable
+                  v-model="request.target!.dual_region"
               ></v-select>
               <v-text-field
-                label="Archive TTM"
-                type="number"
-                hint="After X days change object storage class to archive. Default is 0."
-                v-model="request.target!.archive_ttm"
+                  label="Archive TTM"
+                  type="number"
+                  hint="After X days change object storage class to archive. Default is 0."
+                  v-model="request.target!.archive_ttm"
               ></v-text-field>
             </v-col>
             <v-col>
               <h3>Details</h3>
               <v-select
-                label="Strategy*"
-                :items="strategies"
-                v-model="request.strategy"
-                hint="Snapshot: one or many shots. Mirror: hourly sync."
-                :rules="[requiredRule('Strategy')]"
+                  label="Strategy*"
+                  :items="strategies"
+                  v-model="request.strategy"
+                  hint="Snapshot: one or many shots. Mirror: hourly sync."
+                  :rules="[requiredRule('Strategy')]"
               ></v-select>
               <template v-if="request.strategy == BackupStrategy.SNAPSHOT">
                 <v-text-field
-                  label="Snapshot TTL"
-                  type="number"
-                  hint="After X days data will be deleted. Default is 0."
-                  v-model="request.snapshot_options!.lifetime_in_days"
+                    label="Snapshot TTL"
+                    type="number"
+                    hint="After X days data will be deleted. Default is 0."
+                    v-model="request.snapshot_options!.lifetime_in_days"
                 ></v-text-field>
                 <v-text-field
-                  label="Snapshot schedule"
-                  type="number"
-                  hint="Snapshot will be created every X hours at full hour"
-                  v-model="request.snapshot_options!.frequency_in_hours"
+                    label="Snapshot schedule"
+                    type="number"
+                    hint="Snapshot will be created every X hours at full hour"
+                    v-model="request.snapshot_options!.frequency_in_hours"
                 ></v-text-field>
               </template>
               <template v-if="request.strategy == 'Oneshot'">
                 <v-text-field
-                  label="Oneshot TTL"
-                  type="number"
-                  hint="After X days data will be deleted. Default is 0."
-                  v-model="request.snapshot_options!.lifetime_in_days"
+                    label="Oneshot TTL"
+                    type="number"
+                    hint="After X days data will be deleted. Default is 0."
+                    v-model="request.snapshot_options!.lifetime_in_days"
                 ></v-text-field>
               </template>
               <template v-if="request.strategy == BackupStrategy.MIRROR">
                 <v-text-field
-                  label="Mirror TTL"
-                  type="number"
-                  hint="After X days data will be deleted. Default is 0."
-                  v-model="request.snapshot_options!.lifetime_in_days"
+                    label="Mirror TTL"
+                    type="number"
+                    hint="After X days data will be deleted. Default is 0."
+                    v-model="request.snapshot_options!.lifetime_in_days"
                 ></v-text-field>
               </template>
             </v-col>
@@ -307,10 +351,10 @@ watch(
         </v-form>
         <v-row>
           <v-col>
-            <PricePrediction :backup="evalutingBackup" />
+            <PricePrediction :backup="evalutingBackup"/>
           </v-col>
           <v-col>
-            <ComplianceCheck :backup="evalutingBackup" />
+            <ComplianceCheck :backup="evalutingBackup"/>
           </v-col>
         </v-row>
       </v-card-text>

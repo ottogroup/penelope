@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"html"
 	"net/http"
 	"strconv"
 
@@ -58,6 +59,7 @@ func (dl *GettingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 func BadRequestResponse(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 	if _, err := fmt.Fprintf(w, "Unkown api endpoint %s", r.URL.Path); err != nil {
-		glog.Warningf("Error writing response for %s: %s", r.URL.Path, err)
+		escapedPath := html.EscapeString(r.URL.Path)
+		glog.Warningf("Error writing response for %s: %s", escapedPath, err)
 	}
 }

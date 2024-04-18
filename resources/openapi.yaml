@@ -156,7 +156,7 @@ paths:
                           type: string
                         period:
                           type: integer
-                        size_in_bytes: 
+                        size_in_bytes:
                           type: integer
         '400':
           description: Bad Request
@@ -316,6 +316,28 @@ paths:
                       type: string
         '400':
           description: Bad Request
+  /sourceProject/{projectId}:
+    get:
+      summary: Get source project
+      parameters:
+        - in: path
+          name: projectId
+          schema:
+            type: string
+          required: true
+          description: Project ID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  source_project:
+                    $ref: '#/components/schemas/SourceProject'
+        '400':
+          description: Bad Request
   /tasks/{task}:
     get:
       summary: Run a task
@@ -339,14 +361,14 @@ components:
         User:
           type: object
           properties:
-            Email: 
+            Email:
               type: string
         RoleBindings:
           type: array
           items:
             type: object
             properties:
-              Role: 
+              Role:
                 $ref: '#/components/schemas/Role'
               Project:
                 type: string
@@ -392,6 +414,14 @@ components:
             $ref: '#/components/schemas/Job'
         jobs_total:
           type: integer
+        data_owner:
+          type: string
+        data_availability_class:
+          $ref: '#/components/schemas/AvailabilityClass'
+        recovery_point_objective:
+          $ref: '#/components/schemas/RecoveryPointObjective'
+        recovery_time_objective:
+          $ref: '#/components/schemas/RecoveryTimeObjective'
     Job:
       type: object
       properties:
@@ -501,12 +531,16 @@ components:
           $ref: '#/components/schemas/BigQueryOptions'
         gcs_options:
           $ref: '#/components/schemas/GCSOptions'
+        recovery_point_objective:
+          $ref: '#/components/schemas/RecoveryPointObjective'
+        recovery_time_objective:
+          $ref: '#/components/schemas/RecoveryTimeObjective'
     UpdateRequest:
       type: object
       properties:
         backup_id:
           type: string
-        status: 
+        status:
           $ref: '#/components/schemas/BackupStatus'
         mirror_ttl:
           type: integer
@@ -526,10 +560,14 @@ components:
           type: array
           items:
             type: string
-        excluded_tables: 
+        excluded_tables:
           type: array
           items:
             type: string
+        recovery_point_objective:
+          $ref: '#/components/schemas/RecoveryPointObjective'
+        recovery_time_objective:
+          $ref: '#/components/schemas/RecoveryTimeObjective'
     BackupType:
       type: string
       enum:
@@ -543,7 +581,7 @@ components:
         - Oneshot
     BackupStatus:
       type: string
-      enum: 
+      enum:
         - NotStarted
         - Prepared
         - Finished
@@ -567,3 +605,29 @@ components:
         - none
         - viewer
         - owner
+    AvailabilityClass:
+      type: string
+      enum:
+        - A1
+        - A2
+        - A3
+        - A4
+      x-enum-descriptions:
+        - A1 Irrelevant - A recovery test SHOULD be conducted after changes to the backup process.
+        - A2 Aimed - A recovery test SHOULD be conducted after changes to the backup process and at least once every year.
+        - A3 Guaranteed - A recovery test MUST be conducted after changes to the backup process and at least once every six months.
+        - A4 Resilient - A recovery test MUST be conducted after changes to the backup process and at least once every three months. A recovery test SHOULD also be conducted automatically after every backup (restore and verification).
+    RecoveryPointObjective:
+      type: integer
+      format: integer
+      description: RPO - minimal frequency a backup must be conducted (hours)
+    RecoveryTimeObjective:
+      type: integer
+      description: RTO - the recovery process time duration needed to restore data from backup storage to project/service (minutes)
+    SourceProject:
+      type: object
+      properties:
+        data_owner:
+          type: string
+        availability_class:
+          $ref: '#/components/schemas/AvailabilityClass'

@@ -31,7 +31,7 @@ func TestListing_WithEmptyResponse(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Viewer,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 
 	httpMockHandler.RegisterLocalServer(s.URL)
@@ -85,7 +85,7 @@ func TestListing_WithSingleResponse(t *testing.T) {
 	s := restAPIFactoryWithRealFactory(t, []model.ProjectRoleBinding{{
 		Role:    model.Viewer,
 		Project: defaultProjectID,
-	}}, mockBackupProvider, mockTokenConfigProvider)
+	}}, mockBackupProvider, mockTokenConfigProvider, mockSourceTokenProvider)
 	defer s.Close()
 	httpMockHandler.RegisterLocalServer(s.URL)
 

@@ -29,6 +29,8 @@ const (
 	SetTestUser                                       EnvKey = "SET_TEST_USER"
 	IsProviderLocal                                   EnvKey = "IS_PROVIDER_LOCAL"
 	DefaultProviderBucketEnv                          EnvKey = "DEFAULT_PROVIDER_BUCKET"
+	DefaultProvidersCacheTTLEnv                       EnvKey = "DEFAULT_PROVIDER_CACHE_TTL" // in minutes
+	DefaultProviderGCPSourceProjectPathEnv            EnvKey = "DEFAULT_GCP_SOURCE_PROJECT_PROVIDER_FILE_PATH"
 	DefaultProviderSinkForProjectPathEnv              EnvKey = "DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH"
 	DefaultProviderPrincipalForUserPathEnv            EnvKey = "DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH"
 	DefaultProviderImpersonateGoogleServiceAccountEnv EnvKey = "DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT"
