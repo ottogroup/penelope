@@ -81,7 +81,7 @@ func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[reques
 	var request requestobjects.CreateRequest = args.Request
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.Creating, request.Project) {
-		return requestobjects.BackupResponse{}, fmt.Errorf("%sourceGCPProject is not allowed for user %q on project %q", requestobjects.Creating.String(), args.Principal.User.Email, request.Project)
+		return requestobjects.BackupResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Creating.String(), args.Principal.User.Email, request.Project)
 	}
 
 	backup, err := b.prepareBackupFromRequest(ctx, request)
