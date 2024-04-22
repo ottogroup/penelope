@@ -19,7 +19,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
 	go.opencensus.io v0.24.0
-	google.golang.org/api v0.174.0
+	google.golang.org/api v0.175.0
 	google.golang.org/genproto v0.0.0-20240415180920-8c6c420018be
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
@@ -29,8 +29,8 @@ require (
 )
 
 require (
-	cloud.google.com/go/auth v0.2.0 // indirect
-	cloud.google.com/go/auth/oauth2adapt v0.2.0 // indirect
+	cloud.google.com/go/auth v0.2.2 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.1 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/longrunning v0.5.6 // indirect
 	cloud.google.com/go/trace v1.10.6 // indirect
