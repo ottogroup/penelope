@@ -1,6 +1,9 @@
 package gcs
 
 import (
+	"cloud.google.com/go/iam"
+	resourcemanager "cloud.google.com/go/resourcemanager/apiv3"
+	"cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 	"context"
 	"fmt"
 	"io"
@@ -31,6 +34,8 @@ type CloudStorageClient interface {
 	DoesBucketExist(ctxIn context.Context, project string, bucket string) (bool, error)
 	BucketUsageInBytes(ctxIn context.Context, project string, bucket string) (float64, error)
 	CreateBucket(ctxIn context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error
+	GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error)
+	SetBucketIAMPolicy(ctxIn context.Context, bucket string, policy *iam.Policy) error
 	CreateObject(ctxIn context.Context, bucketName, objectName, content string) error
 	DeleteBucket(ctxIn context.Context, bucket string) error
 	DeleteObject(ctxIn context.Context, bucketName string, objectName string) error
@@ -50,17 +55,26 @@ type CloudStorageClientFactory interface {
 
 // defaultGcsClient defines client to interact with the GCS
 type defaultGcsClient struct {
-	client       *storage.Client
-	metricClient *monitoring.MetricClient
+	client        *storage.Client
+	metricClient  *monitoring.MetricClient
+	projectClient *resourcemanager.ProjectsClient
 }
 
-// Close terminates terminates all resources in use
+func (c *defaultGcsClient) GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error) {
+	_, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).GetProject")
+	defer span.End()
+
+	return c.projectClient.GetProject(ctxIn, &resourcemanagerpb.GetProjectRequest{Name: fmt.Sprintf("projects/%s", projectID)})
+}
+
+// Close terminates all resources in use
 func (c *defaultGcsClient) Close(ctxIn context.Context) {
 	_, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).Close")
 	defer span.End()
 
 	c.client.Close()
 	c.metricClient.Close()
+	c.projectClient.Close()
 }
 
 // NewCloudStorageClient create a new CloudStorageClient
@@ -88,6 +102,11 @@ func createCloudStorageClient(ctxIn context.Context) (CloudStorageClient, error)
 		monitoringOptions = append(monitoringOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
 	}
 
+	var projectsClientOptions = []option.ClientOption{option.WithScopes(metricAPIScope)}
+	if config.UseGrpcWithoutAuthentication.GetBoolOrDefault(false) {
+		projectsClientOptions = append(projectsClientOptions, option.WithoutAuthentication(), option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())))
+	}
+
 	client, err := storage.NewClient(ctx, storageOptions...)
 	if err != nil {
 		return &defaultGcsClient{}, fmt.Errorf("failed to create storage.Client: %v", err)
@@ -98,7 +117,12 @@ func createCloudStorageClient(ctxIn context.Context) (CloudStorageClient, error)
 		return &defaultGcsClient{}, fmt.Errorf("failed to create monitoring.MetricClient: %v", err)
 	}
 
-	return &defaultGcsClient{client: client, metricClient: metricClient}, nil
+	projectClient, err := resourcemanager.NewProjectsClient(ctx, projectsClientOptions...)
+	if err != nil {
+		return &defaultGcsClient{}, fmt.Errorf("failed to create resourcemanager.ProjectsClient: %v", err)
+	}
+
+	return &defaultGcsClient{client: client, metricClient: metricClient, projectClient: projectClient}, nil
 }
 
 func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipalProvider impersonate.TargetPrincipalForProjectProvider, targetProjectID string) (CloudStorageClient, error) {
@@ -158,7 +182,38 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 		return &defaultGcsClient{}, fmt.Errorf("failed to create monitoring.MetricClient: %v", err)
 	}
 
-	return &defaultGcsClient{client: client, metricClient: metricClient}, nil
+	var projectsClientOptions []option.ClientOption
+	if config.UseGrpcWithoutAuthentication.GetBoolOrDefault(false) {
+		projectsClientOptions = []option.ClientOption{
+			option.WithoutAuthentication(),
+			option.WithGRPCDialOption(grpc.WithTransportCredentials(insecure.NewCredentials())),
+		}
+	} else {
+		tokenSource, err := gimpersonate.CredentialsTokenSource(ctx, gimpersonate.CredentialsConfig{
+			TargetPrincipal: target,
+			Scopes:          []string{cloudPlatformAPIScope, defaultAPIScope},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		projectsClientOptions = []option.ClientOption{
+			option.WithTokenSource(tokenSource),
+		}
+	}
+	projectsClient, err := resourcemanager.NewProjectsClient(ctx, projectsClientOptions...)
+	if err != nil {
+		return &defaultGcsClient{}, fmt.Errorf("failed to create resourcemanager.NewProjectsClient: %v", err)
+	}
+
+	return &defaultGcsClient{client: client, metricClient: metricClient, projectClient: projectsClient}, nil
+}
+
+func (c *defaultGcsClient) SetBucketIAMPolicy(ctxIn context.Context, bucket string, policy *iam.Policy) error {
+	_, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).SetBucketIAMPolicy")
+	defer span.End()
+
+	return c.client.Bucket(bucket).IAM().SetPolicy(ctxIn, policy)
 }
 
 // IsInitialized check if client is initialized

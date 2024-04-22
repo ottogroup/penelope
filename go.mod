@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/iam v1.1.7
 	cloud.google.com/go/logging v1.9.0
 	cloud.google.com/go/monitoring v1.18.2
+	cloud.google.com/go/resourcemanager v1.9.6
 	cloud.google.com/go/storage v1.40.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/aws/aws-sdk-go v1.51.23

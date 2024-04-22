@@ -128,7 +128,12 @@ const apiRequestBody = () => {
     recovery_time_objective: Number(request.value.recovery_time_objective),
     type: request.value.type,
     strategy: request.value.strategy,
-    target: request.value.target,
+    target: {
+      storage_class: request.value.target?.storage_class,
+      region: request.value.target?.region,
+      dual_region: request.value.target?.dual_region,
+      archive_ttm: Number(request.value.target?.archive_ttm),
+    },
     snapshot_options: {
       lifetime_in_days: Number(request.value.snapshot_options?.lifetime_in_days),
       frequency_in_hours: Number(request.value.snapshot_options?.frequency_in_hours),

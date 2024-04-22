@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"cloud.google.com/go/iam"
 	"context"
 	"fmt"
 	"strings"
@@ -420,8 +421,29 @@ func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClien
 		}
 
 		err = cloudStorageClient.CreateBucket(ctx, backup.TargetProject, backup.Sink, backup.Region, backup.DualRegion, backup.StorageClass, lifetimeInDays, backup.ArchiveTTM)
-		if err == nil {
-			return cloudStorageClient.CreateObject(ctx, backup.Sink, fmt.Sprintf("%s/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE", backup.GetTrashcanPath()), "")
+		if err != nil {
+			return err
+		}
+		err = cloudStorageClient.CreateObject(ctx, backup.Sink, fmt.Sprintf("%s/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE", backup.GetTrashcanPath()), "")
+		if err != nil {
+			return err
+		}
+		if backup.Type != repository.CloudStorage {
+			return nil
+		}
+		project, err := cloudStorageClient.GetProject(ctx, backup.TargetProject)
+		if err != nil {
+			return err
+		}
+		projectNumber := strings.ReplaceAll(project.Name, "projects/", "")
+		bucketPolicy := &iam.Policy{}
+		// Storage Transfer Service needs to write to and read from the sink bucket
+		storageTransferGSABinding := fmt.Sprintf("serviceAccount:project-%s@storage-transfer-service.iam.gserviceaccount.com", projectNumber)
+		bucketPolicy.Add(storageTransferGSABinding, "roles/storage.legacyBucketWriter")
+		bucketPolicy.Add(storageTransferGSABinding, "roles/storage.legacyBucketReader")
+		err = cloudStorageClient.SetBucketIAMPolicy(ctx, backup.Sink, bucketPolicy)
+		if err != nil {
+			return err
 		}
 	}
 

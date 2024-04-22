@@ -30,7 +30,8 @@ var (
 	// BucketAttrsHTTPMock request
 	BucketAttrsHTTPMock = NewMockedHTTPRequest("GET", "/storage/v1/b/.*", bucketAttrsResponse)
 	// PatchBucketAttrsHTTPMock request
-	PatchBucketAttrsHTTPMock = NewMockedHTTPRequest("PATCH", "/storage/v1/b/.*", patchBucketAttrsResponse)
+	PatchBucketAttrsHTTPMock   = NewMockedHTTPRequest("PATCH", "/storage/v1/b/.*", patchBucketAttrsResponse)
+	BucketSetIAMPolicyHTTPMock = NewMockedHTTPRequest("POST", "/storage/v1/b/.*/iam", bucketSetIAMPolicy)
 	// SinkCreatedHTTPpMock request
 	SinkCreatedHTTPpMock = NewMockedHTTPRequest("POST", "/storage/v1/b", sinkCreatedResponse)
 	// SinkDeletedHTTPMock request
@@ -60,6 +61,7 @@ var (
 	ListPoliciesSafeHTTPMock   = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-safe/denypolicies", listPoliciesResultResponse)
 
 	ListServiceUsageHTTPMock = NewMockedHTTPRequest("GET", "projects/.*/services", listServiceUsageOkResponse)
+	GetPRojectHTTPMock       = NewMockedHTTPRequest("GET", "/v3/projects/.*/", getProjectOkResponse)
 )
 
 const (
@@ -200,6 +202,47 @@ Content-Type: application/json; charset=UTF-8
 Content-Type: application/json; charset=UTF-8
 
 {"services": [],"nextPageToken": null}`
+
+	getProjectOkResponse = `HTTP/1.1 200
+Content-Type: application/json; charset=UTF-8
+
+{
+  "name": "projects/00000000000",
+  "parent": "folders/00000000001",
+  "projectId": "project1",
+  "state": "ACTIVE",
+  "displayName": "project1",
+  "createTime": "2021-03-12T21:16:05.027Z",
+  "updateTime": "2023-07-05T07:58:52.363128Z",
+  "etag": "W/\"tagValue\"",
+  "labels": {
+    "env": "dev",
+    "service_owner": "owner@owner.com",
+    "team": "team1"
+  }
+}`
+	bucketSetIAMPolicy = `HTTP/1.1 200
+Content-Type: application/json; charset=UTF-8
+
+{
+  "version": 10,
+  "kind": "storage#policy",
+  "resourceId": "string",
+  "bindings": [
+    {
+      "role": "string",
+      "members": [
+        "string"
+      ]
+      "condition": {
+        "title": "string",
+        "description": "string",
+        "expression": "2023-08-13 16:08:44+02:00"
+      }
+    }
+  ],
+  "etag": "string"
+}`
 
 	listPoliciesResultResponse = `HTTP/1.1 200
 Content-Type: application/json; charset=UTF-8

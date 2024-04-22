@@ -1,38 +1,42 @@
-# Penelope - GCP Backup Solution 
+# Penelope - GCP Backup Solution
 
 - [Penelope - GCP Backup Solution](#penelope---gcp-backup-solution)
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
-  - [Migration](#migration)
-  - [Configuration](#configuration)
+    - [Migration](#migration)
+    - [Configuration](#configuration)
 - [Deploy Basic Setup](#deploy-basic-setup)
-  - [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
-  - [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
-  - [3. Step: Penelope Deployment](#3-step-penelope-deployment)
-  - [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
-  - [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
+    - [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
+    - [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
+    - [3. Step: Penelope Deployment](#3-step-penelope-deployment)
+    - [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
+    - [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
 - [Providers](#providers)
-  - [The Secret Provider](#the-secret-provider)
-    - [Default](#default)
-  - [Backup Provider](#backup-provider)
-    - [Default](#default-1)
-  - [Target Principal Provider](#target-principal-provider)
-    - [Default](#default-2)
-  - [Principal Provider](#principal-provider)
-    - [Default](#default-3)
-  - [Source Project Provider](#source-project-provider)
-    - [Default](#default-4)
+    - [The Secret Provider](#the-secret-provider)
+        - [Default](#default)
+    - [Backup Provider](#backup-provider)
+        - [Default](#default-1)
+    - [Target Principal Provider](#target-principal-provider)
+        - [Default](#default-2)
+    - [Principal Provider](#principal-provider)
+        - [Default](#default-3)
+    - [Source Project Provider](#source-project-provider)
+        - [Default](#default-4)
 - [Internal Data Model and Backup Mechanics](#internal-data-model-and-backup-mechanics)
-    
-# Introduction
-Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery 
-datasets and tables as well as from Cloud Storage buckets within Google Cloud Storage. For authentication against 
-GCP services Penelope uses Google service accounts for performing backups and it assumes that it is behind an authentication provider like [Google Identity Aware Proxy](https://cloud.google.com/iap). 
+- [Role and rights concept](#role-and-rights-concept)
 
-Penelope consists of three main components: 
+# Introduction
+
+Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery
+datasets and tables as well as from Cloud Storage buckets within Google Cloud Storage. For authentication against
+GCP services Penelope uses Google service accounts for performing backups and it assumes that it is behind an
+authentication provider like [Google Identity Aware Proxy](https://cloud.google.com/iap).
+
+Penelope consists of three main components:
+
 * A Docker image for a server written in GO providing an API with different methods to create, start, etc. backups
-* A web frontend allowing users to easily create and manage backup jobs 
+* A web frontend allowing users to easily create and manage backup jobs
 * A PostgreSQL database storing different pieces of information about backup jobs
 
 **Bellow:** Screenshot from Penelope using the form to create a new backup
@@ -46,25 +50,30 @@ Penelope consists of three main components:
 * Google Service Account
 
 Because Penelope uses the Google Cloud SDK, you first have to set up your local environment to access GCP. You need
-to create a Google service account to authenticate Penelope. See [Creating and managing service accounts](https://cloud.google.com/iam/docs/creating-managing-service-accounts)
+to create a Google service account to authenticate Penelope.
+See [Creating and managing service accounts](https://cloud.google.com/iam/docs/creating-managing-service-accounts)
 documentation for more details.
 
 # Getting Started
 
-This repository provides a starter kit to set up Penelope on your own. Penelope uses providers for different purposes, 
-for example penelope needs a credential to connect with the configured database (see environment variables). You can 
-use Penelopes basic secret provider, which uses a specific environment variable to provide a secret credential, or 
+This repository provides a starter kit to set up Penelope on your own. Penelope uses providers for different purposes,
+for example penelope needs a credential to connect with the configured database (see environment variables). You can
+use Penelopes basic secret provider, which uses a specific environment variable to provide a secret credential, or
 you can define a more advance provider, which for example fetches the credentials during runtime. Penelope needs four
 specific providers:
 
 * `SecretProvider` - containing the method *GetSecret*, which provides the database password for given user.
-* `SinkGCPProjectProvider` - containing the method *GetSinkGCPProjectID*, which provides for a given GCP project id a specific cloud storage backup sink.
-* `TargetPrincipalForProjectProvider` - contains the method *GetTargetPrincipalForProject*, which provides a target service account to be impersonated for a given project.
-* `PrincipalProvider` - contains the method *GetPrincipalForEmail*, which provides the users principal (containing the user and role bindings) for a given email address.
+* `SinkGCPProjectProvider` - containing the method *GetSinkGCPProjectID*, which provides for a given GCP project id a
+  specific cloud storage backup sink.
+* `TargetPrincipalForProjectProvider` - contains the method *GetTargetPrincipalForProject*, which provides a target
+  service account to be impersonated for a given project.
+* `PrincipalProvider` - contains the method *GetPrincipalForEmail*, which provides the users principal (containing the
+  user and role bindings) for a given email address.
 
 ## Migration
 
-Penelope uses a PostgreSQL database to store the backup state. You can find the migrations under the folder `resources/migrations/`. 
+Penelope uses a PostgreSQL database to store the backup state. You can find the migrations under the
+folder `resources/migrations/`.
 You can use [Flyway](https://flywaydb.org/) to run the migrations against your own PostgreSQL database.
 
 ## Configuration
@@ -79,6 +88,8 @@ settings. If you not provide required settings, penelope will not run.
 | `DEFAULT_PROVIDER_BUCKET`                             | required | Set the bucket for all providers                                                                                                    |
 | `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`  | required | Set the path to the `.yaml` file which contains the target backup project for `SinkGCPProjectProvider`.                             |
 | `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH`           | required | Set the path to the `.yaml` file which contains the user principal for `PrincipalProvider`.                                         |
+| `DEFAULT_GCP_SOURCE_PROJECT_PROVIDER_FILE_PATH`       | required | Set the path to the `.yaml` file which contains the user principal for `PrincSourceGCPProjectProvideripalProvider`.                 |
+| `DEFAULT_PROVIDER_CACHE_TTL`                          | required | Set  time to life (TTL) for data stored in cache by defualt providers                                                               |
 | `DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT` | required | Set default impersonated google service account for `TargetPrincipalForProjectProvider`.                                            |
 | `DEV_MODE`                                            | required | Set Penelope to run locally in dev mode any skipping user authentification.                                                         |
 | `APP_JWT_AUDIENCE`                                    | required | Set the expected audience value of the jwt token.                                                                                   |
@@ -105,27 +116,28 @@ settings. If you not provide required settings, penelope will not run.
 
 # Deploy Basic Setup
 
-This step-by-step guide will walk you through how to set up Penelope in your own Google App Engine instance. Let us start with the database migration.
+This step-by-step guide will walk you through how to set up Penelope in your own Google App Engine instance. Let us
+start with the database migration.
 
 ## 1. Step: Migration with Flyway
 
-In the following you will learn, how you can use Flyway for migration. However, feel free to use any other tool which 
+In the following you will learn, how you can use Flyway for migration. However, feel free to use any other tool which
 fits best for your use case. The migration files are in the folder `resource/migrations` as already mentioned above.
 
 ```shell script
 flyway migrate -url=jdbc:postgresql://<HOST>:<PORT>/<DB> -user=<USER> -password=<PW> -locations=filesystem:./resources/migrations
 ```
 
-Because we are going to deploy Penelope to App Engine, it maybe useful to take 
+Because we are going to deploy Penelope to App Engine, it maybe useful to take
 CloudSQL into consideration. You can use Cloud SQL Proxy to connect with your instance via a
 secure connection. In order to find out more about the proxy client see the
-[About the Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy) documentation. 
+[About the Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy) documentation.
 
 ## 2. Step: Configuration of App Engine
 
 You are going to need a `app.yaml` file to deploy and configure your App Engine service.
-In this file you specify the go runtime version, url handlers and all environment variables to configure Penelope. 
-This repository provides a default configuration template for your own App Engine. Replace the brackets and feel 
+In this file you specify the go runtime version, url handlers and all environment variables to configure Penelope.
+This repository provides a default configuration template for your own App Engine. Replace the brackets and feel
 free to change the values, but be carefully with the handlers.
 
 ```yaml
@@ -133,9 +145,9 @@ free to change the values, but be carefully with the handlers.
 runtime: go119
 service: default
 handlers:
-  -   url: /
-      static_files: static/ui/index.html
-      upload: static/ui/index.html
+  - url: /
+    static_files: static/ui/index.html
+    upload: static/ui/index.html
   # ...
 
 env_variables:
@@ -150,8 +162,8 @@ env_variables:
 
 ## 3. Step: Penelope Deployment
 
-Now that you have specified the configuration for Penelope, you are able to deploy the local application and 
-configuration settings with Cloud SDK. For more details on how to install or manage your GCP resources and 
+Now that you have specified the configuration for Penelope, you are able to deploy the local application and
+configuration settings with Cloud SDK. For more details on how to install or manage your GCP resources and
 applications see [Google Cloud SDK Documentation](https://cloud.google.com/sdk/docs/quickstart). Since we are going to
 deploy the application to app engine, we will use `gcloud app deploy` for deployment.
 
@@ -162,25 +174,28 @@ gcloud app deploy app.yaml
 ## 4. Step: Configuration of Cron-Jobs
 
 Congratulations. If you configured your application correctly, you successfully deployed Penelope to
-App Engine. But you're not done yet. There are still tasks, which need to be triggered. These Penelope tasks are responsible for 
-making backups, cleanups of expired sinks and so on. This repository provides a basic cron job configuration as well for all
+App Engine. But you're not done yet. There are still tasks, which need to be triggered. These Penelope tasks are
+responsible for
+making backups, cleanups of expired sinks and so on. This repository provides a basic cron job configuration as well for
+all
 tasks. There are no changes required.
 
 ```yaml
 # cron.yaml
 cron:
-    -   description: "prepare backup jobs"
-        url: /api/tasks/prepare_backup_jobs
-        schedule: every 60 minutes from 00:00 to 23:00
-    -   description: "schedule new jobs"
-        url: /api/tasks/run_new_jobs
-        schedule: every 10 minutes from 00:05 to 23:55
-    # ...
+  - description: "prepare backup jobs"
+    url: /api/tasks/prepare_backup_jobs
+    schedule: every 60 minutes from 00:00 to 23:00
+  - description: "schedule new jobs"
+    url: /api/tasks/run_new_jobs
+    schedule: every 10 minutes from 00:05 to 23:55
+  # ...
 ``` 
 
 ## 5. Step: Cron-Jobs Scheduling
 
-Deploying the `cron.yaml` configuration file to App Engine is straight forward. You just need to run the following command and you are finished.
+Deploying the `cron.yaml` configuration file to App Engine is straight forward. You just need to run the following
+command and you are finished.
 
 ```shell script
 gcloud app deploy cron.yaml
@@ -188,44 +203,46 @@ gcloud app deploy cron.yaml
 
 # Providers
 
-This section is specifically tell you about the special Penelope providers. As mentioned before, there are four 
-providers which provide Penelope with information like where to store the backup, which role bindings has the user and so on. 
-This repository contains default providers. However, you are able to implement your own providers. In the following, 
-you will find out how each default provider works and how you can implement your own provider. To use your own Penelope 
-defined providers use `AppStartArguments` and pass it to the run function of the `github.com/ottogroup/penelope/cmd` package.
+This section is specifically tell you about the special Penelope providers. As mentioned before, there are four
+providers which provide Penelope with information like where to store the backup, which role bindings has the user and
+so on.
+This repository contains default providers. However, you are able to implement your own providers. In the following,
+you will find out how each default provider works and how you can implement your own provider. To use your own Penelope
+defined providers use `AppStartArguments` and pass it to the run function of the `github.com/ottogroup/penelope/cmd`
+package.
 
 ```go
 package main
 
 import (
-    "github.com/ottogroup/penelope/cmd"
+	"github.com/ottogroup/penelope/cmd"
 )
 
-
 func main() {
-    // Create all your providers here ...
+	// Create all your providers here ...
 
-    appStartArguments := app.AppStartArguments{
+	appStartArguments := app.AppStartArguments{
 		PrincipalProvider:                 principalProvider,
 		SinkGCPProjectProvider:            sinkGCPProjectProvider,
 		TargetPrincipalForProjectProvider: targetPrincipalForProjectProvider,
 		SecretProvider:                    secretProvider,
-    }
+	}
 
-    cmd.Run(appStartArguments)
+	cmd.Run(appStartArguments)
 }
 ```
 
-## The Secret Provider 
+## The Secret Provider
 
-Let's have a look at the first provider. The secret provider, specified by the `SecretProvider` interface, provides Penelope with the database
+Let's have a look at the first provider. The secret provider, specified by the `SecretProvider` interface, provides
+Penelope with the database
 password. This provider defines only one method. It receives a `context.Context` and `string` argument and returns
-a `string` and `error` type. You can probably guess the meaning of each argument. However, we will go through 
-each parameter to be clear. The first expected argument is a context, which is created for each (http) request. This is 
-golang specific. If you want to find out more about the Context type, you can read the [Package Context](https://golang.org/pkg/context/)
-documentation. The next argument contains the database user name. All you have to do is to return the 
+a `string` and `error` type. You can probably guess the meaning of each argument. However, we will go through
+each parameter to be clear. The first expected argument is a context, which is created for each (http) request. This is
+golang specific. If you want to find out more about the Context type, you can read
+the [Package Context](https://golang.org/pkg/context/)
+documentation. The next argument contains the database user name. All you have to do is to return the
 password for this user. If you are not able to return the database password, you can return an error value.
-
 
 ```go
 package secret
@@ -233,22 +250,27 @@ package secret
 import "context"
 
 type SecretProvider interface {
-  GetSecret(ctxIn context.Context, user string) (string, error)
+	GetSecret(ctxIn context.Context, user string) (string, error)
 }
 ```
 
 ### Default
 
-The default provider is actually pretty straight forward. It basically doesn't care about the user argument. It just returns the 
-value you have specified in the `POSTGRES_PASSWORD` environment variable. If this default provider is not advance enough for your
+The default provider is actually pretty straight forward. It basically doesn't care about the user argument. It just
+returns the
+value you have specified in the `POSTGRES_PASSWORD` environment variable. If this default provider is not advance enough
+for your
 need, then feel free to implement your own secret provider.
 
-## Backup Provider 
+## Backup Provider
 
 The tasks of the backup sink provider is to provide Penelope with a GCP project where the backup should be stored.
-This provider is defined by the `SinkGCPProjectProvider` interface. The first argument is the same for all provider methods, 
-which is again context. The next argument is the source GCP project id. It is the project of the source data, which should
-be backup on a target project. The task of this interface is to return the target project for the received source project.
+This provider is defined by the `SinkGCPProjectProvider` interface. The first argument is the same for all provider
+methods,
+which is again context. The next argument is the source GCP project id. It is the project of the source data, which
+should
+be backup on a target project. The task of this interface is to return the target project for the received source
+project.
 
 ```go
 package provider
@@ -256,14 +278,15 @@ package provider
 import "context"
 
 type SinkGCPProjectProvider interface {
-    GetSinkGCPProjectID(ctxIn context.Context, sourceGCPProjectID string) (string, error)
+	GetSinkGCPProjectID(ctxIn context.Context, sourceGCPProjectID string) (string, error)
 }
 ```
 
 ### Default
 
-The default provide is a bit more complex this time. You will not only have to define the environment variables 
-`DEFAULT_PROVIDER_BUCKET` and `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`, you also have to store a `.yaml` file 
+The default provide is a bit more complex this time. You will not only have to define the environment variables
+`DEFAULT_PROVIDER_BUCKET` and `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`, you also have to store a `.yaml`
+file
 in the specified bucket. The content of the file should look like this.
 
 ```yaml
@@ -273,18 +296,19 @@ in the specified bucket. The content of the file should look like this.
   backup: project-two-backup
 ```
 
-For each project you define a backup project (actually not that complex, huh?). But what happens, if a source 
-project is not listed in the file? Then the default implementation returns an error. You think there are other solutions?
-Maybe you would like to create a backup projects on-the-fly or just use the source project as the target project. Then 
+For each project you define a backup project (actually not that complex, huh?). But what happens, if a source
+project is not listed in the file? Then the default implementation returns an error. You think there are other
+solutions?
+Maybe you would like to create a backup projects on-the-fly or just use the source project as the target project. Then
 feel free to implement your own `SinkGCPProjectProvider`.
 
 ## Target Principal Provider
 
-This provider can be more difficult to comprehend than the previous providers. Behind the scenes, Penelope uses 
-impersonation to create all the backup sinks and so on in GCP. And what does it impersonate to do all these tasks? 
+This provider can be more difficult to comprehend than the previous providers. Behind the scenes, Penelope uses
+impersonation to create all the backup sinks and so on in GCP. And what does it impersonate to do all these tasks?
 [Service accounts](https://cloud.google.com/iam/docs/understanding-service-accounts), which are special google account
-to represent non-human user like applications. To determine which service account should be impersonated by Penelope, 
-the `TargetPrincipalForProjectProvider` interface is required. It returns the service account for a target project. 
+to represent non-human user like applications. To determine which service account should be impersonated by Penelope,
+the `TargetPrincipalForProjectProvider` interface is required. It returns the service account for a target project.
 
 ```go
 package impersonate
@@ -292,7 +316,7 @@ package impersonate
 import "context"
 
 type TargetPrincipalForProjectProvider interface {
-    GetTargetPrincipalForProject(ctxIn context.Context, projectID string) (string, error)
+	GetTargetPrincipalForProject(ctxIn context.Context, projectID string) (string, error)
 }
 ```
 
@@ -309,51 +333,51 @@ This section explains the concept of a user principal and the role of the `Princ
 
 * A `Principal` data type represents a user's identity and access rights within the system.
 * It contains two components:
-  * `email`: A string representing the user's email address (unique identifier).
-  * `role_bindings`: A list of role bindings, which define a user's role within each project.
+    * `email`: A string representing the user's email address (unique identifier).
+    * `role_bindings`: A list of role bindings, which define a user's role within each project.
 
 ### Role Binding:
 
 * A role binding associates a project ID with a user's role for that specific project.
 * Possible roles are:
-  * `None`: User has no access to the project.
-  * `Viewer`: User can view project data but cannot modify it.
-  * `Owner`: User has full access to the project, including editing and backup privileges.
-  
+    * `None`: User has no access to the project.
+    * `Viewer`: User can view project data but cannot modify it.
+    * `Owner`: User has full access to the project, including editing and backup privileges.
+
 ### PrincipalProvider Interface:
 
 * The `PrincipalProvider interface defines a single method:
-  * `GetPrincipal(email: string) -> Principal`: This method takes a user's email address and returns their corresponding Principal data type.
-  
+    * `GetPrincipal(email: string) -> Principal`: This method takes a user's email address and returns their
+      corresponding Principal data type.
+
 ### Importance of PrincipalProvider:
 
 * The `PrincipalProvider` plays a crucial role in access control.
 * By retrieving a user's principal data, the system can determine their roles for specific projects.
 * This information is critical for authorizing actions:
-  * Only `Owner` users can perform backups.
-  * Users without the appropriate role (e.g., `None` or `Viewer`) cannot edit project data.
+    * Only `Owner` users can perform backups.
+    * Users without the appropriate role (e.g., `None` or `Viewer`) cannot edit project data.
 
 ### In summary:
 
 * The Principal data type stores user identity and project access levels.
 * The PrincipalProvider interface provides access to this information for authorization purposes.
 
-
 ```go
 package provider
 
 import (
 	"context"
-    "github.com/ottogroup/penelope/pkg/http/auth/model"
+	"github.com/ottogroup/penelope/pkg/http/auth/model"
 )
 
 type PrincipalProvider interface {
-    GetPrincipalForEmail(ctxIn context.Context, email string) (*model.Principal, error)
+	GetPrincipalForEmail(ctxIn context.Context, email string) (*model.Principal, error)
 }
 ```
 
-The data type `Principal` is shown in following source code, which contains additionally all relevant information. 
-You can see it consist of a `User` and a list of `ProjectRoleBinding`s. Furthermore, you can see that `User` only 
+The data type `Principal` is shown in following source code, which contains additionally all relevant information.
+You can see it consist of a `User` and a list of `ProjectRoleBinding`s. Furthermore, you can see that `User` only
 consists of the email address. The `ProjectRoleBinding` contains the role for each project.
 
 ```go
@@ -362,31 +386,31 @@ package model
 type Role string
 
 type Principal struct {
-    User         User
-    RoleBindings []ProjectRoleBinding 
+	User         User
+	RoleBindings []ProjectRoleBinding
 }
 
 type User struct {
-    Email string
+	Email string
 }
 
 var (
-    None Role = "none"
-    Viewer Role = "viewer"
-    Owner Role = "owner"
+	None   Role = "none"
+	Viewer Role = "viewer"
+	Owner  Role = "owner"
 )
 
 type ProjectRoleBinding struct {
-    Role    Role
-    Project string
+	Role    Role
+	Project string
 }
 ```
 
 ### Default
 
-Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It 
+Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It
 also needs the path to a `.yaml` file. Therefore `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH` needs to be set.
-The content can look like this. 
+The content can look like this.
 
 ```yaml
 - user:
@@ -407,8 +431,10 @@ The content can look like this.
 
 ## Source Project Provider
 
-source project orincipal is used to retrieve additioanl information about the source project. The `SourceGCPProjectProvider`
-represents the interface for this provider. It contains only one method, which returns the `SourceGCPProject` for a given
+source project orincipal is used to retrieve additioanl information about the source project.
+The `SourceGCPProjectProvider`
+represents the interface for this provider. It contains only one method, which returns the `SourceGCPProject` for a
+given
 project id.
 
 ```go
@@ -419,15 +445,15 @@ import (
 )
 
 type SourceGCPProjectProvider interface {
-  GetSourceGCPProject(ctxIn context.Context, gcpProjectID string) (SourceGCPProject, error)
+	GetSourceGCPProject(ctxIn context.Context, gcpProjectID string) (SourceGCPProject, error)
 }
 ```
 
 ### Default
 
-Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It 
+Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It
 also needs the path to a `.yaml` file. Therefore `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH` needs to be set.
-The content can look like this. 
+The content can look like this.
 
 ```yaml
 - project: local-account
@@ -447,12 +473,12 @@ backup source a job is either implemented as
 Penelope keeps track of jobs in the `jobs` table. A fk relation to the corresponding backup indentifies which backup
 definition lead to a certain job.
 
-Both db entities - `backups` and `jobs` - have a `status` field representing the current state they are in. The `status` 
+Both db entities - `backups` and `jobs` - have a `status` field representing the current state they are in. The `status`
 field different [Penelope tasks](pkg/tasks/tasks_multiplexer.go) operate on it and trigger a state chang in the model.
 State changes of `backups` are well-defined in the [processor.go](pkg/processor/processor.go).
 
 Since a StorageTransferJob is handled by GCP, it runs asynchronously. Penelope checks job statuses in regular intervals
-when the task `CheckJobsStatus` is invoked. It monitors StorageTransferJobs and corresponding TransferOperations. The 
+when the task `CheckJobsStatus` is invoked. It monitors StorageTransferJobs and corresponding TransferOperations. The
 following diagram shows how the job status is assessed.
 
 ```mermaid
@@ -467,3 +493,110 @@ flowchart LR
     D--> |No| SPen
 ```
 
+# Role and rights concept
+
+## Service accounts
+
+### Runner
+
+There should be one custom service account ```runner``` that is used to run the Penelope application. This service
+account should have the following roles in the project it runs:
+
+* CloudSQL Client (`roles/cloudsql.client)
+    * to be able to connect to the database running in the same project as Penelope application
+* Cloud Trace Agent
+    * to be able to connect to write traces to Google Monitoring
+
+### Backup
+
+The GCP Projects that are created for the pure purpose to store only backup data will be accessed by the ```backup```
+service accounts.
+
+#### permission for runner service account
+
+The ```runner``` service account should to be able to impersonate the```backup``` service account with the role: Service
+Account Token Creator (`roles/roles/iam.serviceAccountTokenCreator`)
+
+#### permission in data source
+
+The ```backup``` service account should have the following roles in the source project:
+
+* to be able to evaluate data store costs during backup creation
+    * Monitoring Viewer (`roles/monitoring.viewer`)
+* to be able to access project metadata
+    * `resourcemanager.projects.get`
+    * `resourcemanager.projects.list`
+* to be able to list and get GCS bucket metadata
+    * `storage.buckets.get`
+    * `storage.buckets.list`
+* to be able to make GCS Mirroring
+    * Private Logs Viewer  (`roles/logging.privateLogViewer`)
+* to be able to for GCS Mirroring strategy to check logging.list quota usage
+    * `serviceusage.services.list`
+* to be able to list and get BigQuery datasets/table/views metadata
+    * `bigquery.datasets.get`
+    * `bigquery.tables.get`
+    * `bigquery.tables.list`
+* to be able to list and export from BigQuery
+    * `bigquery.tables.createSnapshot`
+    * `bigquery.tables.export`
+    * `bigquery.tables.getData`
+    * `bigquery.tables.replicateData`
+
+#### permission in data sink
+
+The ```backup``` service account should have the following roles in the target (backup only) project:
+
+* to be able to manage GCS buckets and its objects
+    * `storage.buckets.create`
+    * `storage.buckets.delete`
+    * `storage.buckets.enableObjectRetention`
+    * `storage.buckets.get`
+    * `storage.buckets.getIamPolicy`
+    * `storage.buckets.list`
+    * `storage.buckets.setIamPolicy`
+    * `storage.buckets.update`
+    * `storage.objects.create`
+    * `storage.objects.delete`
+    * `storage.objects.get`
+    * `storage.objects.list`
+    * `storage.objects.update`
+* to be able to trigger export jobs in BigQuery from source project(s)
+    * BigQuery Job User (`roles/bigquery.jobUser`)
+* to be able to create&update Storage Transfer jobs
+    * Storage Transfer User (`roles/storagetransfer.user`)
+* to be able to clean up backups that transit to status `BackupDeleted`
+    * `storagetransfer.jobs.delete`
+    * `storagetransfer.jobs.get`
+    * `storagetransfer.jobs.list`
+    * `bigquery.jobs.delete`
+    * `bigquery.jobs.get`
+    * `bigquery.jobs.list`
+* to be able to check compliance permissions
+    * `iam.denypolicies.list`
+    * `iam.denypolicies.get`
+
+### Storage Transfer Service Account
+
+For the backup that are made for the bucket in the source project the service account - created by the Storage Transfer
+Service, is used. The service agent's email uses the format
+```project-SINK_PROJECT_NUMBER@storage-transfer-service.iam.gserviceaccount.com```.
+
+#### permission in data source
+
+Google's managed service account need following permission in the source project:
+
+* Storage Object Viewer (```roles/storage.objectViewer```)
+
+#### permission in data sink
+
+Google's managed service account need following permission in the target (backup only) project:
+
+* on project level a role wit the following IAM permissions:
+    * Storage Transfer User (`roles/storagetransfer.user`)
+
+* on sink bucket level:
+  * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
+      * **NOTE**: it is done automatically set by the ```runner``` service account
+  * Storage Legacy Bucket Writer (```roles/storage.legacyBucketWriter```)
+      * **NOTE**: it is done automatically set by the ```runner``` service account

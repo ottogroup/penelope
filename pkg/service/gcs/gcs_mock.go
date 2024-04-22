@@ -1,6 +1,8 @@
 package gcs
 
 import (
+	"cloud.google.com/go/iam"
+	"cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 	"context"
 	"fmt"
 	"regexp"
@@ -12,6 +14,14 @@ type MockGcsClient struct {
 	ClientInitialized bool
 	ShouldFail        bool
 	ObjectContent     []byte
+}
+
+func (c *MockGcsClient) GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error) {
+	panic("implement me")
+}
+
+func (c *MockGcsClient) SetBucketIAMPolicy(ctxIn context.Context, bucket string, policy *iam.Policy) error {
+	panic("implement me")
 }
 
 func (c *MockGcsClient) Close(ctxIn context.Context) {
