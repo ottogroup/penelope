@@ -21,6 +21,8 @@ import (
 	"go.opencensus.io/trace"
 )
 
+const sinkSTSAccountScheme = "serviceAccount:project-%s@storage-transfer-service.iam.gserviceaccount.com"
+
 type CreatingProcessorFactory interface {
 	CreateProcessor(ctxIn context.Context) (Operation[requestobjects.CreateRequest, requestobjects.BackupResponse], error)
 }
@@ -438,7 +440,7 @@ func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClien
 		projectNumber := strings.ReplaceAll(project.Name, "projects/", "")
 		bucketPolicy := &iam.Policy{}
 		// Storage Transfer Service needs to write to and read from the sink bucket
-		storageTransferGSABinding := fmt.Sprintf("serviceAccount:project-%s@storage-transfer-service.iam.gserviceaccount.com", projectNumber)
+		storageTransferGSABinding := fmt.Sprintf(sinkSTSAccountScheme, projectNumber)
 		bucketPolicy.Add(storageTransferGSABinding, "roles/storage.legacyBucketWriter")
 		bucketPolicy.Add(storageTransferGSABinding, "roles/storage.legacyBucketReader")
 		err = cloudStorageClient.SetBucketIAMPolicy(ctx, backup.Sink, bucketPolicy)

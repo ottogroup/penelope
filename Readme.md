@@ -585,8 +585,12 @@ Service, is used. The service agent's email uses the format
 #### permission in data source
 
 Google's managed service account need following permission in the source project:
-
-* Storage Object Viewer (```roles/storage.objectViewer```)
+ 
+* to be able to export GCS date from source
+  * on project level permissions that are part of following GCP roles
+      * Storage Object Viewer (```roles/storage.objectViewer```)
+      * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
+      * **NOTE**: these roles can be set only on the bucket level you need to define custom role
 
 #### permission in data sink
 
@@ -596,7 +600,7 @@ Google's managed service account need following permission in the target (backup
     * Storage Transfer User (`roles/storagetransfer.user`)
 
 * on sink bucket level:
-  * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
-      * **NOTE**: it is done automatically set by the ```runner``` service account
-  * Storage Legacy Bucket Writer (```roles/storage.legacyBucketWriter```)
-      * **NOTE**: it is done automatically set by the ```runner``` service account
+    * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
+        * **NOTE**: it is done automatically set by the ```runner``` service account
+    * Storage Legacy Bucket Writer (```roles/storage.legacyBucketWriter```)
+        * **NOTE**: it is done automatically set by the ```runner``` service account
