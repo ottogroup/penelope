@@ -529,7 +529,7 @@ flowchart LR
 There should be one custom service account ```runner``` that is used to run the Penelope application. This service
 account should have the following roles in the project it runs:
 
-* CloudSQL Client (`roles/cloudsql.client)
+* CloudSQL Client (`roles/cloudsql.client`)
     * to be able to connect to the database running in the same project as Penelope application
 * Cloud Trace Agent
     * to be able to connect to write traces to Google Monitoring
