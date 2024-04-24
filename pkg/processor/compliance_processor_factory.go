@@ -342,10 +342,18 @@ func (c *backupWithSingleWriterCheck) Check(ctx context.Context, request request
 			glog.Errorf("could not get next policy: %s", err)
 			break
 		}
+		// list policies for the target project comes without rules
+		fullPolicy, err := policiesClient.GetPolicy(ctx, &iampb.GetPolicyRequest{
+			Name: policy.Name,
+		})
+		if err != nil {
+			glog.Errorf("could not get full policy: %s", err)
+			break
+		}
 
 		// We need to check if deny edit permission for cloud storage is set for all principals except for the
 		// target backup service account.
-		for _, rule := range policy.Rules {
+		for _, rule := range fullPolicy.Rules {
 			deniedPermissions := rule.GetDenyRule().GetDeniedPermissions()
 			deniedPrincipals := rule.GetDenyRule().GetDeniedPrincipals()
 			exceptionPrincipals := rule.GetDenyRule().GetExceptionPrincipals()

@@ -1,5 +1,7 @@
 # Penelope - GCP Backup Solution
 
+![image](frontend/public/Penelope_250.jpeg)
+
 - [Penelope - GCP Backup Solution](#penelope---gcp-backup-solution)
 - [Introduction](#introduction)
 - [Requirements](#requirements)
@@ -495,6 +497,36 @@ flowchart LR
 
 # Role and rights concept
 
+```mermaid
+flowchart LR
+    subgraph GCP_source_Project
+    BigQuery
+    GCS(Cloud Storage)
+    end
+
+    subgraph GCP_sink_Project
+        SinkBucket
+    end
+    subgraph GCP_runtime_Project
+        Backup(Backup)
+        Runner--"impersonate"-->Backup
+        Runner--"runs PenelopeApplication in"-->AppEngine
+    end
+    STS--"member of"-->GCP_sink_Project
+    Backup--"PenelopeBackupManager"-->GCP_sink_Project
+    Backup--"PenelopeDataExporter"-->GCP_source_Project
+    STS(Storage Transfer Service SA)--"`storage.legacyBucketWriter 
+    storage.legacyBucketReader`"-->SinkBucket
+    STS--"storagetransfer.user"-->GCP_sink_Project
+    STS--"storage.legacyBucketReader
+    storage.objectViewer"-->GCP_source_Project
+
+    classDef blue fill:#4285F4
+    class GCP_sink_Project blue
+    class GCP_source_Project blue
+    class GCP_runtime_Project blue
+```
+
 ## Service accounts
 
 ### Runner
@@ -517,7 +549,7 @@ service accounts.
 The ```runner``` service account should to be able to impersonate the```backup``` service account with the role: Service
 Account Token Creator (`roles/roles/iam.serviceAccountTokenCreator`)
 
-#### permission in data source
+#### permission in data source (PenelopeDataExporter)
 
 The ```backup``` service account should have the following roles in the source project:
 
@@ -543,7 +575,7 @@ The ```backup``` service account should have the following roles in the source p
     * `bigquery.tables.getData`
     * `bigquery.tables.replicateData`
 
-#### permission in data sink
+#### permission in data sink (PenelopeBackupManager)
 
 The ```backup``` service account should have the following roles in the target (backup only) project:
 
@@ -590,7 +622,7 @@ Google's managed service account need following permission in the source project
   * on project level permissions that are part of following GCP roles
       * Storage Object Viewer (```roles/storage.objectViewer```)
       * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
-      * **NOTE**: these roles can be set only on the bucket level you need to define custom role
+      * **NOTE**: this role can be set only on the bucket level you need to define custom role
 
 #### permission in data sink
 
