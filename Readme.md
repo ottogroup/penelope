@@ -520,11 +520,6 @@ flowchart LR
     STS--"storagetransfer.user"-->GCP_sink_Project
     STS--"storage.legacyBucketReader
     storage.objectViewer"-->GCP_source_Project
-
-    classDef blue fill:#4285F4
-    class GCP_sink_Project blue
-    class GCP_source_Project blue
-    class GCP_runtime_Project blue
 ```
 
 ## Service accounts
