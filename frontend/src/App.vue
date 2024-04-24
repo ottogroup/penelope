@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import logo from "@/assets/penelope_32.png";
+import logo from "@/assets/penelope_48.png";
 import Sandbox from "@/views/Sandbox.vue";
 import { ref } from "vue";
 
