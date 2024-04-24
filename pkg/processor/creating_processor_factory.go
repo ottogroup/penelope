@@ -440,6 +440,7 @@ func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClien
 		projectNumber := strings.ReplaceAll(project.Name, "projects/", "")
 		bucketPolicy := &iam.Policy{}
 		// Storage Transfer Service needs to write to and read from the sink bucket
+		// based on https://cloud.google.com/storage-transfer/docs/sink-cloud-storage#required_permissions
 		storageTransferGSABinding := "serviceAccount:" + fmt.Sprintf(sinkSTSAccountScheme, projectNumber)
 		bucketPolicy.Add(storageTransferGSABinding, "roles/storage.legacyBucketWriter")
 		bucketPolicy.Add(storageTransferGSABinding, "roles/storage.legacyBucketReader")
