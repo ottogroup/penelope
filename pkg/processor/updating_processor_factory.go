@@ -85,7 +85,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 	// handle status change
 	if request.Status != "" && !backup.Status.EqualTo(request.Status) {
 		if !isBackupStatusTransitionValid(backup.Status, repository.BackupStatus(request.Status)) {
-			return requestobjects.UpdateResponse{}, fmt.Errorf("backup status update not allowed from %s to %s", request.BackupID, request.Status)
+			return requestobjects.UpdateResponse{}, fmt.Errorf("backup status update not allowed from %s to %s", backup.Status, request.Status)
 		}
 		// make a shortcut from NotStarted -> ToDelete to NotStarted -> BackupDeleted
 		if repository.NotStarted == backup.Status && repository.ToDelete.EqualTo(request.Status) {

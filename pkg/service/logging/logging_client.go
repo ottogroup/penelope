@@ -16,11 +16,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	logging "cloud.google.com/go/logging/apiv2"
+	"cloud.google.com/go/logging/apiv2/loggingpb"
 	"github.com/pkg/errors"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	loggingpb "google.golang.org/genproto/googleapis/logging/v2"
 )
 
 // DefaultLoggingClient represent logging client
@@ -201,7 +201,7 @@ func (l *DefaultLoggingClient) IterateOverBucketObjectEvents(ctxIn context.Conte
 	return lastTimestamp, nil
 }
 
-// Close terminates terminates all resources in use
+// Close terminates all resources in use
 func (l *DefaultLoggingClient) Close() {
 	l.client.Close()
 }

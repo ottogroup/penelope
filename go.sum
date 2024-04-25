@@ -19,6 +19,8 @@ cloud.google.com/go/longrunning v0.5.6 h1:xAe8+0YaWoCKr9t1+aWe+OeQgN/iJK1fEgZSXm
 cloud.google.com/go/longrunning v0.5.6/go.mod h1:vUaDrWYOMKRuhiv6JBnn49YxCPz2Ayn9GqyjaBT8/mA=
 cloud.google.com/go/monitoring v1.18.2 h1:nIQdZdf1/9M0cEmXSlLB2jMq/k3CRh9p3oUzS06VDG8=
 cloud.google.com/go/monitoring v1.18.2/go.mod h1:MuL95M6d9HtXQOaWP9JxhFZJKP+fdTF0Gt5xl4IDsew=
+cloud.google.com/go/resourcemanager v1.9.6 h1:VPfJFbWxrTYQzEXCDbJNpcvSB8eZhTSM0YHH146fIB8=
+cloud.google.com/go/resourcemanager v1.9.6/go.mod h1:d+XUOGbxg6Aka3lmC4fDiserslux3d15uX08C6a0MBg=
 cloud.google.com/go/storage v1.40.0 h1:VEpDQV5CJxFmJ6ueWNsKxcr1QAYOXEgxDa+sBbJahPw=
 cloud.google.com/go/storage v1.40.0/go.mod h1:Rrj7/hKlG87BLqDJYtwR0fbPld8uJPbQ2ucUMY7Ir0g=
 cloud.google.com/go/trace v1.10.6 h1:XF0Ejdw0NpRfAvuZUeQe3ClAG4R/9w5JYICo7l2weaw=

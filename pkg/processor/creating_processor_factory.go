@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"cloud.google.com/go/iam"
 	"context"
 	"fmt"
 	"strings"
@@ -19,6 +20,8 @@ import (
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 )
+
+const sinkSTSAccountScheme = "project-%s@storage-transfer-service.iam.gserviceaccount.com"
 
 type CreatingProcessorFactory interface {
 	CreateProcessor(ctxIn context.Context) (Operation[requestobjects.CreateRequest, requestobjects.BackupResponse], error)
@@ -420,8 +423,30 @@ func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClien
 		}
 
 		err = cloudStorageClient.CreateBucket(ctx, backup.TargetProject, backup.Sink, backup.Region, backup.DualRegion, backup.StorageClass, lifetimeInDays, backup.ArchiveTTM)
-		if err == nil {
-			return cloudStorageClient.CreateObject(ctx, backup.Sink, fmt.Sprintf("%s/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE", backup.GetTrashcanPath()), "")
+		if err != nil {
+			return err
+		}
+		err = cloudStorageClient.CreateObject(ctx, backup.Sink, fmt.Sprintf("%s/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE", backup.GetTrashcanPath()), "")
+		if err != nil {
+			return err
+		}
+		if backup.Type != repository.CloudStorage {
+			return nil
+		}
+		project, err := cloudStorageClient.GetProject(ctx, backup.TargetProject)
+		if err != nil {
+			return err
+		}
+		projectNumber := strings.ReplaceAll(project.Name, "projects/", "")
+		bucketPolicy := &iam.Policy{}
+		// Storage Transfer Service needs to write to and read from the sink bucket
+		// based on https://cloud.google.com/storage-transfer/docs/sink-cloud-storage#required_permissions
+		storageTransferGSABinding := "serviceAccount:" + fmt.Sprintf(sinkSTSAccountScheme, projectNumber)
+		bucketPolicy.Add(storageTransferGSABinding, "roles/storage.legacyBucketWriter")
+		bucketPolicy.Add(storageTransferGSABinding, "roles/storage.legacyBucketReader")
+		err = cloudStorageClient.SetBucketIAMPolicy(ctx, backup.Sink, bucketPolicy)
+		if err != nil {
+			return err
 		}
 	}
 

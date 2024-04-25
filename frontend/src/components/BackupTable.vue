@@ -88,13 +88,13 @@ const projectLink = (project: string) => {
     <template #[`item.source`]="{ item }">
       <template v-if="item.type === BackupType.BIG_QUERY">
         BigQuery:
-        <a :href="bigqueryDatasetLink(item.project ?? '', item.bigquery_options?.dataset ?? '')">{{
+        <a :href="bigqueryDatasetLink(item.project ?? '', item.bigquery_options?.dataset ?? '')"  target="_blank">{{
             item.bigquery_options?.dataset
           }}</a>
         <ul>
           <li v-for="table in item.bigquery_options?.table">
             Table:
-            <a :href="bigqueryTableLink(item.project ?? '', item.bigquery_options?.dataset ?? '', table)">{{
+            <a :href="bigqueryTableLink(item.project ?? '', item.bigquery_options?.dataset ?? '', table)"  target="_blank">{{
                 table
               }}</a>
           </li>
@@ -102,7 +102,7 @@ const projectLink = (project: string) => {
       </template>
       <template v-if="item.type === BackupType.CLOUD_STORAGE">
         Bucket:
-        <a :href="cloudStorageLink(item.project ?? '', item.gcs_options?.bucket ?? '')">{{
+        <a :href="cloudStorageLink(item.project ?? '', item.gcs_options?.bucket ?? '')"  target="_blank">{{
             item.gcs_options?.bucket
           }}</a>
       </template>

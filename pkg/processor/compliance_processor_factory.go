@@ -321,7 +321,18 @@ func (c *backupWithSingleWriterCheck) Check(ctx context.Context, request request
 	it := policiesClient.ListPolicies(ctx, &iampb.ListPoliciesRequest{
 		Parent: fmt.Sprintf("policies/%s/denypolicies", attachmentPoint),
 	})
-
+	gcsClient, err := gcs.NewCloudStorageClient(ctx, c.tokenSourceProvider, targetProject)
+	if err != nil {
+		glog.Errorf("could not create new GCS client: %s", targetProject, err)
+		return requestobjects.ComplianceCheck{}, err
+	}
+	defer gcsClient.Close(ctx)
+	project, err := gcsClient.GetProject(ctx, targetProject)
+	if err != nil {
+		glog.Errorf("could not get project %s info: %s", targetProject, err)
+		return requestobjects.ComplianceCheck{}, err
+	}
+	stsSinkAccount := fmt.Sprintf(sinkSTSAccountScheme, strings.ReplaceAll(project.Name, "projects/", ""))
 	for {
 		policy, err := it.Next()
 		if errors.Is(err, iterator.Done) {
@@ -331,10 +342,18 @@ func (c *backupWithSingleWriterCheck) Check(ctx context.Context, request request
 			glog.Errorf("could not get next policy: %s", err)
 			break
 		}
+		// list policies for the target project comes without rules
+		fullPolicy, err := policiesClient.GetPolicy(ctx, &iampb.GetPolicyRequest{
+			Name: policy.Name,
+		})
+		if err != nil {
+			glog.Errorf("could not get full policy: %s", err)
+			break
+		}
 
 		// We need to check if deny edit permission for cloud storage is set for all principals except for the
 		// target backup service account.
-		for _, rule := range policy.Rules {
+		for _, rule := range fullPolicy.Rules {
 			deniedPermissions := rule.GetDenyRule().GetDeniedPermissions()
 			deniedPrincipals := rule.GetDenyRule().GetDeniedPrincipals()
 			exceptionPrincipals := rule.GetDenyRule().GetExceptionPrincipals()
@@ -347,7 +366,7 @@ func (c *backupWithSingleWriterCheck) Check(ctx context.Context, request request
 				continue
 			}
 
-			if !containsOnlyBackupServiceAccountAsException(targetPrincipal, exceptionPrincipals) {
+			if !containsOnlyBackupServiceAccountsAsException(stsSinkAccount, targetPrincipal, exceptionPrincipals) {
 				continue
 			}
 
@@ -384,8 +403,18 @@ const (
 	allPrincipals = "principalSet://goog/public:all"
 )
 
-func containsOnlyBackupServiceAccountAsException(targetPrincipal string, principals []string) bool {
-	return len(principals) == 1 && strings.EqualFold(principals[0], fmt.Sprintf("principal://iam.googleapis.com/projects/-/serviceAccounts/%s", targetPrincipal))
+func containsOnlyBackupServiceAccountsAsException(stsServiceAccount, targetPrincipal string, principals []string) bool {
+	// sts & backup service accounts can write
+	allowedPrincipals := []string{
+		fmt.Sprintf("principal://iam.googleapis.com/projects/-/serviceAccounts/%s", targetPrincipal),
+		fmt.Sprintf("principal://iam.googleapis.com/projects/-/serviceAccounts/%s", stsServiceAccount),
+	}
+	for _, principal := range principals {
+		if !contains(allowedPrincipals, principal) {
+			return false
+		}
+	}
+	return len(principals) == len(allowedPrincipals)
 }
 
 func containsAllPrincipals(principals []string) bool {

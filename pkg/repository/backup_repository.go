@@ -212,19 +212,29 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 	}
 
 	columns := []string{
-		"snapshot_lifetime_in_days",
 		"bigquery_table",
 		"bigquery_excluded_tables",
 		"cloudstorage_include_path",
 		"cloudstorage_exclude_path",
 		"audit_updated_timestamp",
 		"audit_deleted_timestamp",
-		"mirror_lifetime_in_days",
-		"archive_ttm",
-		"recovery_point_objective",
-		"recovery_time_objective",
 	}
 
+	if fields.RecoveryPointObjective > 0 {
+		columns = append(columns, "recovery_point_objective")
+	}
+	if fields.RecoveryTimeObjective > 0 {
+		columns = append(columns, "recovery_time_objective")
+	}
+	if fields.ArchiveTTM > 0 {
+		columns = append(columns, "archive_ttm")
+	}
+	if fields.MirrorTTL > 0 {
+		columns = append(columns, "mirror_lifetime_in_days")
+	}
+	if fields.SnapshotTTL > 0 {
+		columns = append(columns, "snapshot_lifetime_in_days")
+	}
 	if fields.Status != "" {
 		columns = append(columns, "status")
 	}

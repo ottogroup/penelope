@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"cloud.google.com/go/iam"
+	"cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 	"context"
 	"regexp"
 	"testing"
@@ -441,6 +443,14 @@ func (t *testBigQueryClient) GetDatasetDetails(ctxIn context.Context, datasetId 
 
 type stubGcsClient struct {
 	fDeleteObjectsErr error
+}
+
+func (g *stubGcsClient) GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error) {
+	panic("implement me")
+}
+
+func (g *stubGcsClient) SetBucketIAMPolicy(ctxIn context.Context, bucket string, policy *iam.Policy) error {
+	panic("implement me")
 }
 
 func (g *stubGcsClient) Close(context.Context) {
