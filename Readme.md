@@ -590,8 +590,8 @@ The ```backup``` service account should have the following roles in the target (
     * `storage.objects.update`
 * to be able to trigger export jobs in BigQuery from source project(s)
     * BigQuery Job User (`roles/bigquery.jobUser`)
-* to be able to manage Storage Transfer jobs
-    * Storage Transfer User (`roles/storagetransfer.admin`)
+* to be able to create&update Storage Transfer jobs
+    * Storage Transfer User (`roles/storagetransfer.user`)
 * to be able to clean up backups that transit to status `BackupDeleted`
     * `storagetransfer.jobs.delete`
     * `storagetransfer.jobs.get`
