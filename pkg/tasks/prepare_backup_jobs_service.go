@@ -9,6 +9,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
+	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 	"time"
 )
@@ -79,6 +80,12 @@ func (j *prepareBackupJobsService) createBigQueryBackupJobs(ctxIn context.Contex
 	} else {
 		err = j.scheduleProcessor.CreateBigQueryJobCreator(ctx, bq).PrepareJobs(ctx, backup)
 		if err != nil {
+			if errors.Is(err, processor.BackupSourceNotFound) {
+				err := j.scheduleProcessor.MarkBackupSourceDeleted(ctx, backup.ID)
+				if err != nil {
+					glog.Warningf("[FAIL] Error marking backup source as deleted %s: %s", backup, err)
+				}
+			}
 			glog.Warningf("[FAIL] Error preparing backup jobs for backup %s: %s", backup, err)
 		} else {
 			glog.Infof("[SUCCESS] Persisting backup job finished successfully for backup %s", backup)
@@ -98,6 +105,12 @@ func (j *prepareBackupJobsService) createCloudStorageBackupJobs(ctxIn context.Co
 	glog.Infof("[START] Preparing backup jobs for backup %s", backup)
 	err := j.scheduleProcessor.CreateCloudStorageJobCreator(ctx).PrepareJobs(ctx, backup)
 	if err != nil {
+		if errors.Is(err, processor.BackupSourceNotFound) {
+			err := j.scheduleProcessor.MarkBackupSourceDeleted(ctx, backup.ID)
+			if err != nil {
+				glog.Warningf("[FAIL] Error marking backup source as deleted %s: %s", backup, err)
+			}
+		}
 		glog.Warningf("[FAIL] Error preparing backup jobs for backup %s: %s", backup, err)
 	} else {
 		glog.Infof("[SUCCESS] Persisting backup job finished successfully for backup %s", backup)

@@ -62,6 +62,7 @@ var (
 
 	ListServiceUsageHTTPMock = NewMockedHTTPRequest("GET", "projects/.*/services", listServiceUsageOkResponse)
 	GetPRojectHTTPMock       = NewMockedHTTPRequest("GET", "/v3/projects/.*/", getProjectOkResponse)
+	GetBackUpSourceNotFound  = NewMockedHTTPRequest("GET", "bigquery/v2/projects/.*/datasets/notExistingDataset", getBackUpSourceNotFoundResponse)
 )
 
 const (
@@ -267,6 +268,24 @@ Content-Type: application/json; charset=UTF-8
     }
   ]
 }]}`
+
+	getBackUpSourceNotFoundResponse = `HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=UTF-8
+{
+  "error": {
+    "code": 404,
+    "message": "Not found: Dataset projectname:datasetname",
+    "errors": [
+      {
+        "message": "Not found: Dataset projectname:datasetname",
+        "domain": "global",
+        "reason": "notFound"
+      }
+    ],
+    "status": "NOT_FOUND"
+  }
+}
+`
 )
 
 func SimpleResponseBodyFromTemplate(bodyTemplate string, values map[string]string, statusCode int) (string, error) {

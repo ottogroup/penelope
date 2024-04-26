@@ -99,6 +99,42 @@ func TestPrepareBackupJobsService_WithoutValidJob(t *testing.T) {
 	assert.Containsf(t, strings.TrimSpace(stdErr), logMsg, "Run should write log message %q but it logged\n\t%s", logMsg, stdErr)
 }
 
+func TestBackUpSourceNotFound(t *testing.T) {
+	httpMockHandler.Register(mock.GetBackUpSourceNotFound)
+
+	defer httpMockHandler.Stop()
+	httpMockHandler.Start()
+
+	backup := prepareBackupServiceBigQueryBackup()
+	backup.BackupOptions.BigQueryOptions = repository.BigQueryOptions{Dataset: "notExistingDataset", Table: []string{"not_a_table"}, ExcludedTables: []string{}}
+	backup.Status = repository.NotStarted
+
+	ctx := context.Background()
+	backupRepository, err := repository.NewBackupRepository(ctx, secret.NewEnvSecretProvider())
+	require.NoError(t, err, "BackupRepository should be instantiate")
+
+	_, err = backupRepository.AddBackup(ctx, backup)
+	require.NoError(t, err, "should be able to add new backup")
+	defer func() { deleteBackup(prepareBackupID) }()
+
+	configProvider := &MockImpersonatedTokenConfigProvider{
+		TargetPrincipal: "backup-tooling@local-test-prod.iam.gserviceaccount.com",
+		Error:           nil,
+	}
+
+	service, _ := newPrepareBackupJobsService(ctx, configProvider, secret.NewEnvSecretProvider())
+	_, stdErr, err := captureStderr(func() {
+		service.Run(ctx)
+	})
+
+	getBackup, err := backupRepository.GetBackup(ctx, backup.ID)
+
+	assert.Equal(t, "notExistingDataset", getBackup.BackupOptions.BigQueryOptions.Dataset)
+	assert.Equal(t, repository.BackupSourceDeleted, getBackup.Status)
+	logMsg := "[FAIL] Error preparing backup jobs for backup "
+	assert.Containsf(t, strings.TrimSpace(stdErr), logMsg, "Run should write log message %q but it logged\n\t%s", logMsg, stdErr)
+}
+
 func TestPrepareBackupJobsService_WithFinishedBigQueryBackup(t *testing.T) {
 	ctx := context.Background()
 	backupRepository, err := repository.NewBackupRepository(context.Background(), secret.NewEnvSecretProvider())

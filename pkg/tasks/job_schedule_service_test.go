@@ -39,6 +39,10 @@ type MockScheduleProcessor struct {
 	ctx                     context.Context
 }
 
+func (m *MockScheduleProcessor) MarkBackupSourceDeleted(ctxIn context.Context, id string) error {
+	panic("implement me")
+}
+
 func (m *MockScheduleProcessor) FilterExistingTrashcanEntries(context.Context, []processor.TrashcanEntry) ([]processor.TrashcanEntry, error) {
 	panic("implement me")
 }

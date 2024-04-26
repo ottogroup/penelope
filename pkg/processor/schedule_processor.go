@@ -31,6 +31,7 @@ type ScheduleProcessor interface {
 	UpdateBackupStatus(ctxIn context.Context, id string, status repository.BackupStatus) error
 	UpdateLastCleanupTime(ctxIn context.Context, backupID string, lastCleanupTime time.Time) error
 	MarkBackupDeleted(ctxIn context.Context, id string) error
+	MarkBackupSourceDeleted(ctxIn context.Context, id string) error
 	MarkSourceMetadataDeleted(ctxIn context.Context, id int) error
 	MarkJobDeleted(ctxIn context.Context, id string) error
 	GetBackupForID(ctxIn context.Context, id string) (*repository.Backup, error)
@@ -134,6 +135,9 @@ func (d *defaultScheduleProcessor) UpdateLastCleanupTime(ctxIn context.Context, 
 
 func (d *defaultScheduleProcessor) MarkBackupDeleted(ctxIn context.Context, id string) error {
 	return d.backupRepository.MarkDeleted(ctxIn, id)
+}
+func (d *defaultScheduleProcessor) MarkBackupSourceDeleted(ctxIn context.Context, id string) error {
+	return d.backupRepository.MarkStatus(ctxIn, id, repository.BackupSourceDeleted)
 }
 
 func (d *defaultScheduleProcessor) MarkSourceMetadataDeleted(ctxIn context.Context, id int) error {

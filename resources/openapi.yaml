@@ -588,6 +588,7 @@ components:
         - Paused
         - ToDelete
         - BackupDeleted
+        - BackupSourceDeleted
     JobStatus:
       type: string
       enum:

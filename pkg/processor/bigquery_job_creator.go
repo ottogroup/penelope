@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -20,6 +21,8 @@ type BigQueryJobCreator struct {
 	SourceMetadataJobRepository repository.SourceMetadataJobRepository
 	BigQuery                    bigquery.Client
 }
+
+var BackupSourceNotFound = errors.New("error: backup source not found")
 
 // NewBigQueryJobCreator return instance of BigQueryJobCreator
 func NewBigQueryJobCreator(ctxIn context.Context, backupRepository repository.BackupRepository, jobRepository repository.JobRepository, bigQueryClient bigquery.Client,
@@ -126,7 +129,10 @@ func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *reposi
 		tablesInDataset, err := b.BigQuery.GetTablesInDataset(ctx, backup.SourceProject, backup.Dataset)
 
 		if err != nil {
-			return []*bigquery.Table{}, err
+			var e *googleapi.Error
+			if errors.As(err, &e) && e.Code == 404 {
+				return []*bigquery.Table{}, BackupSourceNotFound
+			}
 		}
 
 		for _, t := range tablesInDataset {
