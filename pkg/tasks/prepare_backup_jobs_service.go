@@ -9,6 +9,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
+	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 	"time"
@@ -101,20 +102,25 @@ func (j *prepareBackupJobsService) createCloudStorageBackupJobs(ctxIn context.Co
 		glog.Infof("Backup with id %s don't need to be scheduled", backup.ID)
 		return
 	}
-
-	glog.Infof("[START] Preparing backup jobs for backup %s", backup)
-	err := j.scheduleProcessor.CreateCloudStorageJobCreator(ctx).PrepareJobs(ctx, backup)
+	gcsClient, err := gcs.NewCloudStorageClient(ctx, j.tokenSourceProvider, backup.SourceProject)
 	if err != nil {
-		if errors.Is(err, processor.BackupSourceNotFound) {
-			err := j.scheduleProcessor.MarkBackupSourceDeleted(ctx, backup.ID)
-			if err != nil {
-				glog.Warningf("[FAIL] Error marking backup source as deleted %s: %s", backup, err)
-			}
-		}
-		glog.Warningf("[FAIL] Error preparing backup jobs for backup %s: %s", backup, err)
+		glog.Warningf("[FAIL] Error creating cloud storage client for backup %s: %s", backup, err)
 	} else {
-		glog.Infof("[SUCCESS] Persisting backup job finished successfully for backup %s", backup)
+		glog.Infof("[START] Preparing backup jobs for backup %s", backup)
+		err := j.scheduleProcessor.CreateCloudStorageJobCreator(ctx, gcsClient).PrepareJobs(ctx, backup)
+		if err != nil {
+			if errors.Is(err, processor.BucketNotFound) {
+				err := j.scheduleProcessor.MarkBackupSourceDeleted(ctx, backup.ID)
+				if err != nil {
+					glog.Warningf("[FAIL] Error marking backup source as deleted %s: %s", backup, err)
+				}
+			}
+			glog.Warningf("[FAIL] Error preparing backup jobs for backup %s: %s", backup, err)
+		} else {
+			glog.Infof("[SUCCESS] Persisting backup job finished successfully for backup %s", backup)
+		}
 	}
+
 }
 
 var getCurrentTime = func() time.Time {

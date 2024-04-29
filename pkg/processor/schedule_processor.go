@@ -6,6 +6,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
+	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
 	"time"
 )
@@ -19,7 +20,7 @@ type TrashcanEntry struct {
 // ScheduleProcessor defines operation for scheduling
 type ScheduleProcessor interface {
 	CreateBigQueryJobCreator(ctxIn context.Context, client bigquery.Client) *BigQueryJobCreator
-	CreateCloudStorageJobCreator(ctxIn context.Context) *CloudStorageJobCreator
+	CreateCloudStorageJobCreator(ctxIn context.Context, gcsClient gcs.CloudStorageClient) *CloudStorageJobCreator
 	GetNextBackupJobs(context.Context, repository.BackupType) ([]*repository.Job, error)
 	GetScheduledBackupJobs(context.Context, repository.BackupType) ([]*repository.Job, error)
 	GetExpired(context.Context, repository.BackupType) ([]*repository.Backup, error)
@@ -95,11 +96,11 @@ func (d *defaultScheduleProcessor) CreateBigQueryJobCreator(ctxIn context.Contex
 	return NewBigQueryJobCreator(ctx, d.backupRepository, d.jobRepository, bigQueryClient, d.sourceMetadataRepository, d.sourceMetadataJobRepository)
 }
 
-func (d *defaultScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context) *CloudStorageJobCreator {
+func (d *defaultScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context, gcsClient gcs.CloudStorageClient) *CloudStorageJobCreator {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultScheduleProcessor).CreateCloudStorageJobCreator")
 	defer span.End()
 
-	return NewCloudStorageJobCreator(ctx, d.backupRepository, d.jobRepository)
+	return NewCloudStorageJobCreator(ctx, d.backupRepository, d.jobRepository, gcsClient)
 }
 
 func (d *defaultScheduleProcessor) GetNextBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {

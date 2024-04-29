@@ -44,6 +44,11 @@ func (b *BigQueryJobCreator) PrepareJobs(ctxIn context.Context, backup *reposito
 	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).PrepareJobs")
 	defer span.End()
 
+	var datasetExists, _ = b.BigQuery.DoesDatasetExists(ctx, backup.SourceProject, backup.Dataset)
+	if !datasetExists {
+		return BackupSourceNotFound
+	}
+
 	if repository.Mirror == backup.Strategy {
 		return b.prepareMirrorJobs(ctx, backup)
 	} else if repository.Snapshot == backup.Strategy {
@@ -129,10 +134,7 @@ func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *reposi
 		tablesInDataset, err := b.BigQuery.GetTablesInDataset(ctx, backup.SourceProject, backup.Dataset)
 
 		if err != nil {
-			var e *googleapi.Error
-			if errors.As(err, &e) && e.Code == 404 {
-				return []*bigquery.Table{}, BackupSourceNotFound
-			}
+			return []*bigquery.Table{}, err
 		}
 
 		for _, t := range tablesInDataset {
@@ -146,11 +148,10 @@ func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *reposi
 	for _, t := range tablesToInspect {
 		resultingTables, err := b.listBigQueryTable(ctx, backup, t)
 		if err != nil {
-			if e, ok := err.(*googleapi.Error); ok && e.Code == 404 {
-				glog.Infof("404 Error: table with id %s not found", t)
+			var e *googleapi.Error
+			if errors.As(err, &e) && e.Code == 404 {
+				glog.Warningf("404 Error: table with id %s not found", t)
 				continue
-			} else {
-				return []*bigquery.Table{}, err
 			}
 		}
 		flattenedTables = append(flattenedTables, resultingTables...)

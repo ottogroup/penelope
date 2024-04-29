@@ -60,9 +60,10 @@ var (
 	ListPoliciesUnsafeHTTPMock = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-unsafe/denypolicies", emptyListPoliciesResultResponse)
 	ListPoliciesSafeHTTPMock   = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-safe/denypolicies", listPoliciesResultResponse)
 
-	ListServiceUsageHTTPMock = NewMockedHTTPRequest("GET", "projects/.*/services", listServiceUsageOkResponse)
-	GetPRojectHTTPMock       = NewMockedHTTPRequest("GET", "/v3/projects/.*/", getProjectOkResponse)
-	GetBackUpSourceNotFound  = NewMockedHTTPRequest("GET", "bigquery/v2/projects/.*/datasets/notExistingDataset", getBackUpSourceNotFoundResponse)
+	ListServiceUsageHTTPMock               = NewMockedHTTPRequest("GET", "projects/.*/services", listServiceUsageOkResponse)
+	GetPRojectHTTPMock                     = NewMockedHTTPRequest("GET", "/v3/projects/.*/", getProjectOkResponse)
+	GetBackUpSourceNotFoundForBigQuery     = NewMockedHTTPRequest("GET", "bigquery/v2/projects/.*/datasets/notExistingDataset", getBackUpSourceNotFoundResponseForBigQuery)
+	GetBackUpSourceNotFoundForCloudStorage = NewMockedHTTPRequest("GET", "/storage/v1/b/notExistingBucket", getBackUpSourceNotFoundResponseForCloudStorage)
 )
 
 const (
@@ -269,7 +270,7 @@ Content-Type: application/json; charset=UTF-8
   ]
 }]}`
 
-	getBackUpSourceNotFoundResponse = `HTTP/1.1 404 Not Found
+	getBackUpSourceNotFoundResponseForBigQuery = `HTTP/1.1 404 Not Found
 Content-Type: application/json; charset=UTF-8
 {
   "error": {
@@ -283,6 +284,22 @@ Content-Type: application/json; charset=UTF-8
       }
     ],
     "status": "NOT_FOUND"
+  }
+}
+`
+	getBackUpSourceNotFoundResponseForCloudStorage = `HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=UTF-8
+{
+  "error": {
+    "code": 404,
+    "message": "The specified bucket does not exist.",
+    "errors": [
+      {
+        "message": "The specified bucket does not exist.",
+        "domain": "global",
+        "reason": "notFound"
+      }
+    ]
   }
 }
 `

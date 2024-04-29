@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"io"
 	"net/http"
 	"os"
@@ -86,7 +87,7 @@ func (m *MockScheduleProcessor) GetExpiredBigQueryMirrorRevisions(ctxIn context.
 	return nil, fmt.Errorf("GetBackupForID failed")
 }
 
-func (m *MockScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context) *processor.CloudStorageJobCreator {
+func (m *MockScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context, gcsClient gcs.CloudStorageClient) *processor.CloudStorageJobCreator {
 	panic("implement me")
 }
 
