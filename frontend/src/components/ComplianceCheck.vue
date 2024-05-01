@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { CreateRequest, DefaultService } from "@/models/api";
+import {BackupStatus, CreateRequest, DefaultService} from "@/models/api";
 import { useNotificationsStore } from "@/stores";
-import { ref, watch } from "vue";
+import {computed, ref, watch} from "vue";
+import Notification from "@/models/notification";
 
 const notificationsStore = useNotificationsStore();
 
@@ -17,6 +18,10 @@ const complianceChecks = ref<
   }[]
 >([]);
 
+const backupStatusIsValid = computed(() => {
+  return props.backup?.status !== BackupStatus.BACKUP_DELETED;
+});
+
 const updateData = () => {
   if (props.backup === undefined) {
     isLoading.value = false;
@@ -30,7 +35,18 @@ const updateData = () => {
     .then((resp) => {
       complianceChecks.value = resp.checks ?? [];
     })
-    .catch((err) => notificationsStore.handleError(err))
+    .catch((err) => {
+      if (props.backup?.status === BackupStatus.BACKUP_DELETED) {
+        notificationsStore.addNotification(
+          new Notification({
+            message: `Error ${err.status}: Could not fetch compliance check, backup status is "${props.backup.status}"`,
+            color: "error",
+          })
+        );
+      } else {
+        notificationsStore.handleError(err);
+      }
+    })
     .finally(() => {
       isLoading.value = false;
     });
@@ -46,7 +62,7 @@ watch(
 </script>
 
 <template>
-  <template v-if="complianceChecks.length > 0 || isLoading">
+  <template v-if="backupStatusIsValid && (complianceChecks.length > 0 || isLoading)">
     <h4>Compliance checks</h4>
     <v-progress-linear v-if="isLoading" indeterminate />
     <v-list>

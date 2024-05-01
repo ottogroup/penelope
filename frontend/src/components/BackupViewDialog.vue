@@ -36,6 +36,7 @@ const updateData = () => {
             mirror_options: response.mirror_options,
             bigquery_options: response.bigquery_options,
             gcs_options: response.gcs_options,
+            status: response.status,
           };
         })
         .catch((err) => {

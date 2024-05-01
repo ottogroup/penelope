@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { CreateRequest, DefaultService } from "@/models/api";
-import { useNotificationsStore } from "@/stores";
-import { ApexOptions } from "apexcharts";
-import { ref, watch } from "vue";
+import {BackupStatus, CreateRequest, DefaultService} from "@/models/api";
+import {useNotificationsStore} from "@/stores";
+import {ApexOptions} from "apexcharts";
+import {computed, ref, watch} from "vue";
 import VueApexCharts from "vue3-apexcharts";
+import Notification from "@/models/notification";
 
 const notificationsStore = useNotificationsStore();
 
@@ -48,6 +49,10 @@ const pricePredictionOptions = ref<ApexOptions>({
   },
 });
 
+const backupStatusIsValid = computed(() => {
+  return props.backup?.status !== BackupStatus.FINISHED && props.backup?.status !== BackupStatus.BACKUP_DELETED;
+});
+
 const updateData = () => {
   if (props.backup === undefined) {
     isLoading.value = false;
@@ -66,7 +71,18 @@ const updateData = () => {
         },
       ];
     })
-    .catch((err) => notificationsStore.handleError(err))
+    .catch((err) => {
+      if (props.backup?.status === BackupStatus.BACKUP_DELETED || props.backup?.status === BackupStatus.FINISHED) {
+        notificationsStore.addNotification(
+          new Notification({
+            message: `Error ${err.status}: Could not fetch cost prediction, backup status is "${props.backup.status}"`,
+            color: "error",
+          })
+        );
+      } else {
+        notificationsStore.handleError(err);
+      }
+    })
     .finally(() => {
       isLoading.value = false;
     });
@@ -82,12 +98,12 @@ watch(
 </script>
 
 <template>
-  <template v-if="pricePrediction.length > 0 || isLoading">
+  <template v-if="backupStatusIsValid && (pricePrediction.length > 0 || isLoading)">
     <h4>Cost prediction</h4>
-    <v-progress-linear v-if="isLoading" indeterminate />
-    <VueApexCharts type="area" :options="pricePredictionOptions" :series="pricePrediction" />
+    <v-progress-linear v-if="isLoading" indeterminate/>
+    <VueApexCharts type="area" :options="pricePredictionOptions" :series="pricePrediction"/>
     <small
-      >* cost calculation based on current amount of data. <b>Additional written data will increase pricing</b></small
+    >* cost calculation based on current amount of data. <b>Additional written data will increase pricing</b></small
     >
   </template>
 </template>

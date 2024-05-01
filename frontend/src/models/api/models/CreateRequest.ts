@@ -24,5 +24,6 @@ export type CreateRequest = {
     gcs_options?: GCSOptions;
     recovery_point_objective?: RecoveryPointObjective;
     recovery_time_objective?: RecoveryTimeObjective;
+    status?: string;
 };
 
