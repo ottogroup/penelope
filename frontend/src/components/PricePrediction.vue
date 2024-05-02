@@ -49,8 +49,8 @@ const pricePredictionOptions = ref<ApexOptions>({
   },
 });
 
-const backupStatusIsValid = computed(() => {
-  return props.backup?.status !== BackupStatus.FINISHED && props.backup?.status !== BackupStatus.BACKUP_DELETED;
+const backupStatusIsNotValid = computed(() => {
+  return props.backup?.status === BackupStatus.FINISHED || props.backup?.status === BackupStatus.BACKUP_DELETED;
 });
 
 const updateData = () => {
@@ -62,30 +62,31 @@ const updateData = () => {
   isLoading.value = true;
   pricePrediction.value = [];
 
-  DefaultService.postBackupsCalculate(props.backup)
-    .then((resp) => {
-      pricePrediction.value = [
-        {
-          name: `€ at month for ${((resp.costs?.[0]?.size_in_bytes ?? 0) / Math.pow(2, 30)).toFixed(2)} GB`,
-          data: resp.costs?.map((c) => c.cost!) ?? [],
-        },
-      ];
-    })
-    .catch((err) => {
-      if (props.backup?.status === BackupStatus.BACKUP_DELETED || props.backup?.status === BackupStatus.FINISHED) {
-        notificationsStore.addNotification(
-          new Notification({
-            message: `Error ${err.status}: Could not fetch cost prediction, backup status is "${props.backup.status}"`,
-            color: "error",
-          })
-        );
-      } else {
+
+  if (!backupStatusIsNotValid.value) {
+    DefaultService.postBackupsCalculate(props.backup)
+      .then((resp) => {
+        pricePrediction.value = [
+          {
+            name: `€ at month for ${((resp.costs?.[0]?.size_in_bytes ?? 0) / Math.pow(2, 30)).toFixed(2)} GB`,
+            data: resp.costs?.map((c) => c.cost!) ?? [],
+          },
+        ];
+      })
+      .catch((err) => {
         notificationsStore.handleError(err);
-      }
-    })
-    .finally(() => {
-      isLoading.value = false;
-    });
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
+  } else {
+    notificationsStore.addNotification(
+      new Notification({
+        message: `Error: Could not fetch cost prediction, backup status is "${props.backup.status}"`,
+        color: "error",
+      })
+    );
+  }
 };
 
 updateData();
@@ -98,7 +99,7 @@ watch(
 </script>
 
 <template>
-  <template v-if="backupStatusIsValid && (pricePrediction.length > 0 || isLoading)">
+  <template v-if="!backupStatusIsNotValid && (pricePrediction.length > 0 || isLoading)">
     <h4>Cost prediction</h4>
     <v-progress-linear v-if="isLoading" indeterminate/>
     <VueApexCharts type="area" :options="pricePredictionOptions" :series="pricePrediction"/>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {BackupStatus, CreateRequest, DefaultService} from "@/models/api";
-import { useNotificationsStore } from "@/stores";
+import {useNotificationsStore} from "@/stores";
 import {computed, ref, watch} from "vue";
 import Notification from "@/models/notification";
 
@@ -18,8 +18,8 @@ const complianceChecks = ref<
   }[]
 >([]);
 
-const backupStatusIsValid = computed(() => {
-  return props.backup?.status !== BackupStatus.BACKUP_DELETED;
+const backupStatusIsNotValid = computed(() => {
+  return props.backup?.status === BackupStatus.BACKUP_DELETED;
 });
 
 const updateData = () => {
@@ -31,25 +31,25 @@ const updateData = () => {
   isLoading.value = true;
   complianceChecks.value = [];
 
-  DefaultService.postBackupsCompliance(props.backup)
-    .then((resp) => {
-      complianceChecks.value = resp.checks ?? [];
-    })
-    .catch((err) => {
-      if (props.backup?.status === BackupStatus.BACKUP_DELETED) {
-        notificationsStore.addNotification(
-          new Notification({
-            message: `Error ${err.status}: Could not fetch compliance check, backup status is "${props.backup.status}"`,
-            color: "error",
-          })
-        );
-      } else {
+  if (!backupStatusIsNotValid.value) {
+    DefaultService.postBackupsCompliance(props.backup)
+      .then((resp) => {
+        complianceChecks.value = resp.checks ?? [];
+      })
+      .catch((err) => {
         notificationsStore.handleError(err);
-      }
-    })
-    .finally(() => {
-      isLoading.value = false;
-    });
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
+  } else {
+    notificationsStore.addNotification(
+      new Notification({
+        message: `Error: Could not fetch compliance check, backup status is "${props.backup.status}"`,
+        color: "error",
+      })
+    );
+  }
 };
 
 updateData();
@@ -62,9 +62,9 @@ watch(
 </script>
 
 <template>
-  <template v-if="backupStatusIsValid && (complianceChecks.length > 0 || isLoading)">
+  <template v-if="!backupStatusIsNotValid && (complianceChecks.length > 0 || isLoading)">
     <h4>Compliance checks</h4>
-    <v-progress-linear v-if="isLoading" indeterminate />
+    <v-progress-linear v-if="isLoading" indeterminate/>
     <v-list>
       <v-list-item v-for="check in complianceChecks">
         <v-list-item-title class="text-wrap">
