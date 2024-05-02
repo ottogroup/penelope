@@ -36,19 +36,17 @@ const updateData = () => {
       .then((resp) => {
         complianceChecks.value = resp.checks ?? [];
       })
-      .catch((err) => {
-        notificationsStore.handleError(err);
+      .catch(() => {
+        notificationsStore.addNotification(
+          new Notification({
+            message: `Could not fetch compliance check`,
+            color: "warning",
+          })
+        );
       })
       .finally(() => {
         isLoading.value = false;
       });
-  } else {
-    notificationsStore.addNotification(
-      new Notification({
-        message: `Error: Could not fetch compliance check, backup status is "${props.backup.status}"`,
-        color: "error",
-      })
-    );
   }
 };
 

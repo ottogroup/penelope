@@ -73,19 +73,17 @@ const updateData = () => {
           },
         ];
       })
-      .catch((err) => {
-        notificationsStore.handleError(err);
+      .catch(() => {
+        notificationsStore.addNotification(
+          new Notification({
+            message: `Could not fetch cost prediction`,
+            color: "warning",
+          })
+        );
       })
       .finally(() => {
         isLoading.value = false;
       });
-  } else {
-    notificationsStore.addNotification(
-      new Notification({
-        message: `Error: Could not fetch cost prediction, backup status is "${props.backup.status}"`,
-        color: "error",
-      })
-    );
   }
 };
 
