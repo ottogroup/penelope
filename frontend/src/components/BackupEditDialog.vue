@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {Backup, BackupStrategy, DefaultService, UpdateRequest} from "@/models/api";
+import {Backup, BackupStatus, BackupStrategy, DefaultService, UpdateRequest} from "@/models/api";
 import {BackupType} from "@/models/api/models/BackupType";
 import Notification from "@/models/notification";
 import {useNotificationsStore} from "@/stores";
-import {ref, watch} from "vue";
+import {computed, ref, watch} from "vue";
 
 const notificationsStore = useNotificationsStore();
 
@@ -33,6 +33,10 @@ const backup = ref<Backup>({
 });
 
 const isValid = ref(false);
+
+const backupStatusIsNotValid = computed(() => {
+  return backup.value.status === BackupStatus.BACKUP_DELETED;
+});
 
 const updateData = () => {
   isLoading.value = true;
@@ -106,6 +110,7 @@ watch(
             <v-col>
               <h3>Source</h3>
               <v-text-field
+                :disabled="backupStatusIsNotValid"
                 label="Recovery point objective (hours)"
                 type="number"
                 hint="Minimal frequency a backup must be conducted."
@@ -113,6 +118,7 @@ watch(
                 :rules="[integerRequiredRule('Recovery point objective (hours)')]"
               ></v-text-field>
               <v-text-field
+                :disabled="backupStatusIsNotValid"
                 label="Recovery time objective (minutes)"
                 type="number"
                 hint="The recovery process time duration needed to restore data from backup storage to project/service."
