@@ -35,7 +35,7 @@ const backup = ref<Backup>({
 
 const isValid = ref(false);
 
-const backupStatusIsNotValid = computed(() => {
+const backupStatusIsDeleted = computed(() => {
   return backup.value.status === BackupStatus.BACKUP_DELETED;
 });
 
@@ -111,12 +111,11 @@ watch(
   <v-dialog v-model="viewDialog" width="800" @click="closeDialog">
     <v-card title="Update backup" :loading="isLoading">
       <v-card-text>
-        <v-form :disabled="isLoading" v-model="isValid" fast-fail @submit.prevent>
+        <v-form :disabled="isLoading || backupStatusIsDeleted" v-model="isValid" fast-fail @submit.prevent>
           <v-row>
             <v-col>
               <h3>Source</h3>
               <v-text-field
-                :disabled="backupStatusIsNotValid"
                 label="Recovery point objective (hours)"
                 type="number"
                 hint="Minimal frequency a backup must be conducted."
@@ -124,7 +123,6 @@ watch(
                 :rules="[integerRequiredRule('Recovery point objective (hours)')]"
               ></v-text-field>
               <v-text-field
-                :disabled="backupStatusIsNotValid"
                 label="Recovery time objective (minutes)"
                 type="number"
                 hint="The recovery process time duration needed to restore data from backup storage to project/service."

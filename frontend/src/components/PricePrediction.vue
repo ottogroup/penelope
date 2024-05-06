@@ -49,7 +49,7 @@ const pricePredictionOptions = ref<ApexOptions>({
   },
 });
 
-const backupStatusIsNotValid = computed(() => {
+const backupStatusIsDeleted = computed(() => {
   return props.backup?.status === BackupStatus.FINISHED || props.backup?.status === BackupStatus.BACKUP_DELETED;
 });
 
@@ -63,7 +63,7 @@ const updateData = () => {
   pricePrediction.value = [];
 
 
-  if (!backupStatusIsNotValid.value) {
+  if (!backupStatusIsDeleted.value) {
     DefaultService.postBackupsCalculate(props.backup)
       .then((resp) => {
         pricePrediction.value = [
@@ -97,7 +97,7 @@ watch(
 </script>
 
 <template>
-  <template v-if="!backupStatusIsNotValid && (pricePrediction.length > 0 || isLoading)">
+  <template v-if="!backupStatusIsDeleted && (pricePrediction.length > 0 || isLoading)">
     <h4>Cost prediction</h4>
     <v-progress-linear v-if="isLoading" indeterminate/>
     <VueApexCharts type="area" :options="pricePredictionOptions" :series="pricePrediction"/>

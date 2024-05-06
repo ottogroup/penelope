@@ -18,7 +18,7 @@ const complianceChecks = ref<
   }[]
 >([]);
 
-const backupStatusIsNotValid = computed(() => {
+const backupStatusIsDeleted = computed(() => {
   return props.backup?.status === BackupStatus.BACKUP_DELETED;
 });
 
@@ -31,7 +31,7 @@ const updateData = () => {
   isLoading.value = true;
   complianceChecks.value = [];
 
-  if (!backupStatusIsNotValid.value) {
+  if (!backupStatusIsDeleted.value) {
     DefaultService.postBackupsCompliance(props.backup)
       .then((resp) => {
         complianceChecks.value = resp.checks ?? [];
@@ -60,7 +60,7 @@ watch(
 </script>
 
 <template>
-  <template v-if="!backupStatusIsNotValid && (complianceChecks.length > 0 || isLoading)">
+  <template v-if="!backupStatusIsDeleted && (complianceChecks.length > 0 || isLoading)">
     <h4>Compliance checks</h4>
     <v-progress-linear v-if="isLoading" indeterminate/>
     <v-list>
