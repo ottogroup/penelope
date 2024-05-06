@@ -3,13 +3,11 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-pg/pg/v10/orm"
-	"github.com/ottogroup/penelope/pkg/http/mock"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	service2 "github.com/ottogroup/penelope/pkg/service"
@@ -331,13 +329,6 @@ func TestPrepareBackupJobsService_BigQueryMirror_MetadataRepositoryTracksDeleted
 }
 
 func TestTableNotFound(t *testing.T) {
-	httpMockHandler = mock.NewHTTPMockHandler()
-	httpMockHandler.Register(mock.OauthHTTPMock, mock.ImpersonationHTTPMock, mock.RetrieveAccessTokenHTTPMock, mock.TablePartitionQueryHTTPMock)
-	httpMockHandler.Register(mock.ObjectsExistsHTTPMock, mock.SinkNotExistsHTTPMock, mock.SinkCreatedHTTPpMock, mock.SinkDeletedHTTPMock)
-	httpMockHandler.Register(mock.TablePartitionJobHTTPMock, mock.TablePartitionResultHTTPMock, mock.ExtractJobResultOkHTTPMock)
-	httpMockHandler.Register(mock.NewMockedHTTPRequest("GET", "/local-kebab-database/"+os.Getenv("CLOUD_SQL_SECRETS_PATH"), mock.SQLPasswordStorageResponse))
-	httpMockHandler.Register(mock.DatasetInfoHTTPMock, mock.TableNotFoundMock)
-
 	httpMockHandler.Start()
 	defer httpMockHandler.Stop()
 
@@ -367,7 +358,7 @@ func TestTableNotFound(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	assert.Equal(t, "notExistingTable", backup.Table[0])
+	assert.Equal(t, "notExistingTable", backup.BigQueryOptions.Table[0])
 	logMsg := "404 Error: table with id notExistingTable not found"
 	assert.Containsf(t, strings.TrimSpace(stdErr), logMsg, "Run should write log message %q but it logged\n\t%s", logMsg, stdErr)
 }

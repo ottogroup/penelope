@@ -329,6 +329,7 @@ func givenACloudStorageJobCreatorWithTestContext(ctx *testContextCloudStorageJob
 		context.Background(),
 		ctx.BackupRepository,
 		ctx.JobRepository,
+		ctx.CloudStorageClient,
 	)
 }
 

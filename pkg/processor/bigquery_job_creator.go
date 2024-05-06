@@ -153,6 +153,9 @@ func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *reposi
 				glog.Warningf("404 Error: table with id %s not found", t)
 				continue
 			}
+		} else if len(resultingTables) == 0 {
+			glog.Infof("list tables resulted an empty list")
+			continue
 		}
 		flattenedTables = append(flattenedTables, resultingTables...)
 	}

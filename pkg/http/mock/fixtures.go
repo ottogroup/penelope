@@ -42,10 +42,8 @@ var (
 	DatasetNotFoundInfoHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/datasets/unknown-dataset", datasetInfoNotFoundResponse)
 	// DatasetInfoHTTPMock request
 	DatasetInfoHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/datasets/.*", datasetInfoResponse)
-
 	// TableNotFoundMock request
 	TableNotFoundMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/datasets/.*/tables/notExistingTable", tableInfoNotFoundResponse)
-
 	// TableInfoHTTPMock request
 	TableInfoHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/datasets/.*/tables/.*", tableInfoResponse)
 	// TablePartitionQueryHTTPMock request
