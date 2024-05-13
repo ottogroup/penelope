@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {Backup, BackupStrategy, DefaultService, UpdateRequest} from "@/models/api";
+import {Backup, BackupStatus, BackupStrategy, DefaultService, UpdateRequest} from "@/models/api";
 import {BackupType} from "@/models/api/models/BackupType";
 import Notification from "@/models/notification";
 import {useNotificationsStore} from "@/stores";
-import {ref, watch} from "vue";
+import {computed, ref, watch} from "vue";
 
 const notificationsStore = useNotificationsStore();
 
@@ -13,6 +13,7 @@ const props = defineProps({
   },
 });
 
+const emits = defineEmits(['close']);
 const viewDialog = ref(false);
 const isLoading = ref(true);
 const backup = ref<Backup>({
@@ -33,6 +34,10 @@ const backup = ref<Backup>({
 });
 
 const isValid = ref(false);
+
+const backupStatusIsDeleted = computed(() => {
+  return backup.value.status === BackupStatus.BACKUP_DELETED;
+});
 
 const updateData = () => {
   isLoading.value = true;
@@ -88,6 +93,11 @@ const integerRequiredRule = (fieldName: string) => {
   return (v: number) => (!!v && v > 0) || `${fieldName} is required and must be bigger than 0`;
 };
 
+const closeDialog = () => {
+  viewDialog.value = false;
+  emits('close');
+};
+
 watch(
   () => props.id,
   (id) => {
@@ -98,10 +108,10 @@ watch(
 </script>
 
 <template>
-  <v-dialog v-model="viewDialog" width="800">
+  <v-dialog v-model="viewDialog" width="800" @click="closeDialog">
     <v-card title="Update backup" :loading="isLoading">
       <v-card-text>
-        <v-form :disabled="isLoading" v-model="isValid" fast-fail @submit.prevent>
+        <v-form :disabled="isLoading || backupStatusIsDeleted" v-model="isValid" fast-fail @submit.prevent>
           <v-row>
             <v-col>
               <h3>Source</h3>
@@ -195,7 +205,7 @@ watch(
       </v-card-text>
       <template v-slot:actions>
         <v-btn-group class="ms-auto">
-          <v-btn text="Cancel" @click="viewDialog = false"></v-btn>
+          <v-btn text="Cancel" @click="closeDialog"></v-btn>
           <v-btn text="Update" :disabled="isLoading || !isValid" @click="saveBackup()"></v-btn>
         </v-btn-group>
       </template>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { CreateRequest, DefaultService } from "@/models/api";
-import { useNotificationsStore } from "@/stores";
-import { ref, watch } from "vue";
+import {BackupStatus, CreateRequest, DefaultService} from "@/models/api";
+import {useNotificationsStore} from "@/stores";
+import {computed, ref, watch} from "vue";
+import Notification from "@/models/notification";
 
 const notificationsStore = useNotificationsStore();
 
@@ -17,6 +18,10 @@ const complianceChecks = ref<
   }[]
 >([]);
 
+const backupStatusIsDeleted = computed(() => {
+  return props.backup?.status === BackupStatus.BACKUP_DELETED;
+});
+
 const updateData = () => {
   if (props.backup === undefined) {
     isLoading.value = false;
@@ -26,14 +31,23 @@ const updateData = () => {
   isLoading.value = true;
   complianceChecks.value = [];
 
-  DefaultService.postBackupsCompliance(props.backup)
-    .then((resp) => {
-      complianceChecks.value = resp.checks ?? [];
-    })
-    .catch((err) => notificationsStore.handleError(err))
-    .finally(() => {
-      isLoading.value = false;
-    });
+  if (!backupStatusIsDeleted.value) {
+    DefaultService.postBackupsCompliance(props.backup)
+      .then((resp) => {
+        complianceChecks.value = resp.checks ?? [];
+      })
+      .catch(() => {
+        notificationsStore.addNotification(
+          new Notification({
+            message: `Could not make compliance check for backup`,
+            color: "warning",
+          })
+        );
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
+  }
 };
 
 updateData();
@@ -46,9 +60,9 @@ watch(
 </script>
 
 <template>
-  <template v-if="complianceChecks.length > 0 || isLoading">
+  <template v-if="!backupStatusIsDeleted && (complianceChecks.length > 0 || isLoading)">
     <h4>Compliance checks</h4>
-    <v-progress-linear v-if="isLoading" indeterminate />
+    <v-progress-linear v-if="isLoading" indeterminate/>
     <v-list>
       <v-list-item v-for="check in complianceChecks">
         <v-list-item-title class="text-wrap">

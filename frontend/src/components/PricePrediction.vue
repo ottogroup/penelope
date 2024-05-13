@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { CreateRequest, DefaultService } from "@/models/api";
-import { useNotificationsStore } from "@/stores";
-import { ApexOptions } from "apexcharts";
-import { ref, watch } from "vue";
+import {BackupStatus, CreateRequest, DefaultService} from "@/models/api";
+import {useNotificationsStore} from "@/stores";
+import {ApexOptions} from "apexcharts";
+import {computed, ref, watch} from "vue";
 import VueApexCharts from "vue3-apexcharts";
+import Notification from "@/models/notification";
 
 const notificationsStore = useNotificationsStore();
 
@@ -48,6 +49,10 @@ const pricePredictionOptions = ref<ApexOptions>({
   },
 });
 
+const backupStatusIsDeleted = computed(() => {
+  return props.backup?.status === BackupStatus.FINISHED || props.backup?.status === BackupStatus.BACKUP_DELETED;
+});
+
 const updateData = () => {
   if (props.backup === undefined) {
     isLoading.value = false;
@@ -57,19 +62,29 @@ const updateData = () => {
   isLoading.value = true;
   pricePrediction.value = [];
 
-  DefaultService.postBackupsCalculate(props.backup)
-    .then((resp) => {
-      pricePrediction.value = [
-        {
-          name: `€ at month for ${((resp.costs?.[0]?.size_in_bytes ?? 0) / Math.pow(2, 30)).toFixed(2)} GB`,
-          data: resp.costs?.map((c) => c.cost!) ?? [],
-        },
-      ];
-    })
-    .catch((err) => notificationsStore.handleError(err))
-    .finally(() => {
-      isLoading.value = false;
-    });
+
+  if (!backupStatusIsDeleted.value) {
+    DefaultService.postBackupsCalculate(props.backup)
+      .then((resp) => {
+        pricePrediction.value = [
+          {
+            name: `€ at month for ${((resp.costs?.[0]?.size_in_bytes ?? 0) / Math.pow(2, 30)).toFixed(2)} GB`,
+            data: resp.costs?.map((c) => c.cost!) ?? [],
+          },
+        ];
+      })
+      .catch(() => {
+        notificationsStore.addNotification(
+          new Notification({
+            message: `Could not make cost prediction for backup`,
+            color: "warning",
+          })
+        );
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
+  }
 };
 
 updateData();
@@ -82,12 +97,12 @@ watch(
 </script>
 
 <template>
-  <template v-if="pricePrediction.length > 0 || isLoading">
+  <template v-if="!backupStatusIsDeleted && (pricePrediction.length > 0 || isLoading)">
     <h4>Cost prediction</h4>
-    <v-progress-linear v-if="isLoading" indeterminate />
-    <VueApexCharts type="area" :options="pricePredictionOptions" :series="pricePrediction" />
+    <v-progress-linear v-if="isLoading" indeterminate/>
+    <VueApexCharts type="area" :options="pricePredictionOptions" :series="pricePrediction"/>
     <small
-      >* cost calculation based on current amount of data. <b>Additional written data will increase pricing</b></small
+    >* cost calculation based on current amount of data. <b>Additional written data will increase pricing</b></small
     >
   </template>
 </template>
