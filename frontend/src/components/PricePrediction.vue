@@ -76,7 +76,7 @@ const updateData = () => {
       .catch(() => {
         notificationsStore.addNotification(
           new Notification({
-            message: `Could not fetch cost prediction`,
+            message: `Could not make cost prediction for backup`,
             color: "warning",
           })
         );

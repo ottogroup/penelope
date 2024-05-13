@@ -39,7 +39,7 @@ const updateData = () => {
       .catch(() => {
         notificationsStore.addNotification(
           new Notification({
-            message: `Could not fetch compliance check`,
+            message: `Could not make compliance check for backup`,
             color: "warning",
           })
         );
