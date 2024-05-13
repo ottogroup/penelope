@@ -45,7 +45,8 @@ func (b *BigQueryJobCreator) PrepareJobs(ctxIn context.Context, backup *reposito
 	defer span.End()
 
 	datasetExists, err := b.BigQuery.DoesDatasetExists(ctx, backup.SourceProject, backup.Dataset)
-	if err != nil {
+	var googleAPIErr *googleapi.Error
+	if errors.As(err, &googleAPIErr) && googleAPIErr.Code != 404 {
 		return fmt.Errorf("error: could not check if dataset exists: %s", err)
 	} else if !datasetExists {
 		return BackupSourceNotFoundErr
