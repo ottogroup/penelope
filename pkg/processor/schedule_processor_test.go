@@ -501,8 +501,8 @@ func (*stubGcsClient) IsInitialized(c context.Context) bool {
 	panic("implement me")
 }
 
-func (*stubGcsClient) DoesBucketExist(c context.Context, project string, bucket string) (bool, error) {
-	panic("implement me")
+func (g *stubGcsClient) DoesBucketExist(c context.Context, project string, bucket string) (bool, error) {
+	return true, nil
 }
 
 func (*stubGcsClient) CreateBucket(c context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
