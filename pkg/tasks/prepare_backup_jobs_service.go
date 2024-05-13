@@ -81,7 +81,7 @@ func (j *prepareBackupJobsService) createBigQueryBackupJobs(ctxIn context.Contex
 	} else {
 		err = j.scheduleProcessor.CreateBigQueryJobCreator(ctx, bq).PrepareJobs(ctx, backup)
 		if err != nil {
-			if errors.Is(err, processor.BackupSourceNotFound) {
+			if errors.Is(err, processor.BackupSourceNotFoundErr) {
 				err := j.scheduleProcessor.MarkBackupSourceDeleted(ctx, backup.ID)
 				if err != nil {
 					glog.Warningf("[FAIL] Error marking backup source as deleted %s: %s", backup, err)

@@ -22,7 +22,7 @@ type BigQueryJobCreator struct {
 	BigQuery                    bigquery.Client
 }
 
-var BackupSourceNotFound = errors.New("error: backup source not found")
+var BackupSourceNotFoundErr = errors.New("error: backup source not found")
 
 // NewBigQueryJobCreator return instance of BigQueryJobCreator
 func NewBigQueryJobCreator(ctxIn context.Context, backupRepository repository.BackupRepository, jobRepository repository.JobRepository, bigQueryClient bigquery.Client,
@@ -44,9 +44,11 @@ func (b *BigQueryJobCreator) PrepareJobs(ctxIn context.Context, backup *reposito
 	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).PrepareJobs")
 	defer span.End()
 
-	var datasetExists, _ = b.BigQuery.DoesDatasetExists(ctx, backup.SourceProject, backup.Dataset)
-	if !datasetExists {
-		return BackupSourceNotFound
+	datasetExists, err := b.BigQuery.DoesDatasetExists(ctx, backup.SourceProject, backup.Dataset)
+	if err != nil {
+		return fmt.Errorf("error: could not check if dataset exists: %s", err)
+	} else if !datasetExists {
+		return BackupSourceNotFoundErr
 	}
 
 	if repository.Mirror == backup.Strategy {
