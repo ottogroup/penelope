@@ -43,7 +43,7 @@ func init() {
 	flag.Parse()
 
 	httpMockHandler = mock.NewHTTPMockHandler()
-	httpMockHandler.Register(mock.GetBackUpSourceNotFoundForBigQuery, mock.GetBackUpSourceNotFoundForCloudStorage, mock.TableNotFoundMock, mock.OauthHTTPMock, mock.ImpersonationHTTPMock, mock.RetrieveAccessTokenHTTPMock, mock.TablePartitionQueryHTTPMock, mock.TableInfoHTTPMock, mock.DatasetInfoHTTPMock)
+	httpMockHandler.Register(mock.GetBackUpSourceNotFoundForBigQueryMock, mock.GetBackUpSourceNotFoundForCloudStorageMock, mock.TableNotFoundMock, mock.OauthHTTPMock, mock.ImpersonationHTTPMock, mock.RetrieveAccessTokenHTTPMock, mock.TablePartitionQueryHTTPMock, mock.TableInfoHTTPMock, mock.DatasetInfoHTTPMock)
 	httpMockHandler.Register(mock.ObjectsExistsHTTPMock, mock.SinkNotExistsHTTPMock, mock.SinkCreatedHTTPpMock, mock.SinkDeletedHTTPMock)
 	httpMockHandler.Register(mock.TablePartitionJobHTTPMock, mock.TablePartitionResultHTTPMock, mock.ExtractJobResultOkHTTPMock)
 	httpMockHandler.Register(mock.NewMockedHTTPRequest("GET", "/local-kebab-database/"+os.Getenv("CLOUD_SQL_SECRETS_PATH"), mock.SQLPasswordStorageResponse))

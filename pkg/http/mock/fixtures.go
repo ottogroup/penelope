@@ -55,13 +55,8 @@ var (
 	// ExtractJobResultOkHTTPMock request
 	ExtractJobResultOkHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/jobs/.*", getExtractJobResultOkResponse)
 
-	ListPoliciesUnsafeHTTPMock = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-unsafe/denypolicies", emptyListPoliciesResultResponse)
-	ListPoliciesSafeHTTPMock   = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-safe/denypolicies", listPoliciesResultResponse)
-
-	ListServiceUsageHTTPMock               = NewMockedHTTPRequest("GET", "projects/.*/services", listServiceUsageOkResponse)
-	GetPRojectHTTPMock                     = NewMockedHTTPRequest("GET", "/v3/projects/.*/", getProjectOkResponse)
-	GetBackUpSourceNotFoundForBigQuery     = NewMockedHTTPRequest("GET", "bigquery/v2/projects/.*/datasets/notExistingDataset", getBackUpSourceNotFoundResponseForBigQuery)
-	GetBackUpSourceNotFoundForCloudStorage = NewMockedHTTPRequest("GET", "/storage/v1/b/notExistingBucket", getBackUpSourceNotFoundResponseForCloudStorage)
+	GetBackUpSourceNotFoundForBigQueryMock     = NewMockedHTTPRequest("GET", "bigquery/v2/projects/.*/datasets/notExistingDataset", getBackUpSourceNotFoundResponseForBigQuery)
+	GetBackUpSourceNotFoundForCloudStorageMock = NewMockedHTTPRequest("GET", "/storage/v1/b/notExistingBucket", getBackUpSourceNotFoundResponseForCloudStorage)
 )
 
 const (

@@ -385,6 +385,7 @@ type testContextCloudStorageJobCreator struct {
 }
 
 type testBigQueryClient struct {
+	fDoesDatasetExists      bool
 	fDoesTableExists        bool
 	fDoesTableHasPartitions bool
 	Err                     error
@@ -426,8 +427,8 @@ func (*testBigQueryClient) GetExtractJobStatus(c context.Context, extractJobID s
 	panic("implement me")
 }
 
-func (*testBigQueryClient) DoesDatasetExists(c context.Context, project string, dataset string) (bool, error) {
-	panic("implement me")
+func (t *testBigQueryClient) DoesDatasetExists(c context.Context, project string, dataset string) (bool, error) {
+	return t.fDoesDatasetExists, nil
 }
 
 func (t *testBigQueryClient) DoesTableExists(c context.Context, project string, dataset string, table string) (bool, error) {
