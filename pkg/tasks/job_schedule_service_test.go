@@ -41,7 +41,8 @@ type MockScheduleProcessor struct {
 }
 
 func (m *MockScheduleProcessor) MarkBackupSourceDeleted(ctxIn context.Context, id string) error {
-	panic("implement me")
+	m.scheduledBackup.Status = repository.BackupSourceDeleted
+	return nil
 }
 
 func (m *MockScheduleProcessor) FilterExistingTrashcanEntries(context.Context, []processor.TrashcanEntry) ([]processor.TrashcanEntry, error) {
