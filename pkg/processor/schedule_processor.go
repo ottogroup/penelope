@@ -6,6 +6,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
+	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
 	"time"
 )
@@ -19,7 +20,7 @@ type TrashcanEntry struct {
 // ScheduleProcessor defines operation for scheduling
 type ScheduleProcessor interface {
 	CreateBigQueryJobCreator(ctxIn context.Context, client bigquery.Client) *BigQueryJobCreator
-	CreateCloudStorageJobCreator(ctxIn context.Context) *CloudStorageJobCreator
+	CreateCloudStorageJobCreator(ctxIn context.Context, gcsClient gcs.CloudStorageClient) *CloudStorageJobCreator
 	GetNextBackupJobs(context.Context, repository.BackupType) ([]*repository.Job, error)
 	GetScheduledBackupJobs(context.Context, repository.BackupType) ([]*repository.Job, error)
 	GetExpired(context.Context, repository.BackupType) ([]*repository.Backup, error)
@@ -31,6 +32,7 @@ type ScheduleProcessor interface {
 	UpdateBackupStatus(ctxIn context.Context, id string, status repository.BackupStatus) error
 	UpdateLastCleanupTime(ctxIn context.Context, backupID string, lastCleanupTime time.Time) error
 	MarkBackupDeleted(ctxIn context.Context, id string) error
+	MarkBackupSourceDeleted(ctxIn context.Context, id string) error
 	MarkSourceMetadataDeleted(ctxIn context.Context, id int) error
 	MarkJobDeleted(ctxIn context.Context, id string) error
 	GetBackupForID(ctxIn context.Context, id string) (*repository.Backup, error)
@@ -94,11 +96,11 @@ func (d *defaultScheduleProcessor) CreateBigQueryJobCreator(ctxIn context.Contex
 	return NewBigQueryJobCreator(ctx, d.backupRepository, d.jobRepository, bigQueryClient, d.sourceMetadataRepository, d.sourceMetadataJobRepository)
 }
 
-func (d *defaultScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context) *CloudStorageJobCreator {
+func (d *defaultScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context, gcsClient gcs.CloudStorageClient) *CloudStorageJobCreator {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultScheduleProcessor).CreateCloudStorageJobCreator")
 	defer span.End()
 
-	return NewCloudStorageJobCreator(ctx, d.backupRepository, d.jobRepository)
+	return NewCloudStorageJobCreator(ctx, d.backupRepository, d.jobRepository, gcsClient)
 }
 
 func (d *defaultScheduleProcessor) GetNextBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {
@@ -134,6 +136,9 @@ func (d *defaultScheduleProcessor) UpdateLastCleanupTime(ctxIn context.Context, 
 
 func (d *defaultScheduleProcessor) MarkBackupDeleted(ctxIn context.Context, id string) error {
 	return d.backupRepository.MarkDeleted(ctxIn, id)
+}
+func (d *defaultScheduleProcessor) MarkBackupSourceDeleted(ctxIn context.Context, id string) error {
+	return d.backupRepository.MarkStatus(ctxIn, id, repository.BackupSourceDeleted)
 }
 
 func (d *defaultScheduleProcessor) MarkSourceMetadataDeleted(ctxIn context.Context, id int) error {

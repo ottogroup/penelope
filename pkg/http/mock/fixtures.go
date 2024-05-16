@@ -42,10 +42,8 @@ var (
 	DatasetNotFoundInfoHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/datasets/unknown-dataset", datasetInfoNotFoundResponse)
 	// DatasetInfoHTTPMock request
 	DatasetInfoHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/datasets/.*", datasetInfoResponse)
-
 	// TableNotFoundMock request
 	TableNotFoundMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/datasets/.*/tables/notExistingTable", tableInfoNotFoundResponse)
-
 	// TableInfoHTTPMock request
 	TableInfoHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/datasets/.*/tables/.*", tableInfoResponse)
 	// TablePartitionQueryHTTPMock request
@@ -57,11 +55,8 @@ var (
 	// ExtractJobResultOkHTTPMock request
 	ExtractJobResultOkHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/jobs/.*", getExtractJobResultOkResponse)
 
-	ListPoliciesUnsafeHTTPMock = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-unsafe/denypolicies", emptyListPoliciesResultResponse)
-	ListPoliciesSafeHTTPMock   = NewMockedHTTPRequest("GET", "policies/cloudresourcemanager.googleapis.com%252Fprojects%252Ftest-example-safe/denypolicies", listPoliciesResultResponse)
-
-	ListServiceUsageHTTPMock = NewMockedHTTPRequest("GET", "projects/.*/services", listServiceUsageOkResponse)
-	GetPRojectHTTPMock       = NewMockedHTTPRequest("GET", "/v3/projects/.*/", getProjectOkResponse)
+	GetBackUpSourceNotFoundForBigQueryMock     = NewMockedHTTPRequest("GET", "bigquery/v2/projects/.*/datasets/notExistingDataset", getBackUpSourceNotFoundResponseForBigQuery)
+	GetBackUpSourceNotFoundForCloudStorageMock = NewMockedHTTPRequest("GET", "/storage/v1/b/notExistingBucket", getBackUpSourceNotFoundResponseForCloudStorage)
 )
 
 const (
@@ -267,6 +262,40 @@ Content-Type: application/json; charset=UTF-8
     }
   ]
 }]}`
+
+	getBackUpSourceNotFoundResponseForBigQuery = `HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=UTF-8
+{
+  "error": {
+    "code": 404,
+    "message": "Not found: Dataset projectname:datasetname",
+    "errors": [
+      {
+        "message": "Not found: Dataset projectname:datasetname",
+        "domain": "global",
+        "reason": "notFound"
+      }
+    ],
+    "status": "NOT_FOUND"
+  }
+}
+`
+	getBackUpSourceNotFoundResponseForCloudStorage = `HTTP/1.1 404 Not Found
+Content-Type: application/json; charset=UTF-8
+{
+  "error": {
+    "code": 404,
+    "message": "The specified bucket does not exist.",
+    "errors": [
+      {
+        "message": "The specified bucket does not exist.",
+        "domain": "global",
+        "reason": "notFound"
+      }
+    ]
+  }
+}
+`
 )
 
 func SimpleResponseBodyFromTemplate(bodyTemplate string, values map[string]string, statusCode int) (string, error) {

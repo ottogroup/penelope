@@ -82,6 +82,8 @@ const (
 	ToDelete BackupStatus = "ToDelete"
 	// BackupDeleted was deleted
 	BackupDeleted BackupStatus = "BackupDeleted"
+	// BackupSourceDeleted was deleted
+	BackupSourceDeleted BackupStatus = "BackupSourceDeleted"
 )
 
 const (

@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -20,6 +21,8 @@ type BigQueryJobCreator struct {
 	SourceMetadataJobRepository repository.SourceMetadataJobRepository
 	BigQuery                    bigquery.Client
 }
+
+var BackupSourceNotFoundErr = errors.New("error: backup source not found")
 
 // NewBigQueryJobCreator return instance of BigQueryJobCreator
 func NewBigQueryJobCreator(ctxIn context.Context, backupRepository repository.BackupRepository, jobRepository repository.JobRepository, bigQueryClient bigquery.Client,
@@ -40,6 +43,14 @@ func NewBigQueryJobCreator(ctxIn context.Context, backupRepository repository.Ba
 func (b *BigQueryJobCreator) PrepareJobs(ctxIn context.Context, backup *repository.Backup) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).PrepareJobs")
 	defer span.End()
+
+	datasetExists, err := b.BigQuery.DoesDatasetExists(ctx, backup.SourceProject, backup.Dataset)
+	var googleAPIErr *googleapi.Error
+	if errors.As(err, &googleAPIErr) && googleAPIErr.Code != 404 {
+		return fmt.Errorf("error: could not check if dataset exists: %s", err)
+	} else if !datasetExists {
+		return BackupSourceNotFoundErr
+	}
 
 	if repository.Mirror == backup.Strategy {
 		return b.prepareMirrorJobs(ctx, backup)
@@ -140,12 +151,14 @@ func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *reposi
 	for _, t := range tablesToInspect {
 		resultingTables, err := b.listBigQueryTable(ctx, backup, t)
 		if err != nil {
-			if e, ok := err.(*googleapi.Error); ok && e.Code == 404 {
-				glog.Infof("404 Error: table with id %s not found", t)
+			var e *googleapi.Error
+			if errors.As(err, &e) && e.Code == 404 {
+				glog.Warningf("404 Error: table with id %s not found", t)
 				continue
-			} else {
-				return []*bigquery.Table{}, err
 			}
+		} else if len(resultingTables) == 0 {
+			glog.Infof("list tables resulted an empty list")
+			continue
 		}
 		flattenedTables = append(flattenedTables, resultingTables...)
 	}

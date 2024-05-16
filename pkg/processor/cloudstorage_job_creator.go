@@ -2,8 +2,10 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/repository"
+	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
 	"time"
 )
@@ -12,16 +14,20 @@ import (
 type CloudStorageJobCreator struct {
 	backupRepository repository.BackupRepository
 	jobRepository    repository.JobRepository
+	gcsClient        gcs.CloudStorageClient
 }
 
+var BucketNotFound = errors.New("error: bucket not found")
+
 // NewCloudStorageJobCreator return instance of CloudStorageJobCreator
-func NewCloudStorageJobCreator(ctxIn context.Context, backupRepository repository.BackupRepository, jobRepository repository.JobRepository) *CloudStorageJobCreator {
+func NewCloudStorageJobCreator(ctxIn context.Context, backupRepository repository.BackupRepository, jobRepository repository.JobRepository, gcsClient gcs.CloudStorageClient) *CloudStorageJobCreator {
 	_, span := trace.StartSpan(ctxIn, "NewCloudStorageJobCreator")
 	defer span.End()
 
 	return &CloudStorageJobCreator{
 		backupRepository: backupRepository,
 		jobRepository:    jobRepository,
+		gcsClient:        gcsClient,
 	}
 }
 
@@ -29,6 +35,11 @@ func NewCloudStorageJobCreator(ctxIn context.Context, backupRepository repositor
 func (b *CloudStorageJobCreator) PrepareJobs(ctxIn context.Context, backup *repository.Backup) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*CloudStorageJobCreator).PrepareJobs")
 	defer span.End()
+
+	var bucketExists, _ = b.gcsClient.DoesBucketExist(ctx, backup.SourceProject, backup.Bucket)
+	if !bucketExists {
+		return BucketNotFound
+	}
 
 	if repository.Mirror == backup.Strategy || repository.Snapshot == backup.Strategy {
 		return b.prepareSnapshotJobs(ctx, backup)

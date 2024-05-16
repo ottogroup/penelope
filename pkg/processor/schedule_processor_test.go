@@ -23,6 +23,7 @@ func TestBigQueryJobCreator_PrepareJobs_strategyNotExist(t *testing.T) {
 	backup := newBigQueryMirrorBackup("strategyNotExist", "dataset", []string{})
 	backup.Strategy = "not exist"
 	testContext := givenATestContext()
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BackupRepository.AddBackup(ctx, backup)
 	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
@@ -39,6 +40,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_noTable(t *testing.T) {
 	ctx := context.Background()
 	backup := newBigQueryMirrorBackup("noTable", "dataset", []string{})
 	testContext := givenATestContext()
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BackupRepository.AddBackup(ctx, backup)
 	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
@@ -53,6 +55,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_expectNewJob(
 	ctx := context.Background()
 	backup := newBigQueryMirrorBackup("nonPartitionedTable_expectNewJob", "dataset", []string{})
 	testContext := givenATestContext()
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "1", Checksum: "123"})
 	testContext.BigQuery.fGetTable = &bq.Table{Name: "1", Checksum: "123"}
@@ -73,6 +76,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_expectNoNewJo
 	ctx := context.Background()
 	backup := newBigQueryMirrorBackup("nonPartitionedTable_expectNoNewJob", "dataset", []string{})
 	testContext := givenATestContext()
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "table1", Checksum: "123"})
 	testContext.SourceMetadataRepository.Add(ctx, []*repository.SourceMetadata{{BackupID: backup.ID, Source: "table1", SourceChecksum: "123"}})
@@ -92,6 +96,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_updateData(t 
 	ctx := context.Background()
 	backup := newBigQueryMirrorBackup("nonPartitionedTable_updateData", "dataset", []string{})
 	testContext := givenATestContext()
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BackupRepository.AddBackup(ctx, backup)
 	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "table_to_update", Checksum: "222"})
@@ -129,6 +134,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_removeData(t 
 	ctx := context.Background()
 	backup := newBigQueryMirrorBackup("nonPartitionedTable", "dataset", []string{"t1", "t2"})
 	testContext := givenATestContext()
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BackupRepository.AddBackup(ctx, backup)
 	testContext.SourceMetadataRepository.Add(ctx, []*repository.SourceMetadata{
@@ -153,6 +159,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionedTable_updateData(t *te
 	ctx := context.Background()
 	backup := newBigQueryMirrorBackup("partitionedTable_updateData", "dataset", []string{"partitioned_table$20190101"})
 	testContext := givenATestContext()
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BigQuery.fGetTable = &bq.Table{Name: "partitioned_table$20190101", Checksum: "123"}
 	testContext.BackupRepository.AddBackup(ctx, backup)
@@ -175,6 +182,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_tablesWereDeletedOtherArePresentI
 	ctx := context.Background()
 	backup := newBigQueryMirrorBackup("partitionedTable_updateData", "dataset", []string{"partitioned_table$20190101", "t2"})
 	testContext := givenATestContext()
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "table not under backup #1", Checksum: "123"})
 	testContext.BackupRepository.AddBackup(ctx, backup)
@@ -199,6 +207,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionTables_expectChanges(t *
 	testContext := givenATestContext()
 	backup := newBigQueryMirrorBackup("partitionTables_expectChanges", "dataset", []string{})
 	testContext.BackupRepository.AddBackup(ctx, backup)
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = true
 	testContext.BigQuery.fGetTable = &bq.Table{Name: "partition", Checksum: "111"}
 	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "partition", Checksum: "000"})
@@ -232,6 +241,7 @@ func TestBigQueryJobCreator_PrepareJobs_Snapshot_nonPartitionTables_expectNewJob
 	testContext := givenATestContext()
 	backup := newBigQuerySnapshotBackup("Snapshot_nonPartitionTables_expectChanges", "dataset", []string{})
 	testContext.BackupRepository.AddBackup(ctx, backup)
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BigQuery.fGetTable = &bq.Table{Name: "non_partition", Checksum: "111"}
 	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "non_partition", Checksum: "000"})
@@ -252,6 +262,7 @@ func TestBigQueryJobCreator_PrepareJobs_Snapshot_partitionTables_expectNewJobs(t
 	testContext := givenATestContext()
 	backup := newBigQuerySnapshotBackup("Snapshot_partitionTables_expectNewJobs", "dataset", []string{})
 	testContext.BackupRepository.AddBackup(ctx, backup)
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = true
 	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "partition", Checksum: "000"})
 	testContext.BigQuery.fGetTable = &bq.Table{Name: "partition", Checksum: "111"}
@@ -276,6 +287,7 @@ func TestBigQueryJobCreator_PrepareJobs_Snapshot_partitionTable_expectNewJobs(t 
 	testContext := givenATestContext()
 	backup := newBigQuerySnapshotBackup("Snapshot_partitionTables_expectNewJobs", "dataset", []string{"partition$20190101"})
 	testContext.BackupRepository.AddBackup(ctx, backup)
+	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
 	testContext.BigQuery.fGetTable = &bq.Table{Name: "partition$20190101", Checksum: "111"}
 	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
@@ -296,6 +308,7 @@ func TestCloudStorageJobCreator_PrepareJobs_strategyNotExist(t *testing.T) {
 	backup.Strategy = "not exist"
 	testContext := givenACloudStorageJobTesttestContext()
 	testContext.BackupRepository.AddBackup(ctx, backup)
+	testContext.BigQuery.fDoesDatasetExists = true
 	cloudStorageJobCreator := givenACloudStorageJobCreatorWithTestContext(testContext)
 	// When
 	err := cloudStorageJobCreator.PrepareJobs(ctx, backup)
@@ -309,6 +322,7 @@ func TestCloudStorageJobCreator_PrepareJobs_SimpleBucket(t *testing.T) {
 	backup := newCloudStorageSnapshotBackup("strategyNotExist", "test-bucket")
 	testContext := givenACloudStorageJobTesttestContext()
 	testContext.BackupRepository.AddBackup(ctx, backup)
+	testContext.BigQuery.fDoesDatasetExists = true
 	cloudStorageJobCreator := givenACloudStorageJobCreatorWithTestContext(testContext)
 	// When
 	err := cloudStorageJobCreator.PrepareJobs(ctx, backup)
@@ -329,6 +343,7 @@ func givenACloudStorageJobCreatorWithTestContext(ctx *testContextCloudStorageJob
 		context.Background(),
 		ctx.BackupRepository,
 		ctx.JobRepository,
+		ctx.CloudStorageClient,
 	)
 }
 
@@ -384,6 +399,7 @@ type testContextCloudStorageJobCreator struct {
 }
 
 type testBigQueryClient struct {
+	fDoesDatasetExists      bool
 	fDoesTableExists        bool
 	fDoesTableHasPartitions bool
 	Err                     error
@@ -425,8 +441,8 @@ func (*testBigQueryClient) GetExtractJobStatus(c context.Context, extractJobID s
 	panic("implement me")
 }
 
-func (*testBigQueryClient) DoesDatasetExists(c context.Context, project string, dataset string) (bool, error) {
-	panic("implement me")
+func (t *testBigQueryClient) DoesDatasetExists(c context.Context, project string, dataset string) (bool, error) {
+	return t.fDoesDatasetExists, nil
 }
 
 func (t *testBigQueryClient) DoesTableExists(c context.Context, project string, dataset string, table string) (bool, error) {
@@ -485,8 +501,8 @@ func (*stubGcsClient) IsInitialized(c context.Context) bool {
 	panic("implement me")
 }
 
-func (*stubGcsClient) DoesBucketExist(c context.Context, project string, bucket string) (bool, error) {
-	panic("implement me")
+func (g *stubGcsClient) DoesBucketExist(c context.Context, project string, bucket string) (bool, error) {
+	return true, nil
 }
 
 func (*stubGcsClient) CreateBucket(c context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error {

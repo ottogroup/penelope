@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"io"
 	"net/http"
 	"os"
@@ -37,6 +38,11 @@ type MockScheduleProcessor struct {
 	scheduledBackup         *repository.Backup
 	mirrorRevision          *repository.MirrorRevision
 	ctx                     context.Context
+}
+
+func (m *MockScheduleProcessor) MarkBackupSourceDeleted(ctxIn context.Context, id string) error {
+	m.scheduledBackup.Status = repository.BackupSourceDeleted
+	return nil
 }
 
 func (m *MockScheduleProcessor) FilterExistingTrashcanEntries(context.Context, []processor.TrashcanEntry) ([]processor.TrashcanEntry, error) {
@@ -82,7 +88,7 @@ func (m *MockScheduleProcessor) GetExpiredBigQueryMirrorRevisions(ctxIn context.
 	return nil, fmt.Errorf("GetBackupForID failed")
 }
 
-func (m *MockScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context) *processor.CloudStorageJobCreator {
+func (m *MockScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context, gcsClient gcs.CloudStorageClient) *processor.CloudStorageJobCreator {
 	panic("implement me")
 }
 

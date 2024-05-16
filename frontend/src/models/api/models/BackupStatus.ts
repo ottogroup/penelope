@@ -10,4 +10,5 @@ export enum BackupStatus {
     PAUSED = 'Paused',
     TO_DELETE = 'ToDelete',
     BACKUP_DELETED = 'BackupDeleted',
+    BACKUP_SOURCE_DELETED = 'BackupSourceDeleted',
 }
