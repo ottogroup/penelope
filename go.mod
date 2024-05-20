@@ -22,7 +22,7 @@ require (
 	go.opencensus.io v0.24.0
 	google.golang.org/api v0.174.0
 	google.golang.org/genproto v0.0.0-20240415180920-8c6c420018be
-	google.golang.org/grpc v1.63.2
+	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/dc0d/tinykv.v4 v4.0.1
 	gopkg.in/yaml.v2 v2.4.0
