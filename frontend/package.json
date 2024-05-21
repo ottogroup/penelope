@@ -21,7 +21,7 @@
     "moment": "^2.30.1",
     "pinia": "^2.1.7",
     "roboto-fontface": "*",
-    "ts-json-schema-generator": "^1.5.0",
+    "ts-json-schema-generator": "^1.5.1",
     "vue": "^3.4.0",
     "vue-codemirror6": "^1.2.5",
     "vue-router": "^4.0.0",
