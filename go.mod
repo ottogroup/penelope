@@ -1,7 +1,7 @@
 module github.com/ottogroup/penelope
 
 require (
-	cloud.google.com/go v0.113.0
+	cloud.google.com/go v0.114.0
 	cloud.google.com/go/bigquery v1.61.0
 	cloud.google.com/go/iam v1.1.8
 	cloud.google.com/go/logging v1.10.0
