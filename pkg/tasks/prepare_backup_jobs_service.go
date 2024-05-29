@@ -102,7 +102,7 @@ func (j *prepareBackupJobsService) createCloudStorageBackupJobs(ctxIn context.Co
 		glog.Infof("Backup with id %s don't need to be scheduled", backup.ID)
 		return
 	}
-	gcsClient, err := gcs.NewCloudStorageClient(ctx, j.tokenSourceProvider, backup.SourceProject)
+	gcsClient, err := gcs.NewCloudStorageClient(ctx, j.tokenSourceProvider, backup.TargetProject)
 	if err != nil {
 		glog.Warningf("[FAIL] Error creating cloud storage client for backup %s: %s", backup, err)
 	} else {
