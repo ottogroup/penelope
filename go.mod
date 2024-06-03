@@ -11,7 +11,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/aws/aws-sdk-go v1.53.7
 	github.com/go-pg/pg/extra/pgdebug v0.2.0
-	github.com/go-pg/pg/v10 v10.12.0
+	github.com/go-pg/pg/v10 v10.13.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/glog v1.2.1
 	github.com/google/uuid v1.6.0
