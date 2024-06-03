@@ -10,11 +10,20 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: "github-actions"
+  - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: daily
     groups:
       actions-deps:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: daily
+    groups:
+      npm-deps:
         patterns:
           - "*"
