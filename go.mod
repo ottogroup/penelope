@@ -1,7 +1,7 @@
 module github.com/ottogroup/penelope
 
 require (
-	cloud.google.com/go v0.113.0
+	cloud.google.com/go v0.114.0
 	cloud.google.com/go/bigquery v1.61.0
 	cloud.google.com/go/iam v1.1.8
 	cloud.google.com/go/logging v1.10.0
@@ -9,9 +9,9 @@ require (
 	cloud.google.com/go/resourcemanager v1.9.7
 	cloud.google.com/go/storage v1.41.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
-	github.com/aws/aws-sdk-go v1.53.7
+	github.com/aws/aws-sdk-go v1.53.15
 	github.com/go-pg/pg/extra/pgdebug v0.2.0
-	github.com/go-pg/pg/v10 v10.12.0
+	github.com/go-pg/pg/v10 v10.13.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/glog v1.2.1
 	github.com/google/uuid v1.6.0
@@ -20,7 +20,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
 	go.opencensus.io v0.24.0
-	google.golang.org/api v0.181.0
+	google.golang.org/api v0.182.0
 	google.golang.org/genproto v0.0.0-20240521202816-d264139d666e
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
