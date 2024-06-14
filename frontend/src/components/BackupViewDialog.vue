@@ -123,10 +123,14 @@ const projectLink = (project: string) => {
   return `https://console.cloud.google.com/welcome?project=${project}`;
 };
 
-const closeDialog = () => {
-  viewDialog.value = false;
-  emits('close');
-};
+watch(
+  () => viewDialog.value,
+    (value) => {
+      if (!value) {
+        emits('close');
+      }
+    },
+);
 
 watch(
     () => props.id,
@@ -138,7 +142,7 @@ watch(
 </script>
 
 <template>
-  <v-dialog v-model="viewDialog" width="800" @click="closeDialog">
+  <v-dialog v-model="viewDialog" width="800">
     <v-card title="Backup">
       <v-card-text v-if="isLoading">
         <v-progress-linear indeterminate/>
@@ -395,7 +399,7 @@ watch(
         </v-window>
       </v-card-text>
       <template v-slot:actions>
-        <v-btn class="ms-auto" text="Close" @click="closeDialog"></v-btn>
+        <v-btn class="ms-auto" text="Close" @click="viewDialog = false"></v-btn>
       </template>
     </v-card>
   </v-dialog>
