@@ -25,7 +25,7 @@
     "vue": "^3.4.0",
     "vue-codemirror6": "^1.2.5",
     "vue-router": "^4.0.0",
-    "vue3-apexcharts": "^1.4.4",
+    "vue3-apexcharts": "^1.5.3",
     "vuetify": "^3.0.0",
     "apexcharts": "^3.45.0"
   },
