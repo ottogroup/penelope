@@ -20,7 +20,7 @@ updates:
           - "*"
 
   - package-ecosystem: npm
-    directory: "/"
+    directory: "/frontend"
     schedule:
       interval: daily
     groups:
