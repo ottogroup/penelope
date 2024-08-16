@@ -46,6 +46,7 @@ type CloudStorageClient interface {
 	Close(ctxIn context.Context)
 	UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint) error
 	GetBucketDetails(ctxIn context.Context, bucket string) (*storage.BucketAttrs, error)
+	DeleteObjectWithPrefix(ctxIn context.Context, bucket string, objectPrefixName string) error
 }
 
 // CloudStorageClientFactory creates a CloudStorageClient with the credentails for a specified project
@@ -58,6 +59,27 @@ type defaultGcsClient struct {
 	client        *storage.Client
 	metricClient  *monitoring.MetricClient
 	projectClient *resourcemanager.ProjectsClient
+}
+
+func (c *defaultGcsClient) DeleteObjectWithPrefix(ctxIn context.Context, bucket string, objectPrefixName string) error {
+	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).DeleteObjectWithPrefix")
+	defer span.End()
+
+	objectIterator := c.client.Bucket(bucket).Objects(ctx, &storage.Query{Prefix: objectPrefixName})
+	for {
+		objAttrs, err := objectIterator.Next()
+		if errors.Is(err, iterator.Done) {
+			break
+		}
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("DeleteObjectWithPrefix failed for bucket %s, prefix %s", bucket, objectPrefixName))
+		}
+		if err := c.client.Bucket(bucket).Object(objAttrs.Name).Delete(ctx); err != nil {
+			return errors.Wrap(err, fmt.Sprintf("DeleteObjectWithPrefix failed for bucket %s, prefix %s", bucket, objectPrefixName))
+		}
+	}
+
+	return nil
 }
 
 func (c *defaultGcsClient) GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error) {

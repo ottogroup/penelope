@@ -282,3 +282,10 @@ type ProjectSinkComplianceRequest struct {
 type ProjectSinkComplianceResponse struct {
 	Checks []ProjectSinkComplianceCheck `json:"checks"`
 }
+
+type TrashcanCleanUpRequest struct {
+	BackupID string `json:"backup_id"`
+}
+
+type TrashcanCleanUpResponse struct {
+}

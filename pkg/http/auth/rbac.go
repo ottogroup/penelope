@@ -17,7 +17,7 @@ func CheckRequestIsAllowed(principal *model.Principal, requestType requestobject
 	switch requestType {
 	case requestobjects.Updating:
 		isAllowed = matchRole(rbacRole, model.Owner)
-	case requestobjects.Creating:
+	case requestobjects.Creating, requestobjects.Cleanup:
 		isAllowed = matchRole(rbacRole, model.Owner)
 	case requestobjects.Getting, requestobjects.Listing, requestobjects.Restoring, requestobjects.Calculating,
 		requestobjects.DatasetListing, requestobjects.BucketListing, requestobjects.SourceProjectGet:

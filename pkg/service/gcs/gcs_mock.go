@@ -16,6 +16,10 @@ type MockGcsClient struct {
 	ObjectContent     []byte
 }
 
+func (c *MockGcsClient) DeleteObjectWithPrefix(ctxIn context.Context, bucket string, objectPrefixName string) error {
+	panic("implement me")
+}
+
 func (c *MockGcsClient) GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error) {
 	panic("implement me")
 }

@@ -1,8 +1,7 @@
-/* generated using openapi-typescript-codegen -- do no edit */
+/* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-
 import type { AvailabilityClass } from './AvailabilityClass';
 import type { BackupStatus } from './BackupStatus';
 import type { BackupStrategy } from './BackupStrategy';
@@ -15,7 +14,6 @@ import type { RecoveryPointObjective } from './RecoveryPointObjective';
 import type { RecoveryTimeObjective } from './RecoveryTimeObjective';
 import type { SnapshotOptions } from './SnapshotOptions';
 import type { TargetOptions } from './TargetOptions';
-
 export type Backup = {
     id?: string;
     type?: BackupType;

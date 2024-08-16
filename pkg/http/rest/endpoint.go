@@ -8,6 +8,7 @@ import (
 const apiRootAppPath = "/api/"
 const healthCheckPath = "/_ah/"
 const backupPath = "backups"
+const trashcansPath = "trashcans"
 const bucketsPath = "buckets"
 const datasetsPath = "datasets"
 const restorePath = "restore"

@@ -41,20 +41,7 @@ func (m *mockSourceGCPProjectProvider) GetSourceGCPProject(ctxIn context.Context
 }
 
 func createBuilder(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider, sourceGCPProjectProvider provider.SourceGCPProjectProvider) *builder.ProcessorBuilder {
-	return builder.NewProcessorBuilder(
-		processor.NewCreatingProcessorFactory(backupProvider, tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
-		processor.NewGettingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
-		processor.NewListingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
-		processor.NewUpdatingProcessorFactory(tokenSourceProvider, credentialProvider),
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-	)
+	return builder.NewProcessorBuilder(processor.NewCreatingProcessorFactory(backupProvider, tokenSourceProvider, credentialProvider, sourceGCPProjectProvider), processor.NewGettingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider), processor.NewListingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider), processor.NewUpdatingProcessorFactory(tokenSourceProvider, credentialProvider), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func restAPIFactoryWithStubFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider) *httptest.Server {
@@ -63,20 +50,7 @@ func restAPIFactoryWithStubFactory(tokenSourceProvider impersonate.TargetPrincip
 	if err != nil {
 		panic(fmt.Errorf("error creating AuthenticationMiddleware: %s", err))
 	}
-	app := NewRestAPI(builder.NewProcessorBuilder(
-		&StubFactory[requestobjects.CreateRequest, requestobjects.BackupResponse]{DefaultValue: requestobjects.BackupResponse{}},
-		&StubFactory[requestobjects.GetRequest, requestobjects.BackupResponse]{DefaultValue: requestobjects.BackupResponse{}},
-		&StubFactory[requestobjects.ListRequest, requestobjects.ListingResponse]{DefaultValue: requestobjects.ListingResponse{}},
-		&StubFactory[requestobjects.UpdateRequest, requestobjects.UpdateResponse]{DefaultValue: requestobjects.UpdateResponse{}},
-		&StubFactory[requestobjects.RestoreRequest, requestobjects.RestoreResponse]{DefaultValue: requestobjects.RestoreResponse{}},
-		&StubFactory[requestobjects.CalculateRequest, requestobjects.CalculatedResponse]{DefaultValue: requestobjects.CalculatedResponse{}},
-		&StubFactory[requestobjects.ComplianceRequest, requestobjects.ComplianceResponse]{DefaultValue: requestobjects.ComplianceResponse{}},
-		&StubFactory[requestobjects.BucketListRequest, requestobjects.BucketListResponse]{DefaultValue: requestobjects.BucketListResponse{}},
-		&StubFactory[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse]{DefaultValue: requestobjects.DatasetListResponse{}},
-		&StubFactory[requestobjects.EmptyRequest, requestobjects.RegionsListResponse]{DefaultValue: requestobjects.RegionsListResponse{}},
-		&StubFactory[requestobjects.EmptyRequest, requestobjects.StorageClassListResponse]{DefaultValue: requestobjects.StorageClassListResponse{}},
-		&StubFactory[requestobjects.SourceProjectGetRequest, requestobjects.SourceProjectGetResponse]{DefaultValue: requestobjects.SourceProjectGetResponse{}},
-	), authenticationMiddleware, tokenSourceProvider, credentialProvider)
+	app := NewRestAPI(builder.NewProcessorBuilder(&StubFactory[requestobjects.CreateRequest, requestobjects.BackupResponse]{DefaultValue: requestobjects.BackupResponse{}}, &StubFactory[requestobjects.GetRequest, requestobjects.BackupResponse]{DefaultValue: requestobjects.BackupResponse{}}, &StubFactory[requestobjects.ListRequest, requestobjects.ListingResponse]{DefaultValue: requestobjects.ListingResponse{}}, &StubFactory[requestobjects.UpdateRequest, requestobjects.UpdateResponse]{DefaultValue: requestobjects.UpdateResponse{}}, &StubFactory[requestobjects.RestoreRequest, requestobjects.RestoreResponse]{DefaultValue: requestobjects.RestoreResponse{}}, &StubFactory[requestobjects.CalculateRequest, requestobjects.CalculatedResponse]{DefaultValue: requestobjects.CalculatedResponse{}}, &StubFactory[requestobjects.ComplianceRequest, requestobjects.ComplianceResponse]{DefaultValue: requestobjects.ComplianceResponse{}}, &StubFactory[requestobjects.BucketListRequest, requestobjects.BucketListResponse]{DefaultValue: requestobjects.BucketListResponse{}}, &StubFactory[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse]{DefaultValue: requestobjects.DatasetListResponse{}}, &StubFactory[requestobjects.EmptyRequest, requestobjects.RegionsListResponse]{DefaultValue: requestobjects.RegionsListResponse{}}, &StubFactory[requestobjects.EmptyRequest, requestobjects.StorageClassListResponse]{DefaultValue: requestobjects.StorageClassListResponse{}}, &StubFactory[requestobjects.SourceProjectGetRequest, requestobjects.SourceProjectGetResponse]{DefaultValue: requestobjects.SourceProjectGetResponse{}}, nil), authenticationMiddleware, tokenSourceProvider, credentialProvider)
 	return httptest.NewServer(authenticationMiddleware.AddAuthentication(app.ServeHTTP))
 }
 

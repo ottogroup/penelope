@@ -113,6 +113,7 @@ func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
 		processor.NewConfigRegionsProcessorFactory(),
 		processor.NewConfigStorageClassesProcessorFactory(),
 		processor.NewSourceProjectGetProcessorFactory(provider.SourceGCPProjectProvider, provider.TargetPrincipalForProjectProvider),
+		processor.NewTrashcanCleanUpProcessorFactory(provider.TargetPrincipalForProjectProvider, provider.SecretProvider),
 	)
 }
 

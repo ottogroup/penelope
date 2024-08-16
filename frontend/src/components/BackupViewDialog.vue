@@ -6,12 +6,15 @@ import {BackupType} from "@/models/api/models/BackupType";
 import {RestoreResponse} from "@/models/api/models/RestoreResponse";
 import {useNotificationsStore} from "@/stores";
 import {ref, watch} from "vue";
+import Notification from "@/models/notification";
 
 const props = defineProps({
   id: {
     type: String,
   },
 });
+
+const notificationsStore = useNotificationsStore();
 
 const emits = defineEmits(['close']);
 const tab = ref();
@@ -21,6 +24,23 @@ const listIsLoading = ref(true);
 const backup = ref<Backup | undefined>(undefined);
 const backupForEval = ref<CreateRequest | undefined>(undefined);
 const jobItems = ref<{ job: Job; restore: RestoreResponse | undefined }[]>([]);
+
+const cleanupTrashcan = () => {
+  if (backup.value?.id) {
+    DefaultService.postTrashcansCleanUp(backup.value?.id)
+        .then(() => {
+          notificationsStore.addNotification(
+            new Notification({
+              message: "Backup trashcan cleaned up",
+              color: "success",
+            }),
+          );
+        })
+        .catch((err) => {
+          notificationsStore.handleError(err);
+        });
+  }
+};
 
 const updateData = () => {
   isLoading.value = true;
@@ -89,7 +109,7 @@ const loadJobs = ({page, itemsPerPage}: { page: number; itemsPerPage: number; so
               }) ?? [];
         })
         .catch((err) => {
-          useNotificationsStore().handleError(err);
+          notificationsStore.handleError(err);
         })
         .finally(() => {
           listIsLoading.value = false;
@@ -103,7 +123,7 @@ const loadRestore = (item: { job: Job; restore: RestoreResponse | undefined }) =
         item.restore = resp;
       })
       .catch((err) => {
-        useNotificationsStore().handleError(err);
+        notificationsStore.handleError(err);
       });
 };
 
@@ -399,6 +419,10 @@ watch(
         </v-window>
       </v-card-text>
       <template v-slot:actions>
+        <v-btn @click="cleanupTrashcan()" title="Deletes all data inside trashcan" color="red">
+          <v-icon>mdi-delete</v-icon>
+          Trashcan
+        </v-btn>
         <v-btn class="ms-auto" text="Close" @click="viewDialog = false"></v-btn>
       </template>
     </v-card>

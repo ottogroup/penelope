@@ -353,6 +353,21 @@ paths:
           description: Created
         '403':
           description: Forbidden
+  /trashcans/{backupId}/clean_up:
+    post:
+      summary: Get a backup
+      parameters:
+        - in: path
+          name: backupId
+          schema:
+            type: string
+          required: true
+          description: Backup ID
+      responses:
+        '204':
+          description: OK
+        '400':
+          description: Bad Request
 components:
   schemas:
     UserResponse:
