@@ -3871,10 +3871,10 @@ vscode-uri@^3.0.8:
   resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-3.0.8.tgz#1770938d3e72588659a172d0fd4642780083ff9f"
   integrity sha512-AyFQ0EVmsOZOlAnxoFOGOq1SQDWAB7C6aqMGS23svWAllfOaxbuFvcT8D1i8z3Gyn8fraVeZNNmN6e9bxxXkKw==
 
-vue-codemirror6@^1.2.5:
-  version "1.3.2"
-  resolved "https://registry.yarnpkg.com/vue-codemirror6/-/vue-codemirror6-1.3.2.tgz#9bee72da5960bb7a75e7c76eec10d2d5e95043c3"
-  integrity sha512-A36hGiPVhDL+tQ4HaUz/IAzK/snGSO/pHNPtBIeWEbfYr57SNLU/tLJU+RR+Us+XBh+O1cg/FR1YK+NO/YD+aQ==
+vue-codemirror6@^1.3.4:
+  version "1.3.4"
+  resolved "https://registry.yarnpkg.com/vue-codemirror6/-/vue-codemirror6-1.3.4.tgz#bda3129b8c0934a48a2ca1846487df1895643699"
+  integrity sha512-Gmu2t4Exz3pQdtAsb7wINREx2nswNW+FV+q8S1wmsmeC3OLio5RkybRLsErP1b8+suqsVD/7t0Cx/XmBpQnHJA==
   dependencies:
     codemirror "^6.0.1"
     vue-demi latest
