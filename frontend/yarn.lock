@@ -3937,10 +3937,10 @@ vue@^3.4.0:
     "@vue/server-renderer" "3.4.31"
     "@vue/shared" "3.4.31"
 
-vuetify@^3.0.0:
-  version "3.6.12"
-  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.6.12.tgz#ef52dfc31f772a86deea3357a9a0adebd83ecda6"
-  integrity sha512-66fPzMLrJDpSGUjE4xkqEpEbvPJHp+/i9XqTcTGHTVAtb21/Fq/e01wm4VXs6smM4UgWhJvrRRfKacWAbSwZ7Q==
+vuetify@^3.6.13:
+  version "3.7.0"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.7.0.tgz#1230e97330b9112492aa25183809e483477b2c36"
+  integrity sha512-x+UaU4SPYNcJSE/voCTBFrNn0q9Spzx2EMfDdUj0NYgHGKb59OqnZte+AjaJaoOXy1AHYIGEpm5Ryk2BEfgWuw==
 
 w3c-keyname@^2.2.4:
   version "2.2.8"
