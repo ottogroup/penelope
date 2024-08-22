@@ -7,6 +7,7 @@ import {RestoreResponse} from "@/models/api/models/RestoreResponse";
 import {useNotificationsStore} from "@/stores";
 import {ref, watch} from "vue";
 import Notification from "@/models/notification";
+import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 
 const props = defineProps({
   id: {
@@ -24,22 +25,31 @@ const listIsLoading = ref(true);
 const backup = ref<Backup | undefined>(undefined);
 const backupForEval = ref<CreateRequest | undefined>(undefined);
 const jobItems = ref<{ job: Job; restore: RestoreResponse | undefined }[]>([]);
+const cleanupTrashcanDialog = ref(false);
+
+const confirmCleanupTrashcan = () => {
+  cleanupTrashcanDialog.value = true;
+};
 
 const cleanupTrashcan = () => {
   if (backup.value?.id) {
     DefaultService.postTrashcansCleanUp(backup.value?.id)
-        .then(() => {
-          notificationsStore.addNotification(
-            new Notification({
-              message: "Backup trashcan cleaned up",
-              color: "success",
-            }),
-          );
-        })
-        .catch((err) => {
-          notificationsStore.handleError(err);
-        });
+      .then(() => {
+        notificationsStore.addNotification(
+          new Notification({
+            message: "Backup trashcan cleaned up",
+            color: "success",
+          }),
+        );
+      })
+      .catch((err) => {
+        notificationsStore.handleError(err);
+      });
   }
+}
+
+const cancelCleanupTrashcan = () => {
+  cleanupTrashcanDialog.value = false;
 };
 
 const updateData = () => {
@@ -162,7 +172,7 @@ watch(
 </script>
 
 <template>
-  <v-dialog v-model="viewDialog" width="800">
+  <v-dialog v-model="viewDialog" width="800" v-if="!cleanupTrashcanDialog">
     <v-card title="Backup">
       <v-card-text v-if="isLoading">
         <v-progress-linear indeterminate/>
@@ -419,7 +429,7 @@ watch(
         </v-window>
       </v-card-text>
       <template v-slot:actions>
-        <v-btn @click="cleanupTrashcan()" title="Deletes all data inside trashcan" color="red">
+        <v-btn @click="confirmCleanupTrashcan()" title="Deletes all data inside trashcan" color="red">
           <v-icon>mdi-delete</v-icon>
           Trashcan
         </v-btn>
@@ -427,4 +437,15 @@ watch(
       </template>
     </v-card>
   </v-dialog>
+  <ConfirmDialog
+      v-model="cleanupTrashcanDialog"
+      :options="{
+        title: 'Cleanup trashcan',
+        message: 'Are you sure you want to cleanup trashcan?',
+        color: 'red',
+        confirmButtonText: 'Cleanup',
+        cancelButtonText: 'Cancel',
+      }"
+      @confirm="cleanupTrashcan"
+      @cancel="cancelCleanupTrashcan"></ConfirmDialog>
 </template>
