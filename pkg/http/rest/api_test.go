@@ -33,7 +33,7 @@ var mockSourceTokenProvider = &mockSourceGCPProjectProvider{
 	DataOwner:         "john.doe",
 }
 
-func (m *mockSourceGCPProjectProvider) GetSourceGCPProject(ctxIn context.Context, gcpProjectID string) (provider.SourceGCPProject, error) {
+func (m *mockSourceGCPProjectProvider) GetSourceGCPProject(_ context.Context, _ string) (provider.SourceGCPProject, error) {
 	return provider.SourceGCPProject{
 		AvailabilityClass: m.AvailabilityClass,
 		DataOwner:         m.DataOwner,
@@ -41,7 +41,21 @@ func (m *mockSourceGCPProjectProvider) GetSourceGCPProject(ctxIn context.Context
 }
 
 func createBuilder(backupProvider provider.SinkGCPProjectProvider, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider, sourceGCPProjectProvider provider.SourceGCPProjectProvider) *builder.ProcessorBuilder {
-	return builder.NewProcessorBuilder(processor.NewCreatingProcessorFactory(backupProvider, tokenSourceProvider, credentialProvider, sourceGCPProjectProvider), processor.NewGettingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider), processor.NewListingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider), processor.NewUpdatingProcessorFactory(tokenSourceProvider, credentialProvider), nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return builder.NewProcessorBuilder(
+		processor.NewCreatingProcessorFactory(backupProvider, tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
+		processor.NewGettingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
+		processor.NewListingProcessorFactory(tokenSourceProvider, credentialProvider, sourceGCPProjectProvider),
+		processor.NewUpdatingProcessorFactory(tokenSourceProvider, credentialProvider),
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
 }
 
 func restAPIFactoryWithStubFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialProvider secret.SecretProvider) *httptest.Server {
@@ -50,7 +64,21 @@ func restAPIFactoryWithStubFactory(tokenSourceProvider impersonate.TargetPrincip
 	if err != nil {
 		panic(fmt.Errorf("error creating AuthenticationMiddleware: %s", err))
 	}
-	app := NewRestAPI(builder.NewProcessorBuilder(&StubFactory[requestobjects.CreateRequest, requestobjects.BackupResponse]{DefaultValue: requestobjects.BackupResponse{}}, &StubFactory[requestobjects.GetRequest, requestobjects.BackupResponse]{DefaultValue: requestobjects.BackupResponse{}}, &StubFactory[requestobjects.ListRequest, requestobjects.ListingResponse]{DefaultValue: requestobjects.ListingResponse{}}, &StubFactory[requestobjects.UpdateRequest, requestobjects.UpdateResponse]{DefaultValue: requestobjects.UpdateResponse{}}, &StubFactory[requestobjects.RestoreRequest, requestobjects.RestoreResponse]{DefaultValue: requestobjects.RestoreResponse{}}, &StubFactory[requestobjects.CalculateRequest, requestobjects.CalculatedResponse]{DefaultValue: requestobjects.CalculatedResponse{}}, &StubFactory[requestobjects.ComplianceRequest, requestobjects.ComplianceResponse]{DefaultValue: requestobjects.ComplianceResponse{}}, &StubFactory[requestobjects.BucketListRequest, requestobjects.BucketListResponse]{DefaultValue: requestobjects.BucketListResponse{}}, &StubFactory[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse]{DefaultValue: requestobjects.DatasetListResponse{}}, &StubFactory[requestobjects.EmptyRequest, requestobjects.RegionsListResponse]{DefaultValue: requestobjects.RegionsListResponse{}}, &StubFactory[requestobjects.EmptyRequest, requestobjects.StorageClassListResponse]{DefaultValue: requestobjects.StorageClassListResponse{}}, &StubFactory[requestobjects.SourceProjectGetRequest, requestobjects.SourceProjectGetResponse]{DefaultValue: requestobjects.SourceProjectGetResponse{}}, nil), authenticationMiddleware, tokenSourceProvider, credentialProvider)
+	app := NewRestAPI(
+		builder.NewProcessorBuilder(
+			&StubFactory[requestobjects.CreateRequest, requestobjects.BackupResponse]{DefaultValue: requestobjects.BackupResponse{}},
+			&StubFactory[requestobjects.GetRequest, requestobjects.BackupResponse]{DefaultValue: requestobjects.BackupResponse{}},
+			&StubFactory[requestobjects.ListRequest, requestobjects.ListingResponse]{DefaultValue: requestobjects.ListingResponse{}},
+			&StubFactory[requestobjects.UpdateRequest, requestobjects.UpdateResponse]{DefaultValue: requestobjects.UpdateResponse{}},
+			&StubFactory[requestobjects.RestoreRequest, requestobjects.RestoreResponse]{DefaultValue: requestobjects.RestoreResponse{}},
+			&StubFactory[requestobjects.CalculateRequest, requestobjects.CalculatedResponse]{DefaultValue: requestobjects.CalculatedResponse{}},
+			&StubFactory[requestobjects.ComplianceRequest, requestobjects.ComplianceResponse]{DefaultValue: requestobjects.ComplianceResponse{}},
+			&StubFactory[requestobjects.BucketListRequest, requestobjects.BucketListResponse]{DefaultValue: requestobjects.BucketListResponse{}},
+			&StubFactory[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse]{DefaultValue: requestobjects.DatasetListResponse{}},
+			&StubFactory[requestobjects.EmptyRequest, requestobjects.RegionsListResponse]{DefaultValue: requestobjects.RegionsListResponse{}},
+			&StubFactory[requestobjects.EmptyRequest, requestobjects.StorageClassListResponse]{DefaultValue: requestobjects.StorageClassListResponse{}},
+			&StubFactory[requestobjects.SourceProjectGetRequest, requestobjects.SourceProjectGetResponse]{DefaultValue: requestobjects.SourceProjectGetResponse{}}, nil,
+		), authenticationMiddleware, tokenSourceProvider, credentialProvider)
 	return httptest.NewServer(authenticationMiddleware.AddAuthentication(app.ServeHTTP))
 }
 
@@ -140,7 +168,7 @@ type StubProcessor[T, R any] struct {
 	DefaultValue R
 }
 
-func (p *StubProcessor[T, R]) Process(ctxIn context.Context, args *processor.Argument[T]) (R, error) {
+func (p *StubProcessor[T, R]) Process(_ context.Context, _ *processor.Argument[T]) (R, error) {
 	return p.DefaultValue, nil
 }
 
@@ -148,7 +176,7 @@ type StubFactory[T, R any] struct {
 	DefaultValue R
 }
 
-func (s *StubFactory[T, R]) CreateProcessor(ctxIn context.Context) (processor.Operation[T, R], error) {
+func (s *StubFactory[T, R]) CreateProcessor(_ context.Context) (processor.Operation[T, R], error) {
 	return &StubProcessor[T, R]{DefaultValue: s.DefaultValue}, nil
 }
 
