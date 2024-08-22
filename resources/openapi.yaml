@@ -355,7 +355,7 @@ paths:
           description: Forbidden
   /trashcans/{backupId}/clean_up:
     post:
-      summary: Get a backup
+      summary: Clean up trashcan for backup sink
       parameters:
         - in: path
           name: backupId

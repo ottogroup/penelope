@@ -334,7 +334,7 @@ export class DefaultService {
         });
     }
     /**
-     * Get a backup
+     * Clean up trashcan for backup sink
      * @param backupId Backup ID
      * @returns void
      * @throws ApiError
