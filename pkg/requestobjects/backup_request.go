@@ -137,8 +137,9 @@ type BackupResponse struct {
 	UpdatedTimestamp string `json:"updated,omitempty"`
 	DeletedTimestamp string `json:"deleted,omitempty"`
 
-	Jobs      []JobResponse `json:"jobs,omitempty"`
-	JobsTotal uint64        `json:"jobs_total,omitempty"`
+	Jobs                  []JobResponse `json:"jobs,omitempty"`
+	JobsTotal             uint64        `json:"jobs_total,omitempty"`
+	TrashcanCleanupStatus string        `json:"trashcan_cleanup_status,omitempty"`
 }
 
 // JobResponse get backup job details

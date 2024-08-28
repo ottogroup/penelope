@@ -13,6 +13,13 @@ type BackupStatus string
 // JobStatus for backup
 type JobStatus string
 
+// TrashcanCleanupStatus status for scheduled cleanup of trashcan
+type TrashcanCleanupStatus string
+
+func (s TrashcanCleanupStatus) String() string {
+	return string(s)
+}
+
 // Operation for a backup
 type Operation string
 
@@ -93,6 +100,15 @@ const (
 	Update Operation = "Update"
 	// Delete backup
 	Delete Operation = "Delete"
+)
+
+const (
+	// NoopCleanupTrashcanCleanupStatus no operation
+	NoopCleanupTrashcanCleanupStatus TrashcanCleanupStatus = "Noop"
+	// ScheduledTrashcanCleanupStatus scheduled cleanup
+	ScheduledTrashcanCleanupStatus TrashcanCleanupStatus = "Scheduled"
+	// ErrorCleanupTrashcanCleanupStatus error during cleanup
+	ErrorCleanupTrashcanCleanupStatus TrashcanCleanupStatus = "Error"
 )
 
 // Strategies for a backups

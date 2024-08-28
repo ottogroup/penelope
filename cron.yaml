@@ -20,6 +20,9 @@ cron:
   -   description: "check backup status"
       url: /api/tasks/check_backups_status
       schedule: every 15 minutes from 00:08 to 23:58
+  -   description: "cleanup trashcans"
+      url: /api/tasks/cleanup_trashcans
+      schedule: every 60 minutes from 00:08 to 23:58
   -   description: "check app health status"
       url: /_ah/health
       schedule: every 1 minutes

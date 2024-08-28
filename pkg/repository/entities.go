@@ -50,6 +50,9 @@ type Backup struct {
 	LastScheduledTime time.Time `pg:"last_scheduled_timestamp"`
 	LastCleanupTime   time.Time `pg:"last_cleanup_timestamp"`
 
+	TrashcanCleanupStatus       TrashcanCleanupStatus `pg:"trashcan_cleanup_status"`
+	TrashcanCleanupErrorMessage string                `pg:"trashcan_cleanup_error_message"`
+
 	SinkOptions
 	SnapshotOptions
 	BackupOptions

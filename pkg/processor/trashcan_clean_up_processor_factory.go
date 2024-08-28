@@ -10,7 +10,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"github.com/ottogroup/penelope/pkg/secret"
-	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 )
@@ -74,19 +73,9 @@ func (p *trashcanCleanUpProcessor) Process(ctxIn context.Context, args *Argument
 		return requestobjects.TrashcanCleanUpResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Cleanup.String(), args.Principal.User.Email, backup.TargetProject)
 	}
 
-	gcsClient, err := gcs.NewCloudStorageClient(ctx, p.tokenSourceProvider, backup.TargetProject)
+	err = p.backupRepository.MarkTrashcanCleanupStatus(ctx, backup.ID, repository.ScheduledTrashcanCleanupStatus)
 	if err != nil {
-		return requestobjects.TrashcanCleanUpResponse{}, err
-	}
-
-	err = gcsClient.DeleteObjectWithPrefix(ctx, backup.Sink, backup.GetTrashcanPath())
-	if err != nil {
-		return requestobjects.TrashcanCleanUpResponse{}, err
-	}
-
-	err = gcsClient.CreateObject(ctx, backup.Sink, fmt.Sprintf("%s/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE", backup.GetTrashcanPath()), "")
-	if err != nil {
-		return requestobjects.TrashcanCleanUpResponse{}, err
+		return requestobjects.TrashcanCleanUpResponse{}, errors.Wrapf(err, "mark trashcan cleanup status failed %s", backup.ID)
 	}
 
 	return requestobjects.TrashcanCleanUpResponse{}, nil

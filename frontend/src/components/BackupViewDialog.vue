@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
-import {Backup, CreateRequest, DefaultService, Job, JobStatus} from "@/models/api";
+import {Backup, CreateRequest, DefaultService, Job, JobStatus, TrashcanCleanupStatus} from "@/models/api";
 import {BackupType} from "@/models/api/models/BackupType";
 import {RestoreResponse} from "@/models/api/models/RestoreResponse";
 import {useNotificationsStore} from "@/stores";
@@ -41,6 +41,7 @@ const cleanupTrashcan = () => {
             color: "success",
           }),
         );
+        cleanupTrashcanDialog.value = false;
       })
       .catch((err) => {
         notificationsStore.handleError(err);
@@ -429,10 +430,30 @@ watch(
         </v-window>
       </v-card-text>
       <template v-slot:actions>
-        <v-btn @click="confirmCleanupTrashcan()" title="Deletes all data inside trashcan" color="red">
-          <v-icon>mdi-delete</v-icon>
-          Trashcan
-        </v-btn>
+        <v-tooltip v-if="!!backup && backup?.trashcan_cleanup_status !== TrashcanCleanupStatus.SCHEDULED" text="Deletes all data inside trashcan">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" color="red" @click="confirmCleanupTrashcan()">
+              <v-icon>mdi-delete</v-icon>
+              Trashcan
+            </v-btn>
+          </template>
+        </v-tooltip>
+        <v-tooltip v-else-if="backup?.trashcan_cleanup_status === TrashcanCleanupStatus.ERROR" :text="backup?.trashcan_cleanup_error_message">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props" color="red" @click="confirmCleanupTrashcan()">
+              <v-icon>mdi-refresh</v-icon>
+              Trashcan
+            </v-btn>
+          </template>
+        </v-tooltip>
+        <v-tooltip v-else text="Deletion is already scheduled">
+          <template v-slot:activator="{ props }">
+            <v-btn v-bind="props">
+              <v-icon>mdi-clock-alert-outline</v-icon>
+              Trashcan
+            </v-btn>
+          </template>
+        </v-tooltip>
         <v-btn class="ms-auto" text="Close" @click="viewDialog = false"></v-btn>
       </template>
     </v-card>

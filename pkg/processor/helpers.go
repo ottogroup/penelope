@@ -62,6 +62,7 @@ func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job, sour
 		DeletedTimestamp:      formatTime(backup.DeletedTimestamp),
 		DataOwner:             sourceGCPProject.DataOwner,
 		DataAvailabilityClass: sourceGCPProject.AvailabilityClass,
+		TrashcanCleanupStatus: backup.TrashcanCleanupStatus.String(),
 		CreateRequest: requestobjects.CreateRequest{
 			Type:                   backup.Type.String(),
 			Strategy:               backup.Strategy.String(),

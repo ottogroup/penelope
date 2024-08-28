@@ -437,6 +437,10 @@ components:
           $ref: '#/components/schemas/RecoveryPointObjective'
         recovery_time_objective:
           $ref: '#/components/schemas/RecoveryTimeObjective'
+        trashcan_cleanup_status:
+          $ref: '#/components/schemas/TrashcanCleanupStatus'
+        trashcan_cleanup_error_message:
+          type: string
     Job:
       type: object
       properties:
@@ -594,6 +598,12 @@ components:
         - Snapshot
         - Mirror
         - Oneshot
+    TrashcanCleanupStatus:
+        type: string
+        enum:
+          - Noop
+          - Scheduled
+          - Error
     BackupStatus:
       type: string
       enum:
