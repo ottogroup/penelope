@@ -47,7 +47,7 @@ func (s *cleanupTrashcansService) Run(ctxIn context.Context) {
 
 		err = gcsClient.DeleteObjectWithPrefix(ctx, backup.Sink, backup.GetTrashcanPath())
 		if err != nil {
-			errMsg := fmt.Sprintf("could not delete objects in trashcan: %s", err)
+			errMsg := fmt.Sprintf("could not delete objects in trashcan for backup with id %s: %s", backup.ID, err)
 			glog.Errorf(errMsg)
 			err = s.backupRepository.MarkTrashcanCleanupStatusWithError(ctx, backup.ID, errMsg)
 			if err != nil {

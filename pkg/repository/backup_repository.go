@@ -69,7 +69,7 @@ func (d *defaultBackupRepository) MarkTrashcanCleanupStatusWithError(ctx context
 	}
 
 	_, err := d.storageService.DB().Model(backup).
-		Column("trashcan_cleanup_status").
+		Column("trashcan_cleanup_status", "trashcan_cleanup_error_message").
 		WherePK().
 		Update()
 
