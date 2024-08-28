@@ -65,7 +65,7 @@ func TestCleanupTrashcansService_Noop(t *testing.T) {
 		service.Run(ctx)
 	})
 
-	cleanupTrashcanBucket, err := backupRepository.GetBackup(ctx, backup.Bucket)
+	cleanupTrashcanBucket, err := backupRepository.GetBackup(ctx, backup.ID)
 	assert.Equal(t, repository.NoopCleanupTrashcanCleanupStatus, cleanupTrashcanBucket.TrashcanCleanupStatus)
 
 	require.NoError(t, err)
