@@ -72,7 +72,7 @@ func (d *defaultBackupRepository) MarkTrashcanCleanup(ctx context.Context, id st
 	}
 
 	if !trashcanCleanup.LastScheduled.IsZero() {
-		columns = append(columns, "trashcan_cleanup_last_scheduled_time")
+		columns = append(columns, "trashcan_cleanup_last_scheduled_timestamp")
 	}
 
 	_, err := d.storageService.DB().Model(backup).
