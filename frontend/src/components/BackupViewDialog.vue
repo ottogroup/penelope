@@ -42,6 +42,7 @@ const cleanupTrashcan = () => {
           }),
         );
         cleanupTrashcanDialog.value = false;
+        updateData();
       })
       .catch((err) => {
         notificationsStore.handleError(err);
@@ -152,6 +153,19 @@ const bigqueryTableLink = (project: string, dataset: string, table: string) => {
 
 const projectLink = (project: string) => {
   return `https://console.cloud.google.com/welcome?project=${project}`;
+};
+
+const translateTrashcanCleanupStatus = (status: TrashcanCleanupStatus | undefined) => {
+  switch (status) {
+    case TrashcanCleanupStatus.NOOP:
+      return "No cleanup scheduled";
+    case TrashcanCleanupStatus.ERROR:
+      return "Error";
+    case TrashcanCleanupStatus.SCHEDULED:
+      return "Scheduled";
+    default:
+      return "Unknown";
+  }
 };
 
 watch(
@@ -367,6 +381,30 @@ watch(
                 <td>Updated:</td>
                 <td>{{ backup?.updated }}</td>
               </tr>
+              <tr>
+                <td colspan="2"><h4>Trashcan Cleanup</h4></td>
+              </tr>
+              <tr>
+                <td>Status:</td>
+                <td>{{ translateTrashcanCleanupStatus(backup?.trashcan_cleanup_status) }}</td>
+              </tr>
+              <tr v-if="backup?.trashcan_cleanup_status === TrashcanCleanupStatus.ERROR">
+                <td>Error Message:</td>
+                <td>{{ backup?.trashcan_cleanup_error_message?.split(':').pop() }}</td>
+              </tr>
+              <tr v-if="backup?.trashcan_cleanup_last_scheduled_time">
+                <td>Scheduled:</td>
+                <td>{{ backup?.trashcan_cleanup_last_scheduled_time }}</td>
+              </tr>
+              <tr v-if="backup?.trashcan_cleanup_status !== TrashcanCleanupStatus.SCHEDULED">
+                <td>Executed:</td>
+                <td>
+                  <v-btn v-bind="props" color="red" @click="confirmCleanupTrashcan()" variant="tonal">
+                    <v-icon>mdi-delete</v-icon>
+                    Trashcan
+                  </v-btn>
+                </td>
+              </tr>
               </tbody>
             </v-table>
             <v-row>
@@ -430,30 +468,6 @@ watch(
         </v-window>
       </v-card-text>
       <template v-slot:actions>
-        <v-tooltip v-if="!!backup && backup?.trashcan_cleanup_status !== TrashcanCleanupStatus.SCHEDULED" text="Deletes all data inside trashcan">
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" color="red" @click="confirmCleanupTrashcan()">
-              <v-icon>mdi-delete</v-icon>
-              Trashcan
-            </v-btn>
-          </template>
-        </v-tooltip>
-        <v-tooltip v-else-if="backup?.trashcan_cleanup_status === TrashcanCleanupStatus.ERROR" :text="backup?.trashcan_cleanup_error_message">
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props" color="red" @click="confirmCleanupTrashcan()">
-              <v-icon>mdi-refresh</v-icon>
-              Trashcan
-            </v-btn>
-          </template>
-        </v-tooltip>
-        <v-tooltip v-else text="Deletion is already scheduled">
-          <template v-slot:activator="{ props }">
-            <v-btn v-bind="props">
-              <v-icon>mdi-clock-alert-outline</v-icon>
-              Trashcan
-            </v-btn>
-          </template>
-        </v-tooltip>
         <v-btn class="ms-auto" text="Close" @click="viewDialog = false"></v-btn>
       </template>
     </v-card>

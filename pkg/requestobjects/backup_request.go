@@ -137,9 +137,12 @@ type BackupResponse struct {
 	UpdatedTimestamp string `json:"updated,omitempty"`
 	DeletedTimestamp string `json:"deleted,omitempty"`
 
-	Jobs                  []JobResponse `json:"jobs,omitempty"`
-	JobsTotal             uint64        `json:"jobs_total,omitempty"`
-	TrashcanCleanupStatus string        `json:"trashcan_cleanup_status,omitempty"`
+	Jobs      []JobResponse `json:"jobs,omitempty"`
+	JobsTotal uint64        `json:"jobs_total,omitempty"`
+
+	TrashcanCleanupStatus            string `json:"trashcan_cleanup_status,omitempty"`
+	TrashcanCleanupErrorMessage      string `json:"trashcan_cleanup_error_message,omitempty"`
+	TrashcanCleanupLastScheduledTime string `json:"trashcan_cleanup_last_scheduled_time,omitempty"`
 }
 
 // JobResponse get backup job details

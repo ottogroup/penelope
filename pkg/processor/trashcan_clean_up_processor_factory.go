@@ -73,7 +73,9 @@ func (p *trashcanCleanUpProcessor) Process(ctxIn context.Context, args *Argument
 		return requestobjects.TrashcanCleanUpResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Cleanup.String(), args.Principal.User.Email, backup.TargetProject)
 	}
 
-	err = p.backupRepository.MarkTrashcanCleanupStatus(ctx, backup.ID, repository.ScheduledTrashcanCleanupStatus)
+	err = p.backupRepository.MarkTrashcanCleanup(ctx, backup.ID, repository.TrashcanCleanup{
+		Status: repository.ScheduledTrashcanCleanupStatus,
+	})
 	if err != nil {
 		return requestobjects.TrashcanCleanUpResponse{}, errors.Wrapf(err, "mark trashcan cleanup status failed %s", backup.ID)
 	}

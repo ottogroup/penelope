@@ -9,6 +9,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
+	"time"
 )
 
 func newCleanupTrashcansService(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) (*cleanupTrashcansService, error) {
@@ -49,7 +50,11 @@ func (s *cleanupTrashcansService) Run(ctxIn context.Context) {
 		if err != nil {
 			errMsg := fmt.Sprintf("could not delete objects in trashcan for backup with id %s: %s", backup.ID, err)
 			glog.Errorf(errMsg)
-			err = s.backupRepository.MarkTrashcanCleanupStatusWithError(ctx, backup.ID, errMsg)
+			err = s.backupRepository.MarkTrashcanCleanup(ctx, backup.ID, repository.TrashcanCleanup{
+				Status:        repository.ErrorCleanupTrashcanCleanupStatus,
+				ErrorMessage:  errMsg,
+				LastScheduled: time.Now(),
+			})
 			if err != nil {
 				glog.Errorf("could not mark trashcan cleanup status to %s: %s", repository.ErrorCleanupTrashcanCleanupStatus, err)
 			}
@@ -62,7 +67,10 @@ func (s *cleanupTrashcansService) Run(ctxIn context.Context) {
 			return
 		}
 
-		err = s.backupRepository.MarkTrashcanCleanupStatus(ctx, backup.ID, repository.NoopCleanupTrashcanCleanupStatus)
+		err = s.backupRepository.MarkTrashcanCleanup(ctx, backup.ID, repository.TrashcanCleanup{
+			Status:        repository.NoopCleanupTrashcanCleanupStatus,
+			LastScheduled: time.Now(),
+		})
 		if err != nil {
 			glog.Errorf("could not mark trashcan cleanup status to %s: %s", repository.NoopCleanupTrashcanCleanupStatus, err)
 			return

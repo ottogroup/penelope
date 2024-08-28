@@ -39,5 +39,6 @@ export type Backup = {
     recovery_time_objective?: RecoveryTimeObjective;
     trashcan_cleanup_status?: TrashcanCleanupStatus;
     trashcan_cleanup_error_message?: string;
+    trashcan_cleanup_last_scheduled_time?: string;
 };
 

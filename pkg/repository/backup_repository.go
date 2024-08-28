@@ -47,9 +47,8 @@ type BackupRepository interface {
 	GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*MirrorRevision, error)
 	GetBigQueryOneShotSnapshots(ctxIn context.Context, status BackupStatus) ([]*Backup, error)
 	GetScheduledBackups(context.Context, BackupType) ([]*Backup, error)
-	MarkTrashcanCleanupStatus(ctx context.Context, id string, status TrashcanCleanupStatus) error
 	GetBackupsByCleanupTrashcanStatus(ctx context.Context, status TrashcanCleanupStatus) ([]*Backup, error)
-	MarkTrashcanCleanupStatusWithError(ctx context.Context, id string, errorMessage string) error
+	MarkTrashcanCleanup(ctx context.Context, id string, trashcanCleanup TrashcanCleanup) error
 }
 
 // defaultBackupRepository implements BackupRepository
@@ -58,23 +57,31 @@ type defaultBackupRepository struct {
 	ctx            context.Context
 }
 
-func (d *defaultBackupRepository) MarkTrashcanCleanupStatusWithError(ctx context.Context, id string, errorMessage string) error {
-	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).MarkTrashcanCleanupStatusWithError")
+func (d *defaultBackupRepository) MarkTrashcanCleanup(ctx context.Context, id string, trashcanCleanup TrashcanCleanup) error {
+	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).MarkTrashcanCleanup")
 	defer span.End()
 
+	columns := []string{
+		"trashcan_cleanup_status",
+		"trashcan_cleanup_error_message",
+	}
+
 	backup := &Backup{
-		ID:                          id,
-		TrashcanCleanupStatus:       ErrorCleanupTrashcanCleanupStatus,
-		TrashcanCleanupErrorMessage: errorMessage,
+		ID:              id,
+		TrashcanCleanup: trashcanCleanup,
+	}
+
+	if !trashcanCleanup.LastScheduled.IsZero() {
+		columns = append(columns, "trashcan_cleanup_last_scheduled_time")
 	}
 
 	_, err := d.storageService.DB().Model(backup).
-		Column("trashcan_cleanup_status", "trashcan_cleanup_error_message").
+		Column(columns...).
 		WherePK().
 		Update()
 
 	if err != nil {
-		logQueryError("MarkTrashcanCleanupStatus", err)
+		logQueryError("MarkTrashcanCleanup", err)
 		return fmt.Errorf("error during executing updating backup statemant: %s", err)
 	}
 
@@ -97,32 +104,6 @@ func (d *defaultBackupRepository) GetBackupsByCleanupTrashcanStatus(ctx context.
 	}
 
 	return backups, nil
-}
-
-func (d *defaultBackupRepository) MarkTrashcanCleanupStatus(ctx context.Context, id string, status TrashcanCleanupStatus) error {
-	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).MarkTrashcanCleanupStatus")
-	defer span.End()
-
-	if status == ErrorCleanupTrashcanCleanupStatus {
-		return fmt.Errorf("error status without message is not allowed")
-	}
-
-	backup := &Backup{
-		ID:                    id,
-		TrashcanCleanupStatus: status,
-	}
-
-	_, err := d.storageService.DB().Model(backup).
-		Column("trashcan_cleanup_status", "trashcan_cleanup_error_message").
-		WherePK().
-		Update()
-
-	if err != nil {
-		logQueryError("MarkTrashcanCleanupStatus", err)
-		return fmt.Errorf("error during executing updating backup statemant: %s", err)
-	}
-
-	return nil
 }
 
 // NewBackupRepository return instance of BackupRepository

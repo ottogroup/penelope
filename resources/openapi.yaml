@@ -441,6 +441,9 @@ components:
           $ref: '#/components/schemas/TrashcanCleanupStatus'
         trashcan_cleanup_error_message:
           type: string
+        trashcan_cleanup_last_scheduled_time:
+          type: string
+          format: date-time
     Job:
       type: object
       properties:

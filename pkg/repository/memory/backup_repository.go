@@ -13,31 +13,20 @@ type BackupRepository struct {
 	backups []*repository.Backup
 }
 
-func (r *BackupRepository) MarkTrashcanCleanupStatusWithError(ctx context.Context, id string, errorMessage string) error {
+func (r *BackupRepository) MarkTrashcanCleanup(_ context.Context, id string, status repository.TrashcanCleanup) error {
 	for _, backup := range r.backups {
 		if backup.ID == id {
-			backup.TrashcanCleanupStatus = repository.ErrorCleanupTrashcanCleanupStatus
-			backup.TrashcanCleanupErrorMessage = errorMessage
+			backup.TrashcanCleanup = status
 			return nil
 		}
 	}
 	return nil
 }
 
-func (r *BackupRepository) MarkTrashcanCleanupStatus(ctx context.Context, id string, status repository.TrashcanCleanupStatus) error {
-	for _, backup := range r.backups {
-		if backup.ID == id {
-			backup.TrashcanCleanupStatus = status
-			return nil
-		}
-	}
-	return nil
-}
-
-func (r *BackupRepository) GetBackupsByCleanupTrashcanStatus(ctx context.Context, status repository.TrashcanCleanupStatus) ([]*repository.Backup, error) {
+func (r *BackupRepository) GetBackupsByCleanupTrashcanStatus(_ context.Context, status repository.TrashcanCleanupStatus) ([]*repository.Backup, error) {
 	var backups []*repository.Backup
 	for _, backup := range r.backups {
-		if backup.TrashcanCleanupStatus == status {
+		if backup.TrashcanCleanup.Status == status {
 			backups = append(backups, backup)
 		}
 	}
