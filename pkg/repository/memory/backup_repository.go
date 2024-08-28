@@ -13,6 +13,17 @@ type BackupRepository struct {
 	backups []*repository.Backup
 }
 
+func (r *BackupRepository) MarkTrashcanCleanupStatusWithError(ctx context.Context, id string, errorMessage string) error {
+	for _, backup := range r.backups {
+		if backup.ID == id {
+			backup.TrashcanCleanupStatus = repository.ErrorCleanupTrashcanCleanupStatus
+			backup.TrashcanCleanupErrorMessage = errorMessage
+			return nil
+		}
+	}
+	return nil
+}
+
 func (r *BackupRepository) MarkTrashcanCleanupStatus(ctx context.Context, id string, status repository.TrashcanCleanupStatus) error {
 	for _, backup := range r.backups {
 		if backup.ID == id {
