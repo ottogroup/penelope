@@ -37,7 +37,7 @@ func TestCleanupTrashcansService_Schedule(t *testing.T) {
 	fmt.Println(stdErr)
 
 	cleanupTrashcanBucket, err := backupRepository.GetBackup(ctx, backup.ID)
-	assert.Equal(t, repository.NoopCleanupTrashcanCleanupStatus, cleanupTrashcanBucket.TrashcanCleanupStatus)
+	assert.Equal(t, repository.NoopCleanupTrashcanCleanupStatus, cleanupTrashcanBucket.TrashcanCleanup.Status)
 
 	require.NoError(t, err)
 	logMsg := "trashcan cleanup for backup completed:"
@@ -66,7 +66,7 @@ func TestCleanupTrashcansService_Noop(t *testing.T) {
 	})
 
 	cleanupTrashcanBucket, err := backupRepository.GetBackup(ctx, backup.ID)
-	assert.Equal(t, repository.NoopCleanupTrashcanCleanupStatus, cleanupTrashcanBucket.TrashcanCleanupStatus)
+	assert.Equal(t, repository.NoopCleanupTrashcanCleanupStatus, cleanupTrashcanBucket.TrashcanCleanup.Status)
 
 	require.NoError(t, err)
 	logMsg := ""
@@ -77,12 +77,12 @@ func TestCleanupTrashcansService_Noop(t *testing.T) {
 
 func scheduleTrashcanBackup() *repository.Backup {
 	return &repository.Backup{
-		ID:                    "somerandom-id",
-		Status:                repository.Prepared,
-		TrashcanCleanupStatus: repository.ScheduledTrashcanCleanupStatus,
-		SourceProject:         "local-ability",
-		Strategy:              repository.Snapshot,
-		Type:                  repository.BigQuery,
+		ID:              "somerandom-id",
+		Status:          repository.Prepared,
+		TrashcanCleanup: repository.TrashcanCleanup{Status: repository.ScheduledTrashcanCleanupStatus},
+		SourceProject:   "local-ability",
+		Strategy:        repository.Snapshot,
+		Type:            repository.BigQuery,
 		SinkOptions: repository.SinkOptions{
 			TargetProject: "local-ability-backup",
 			Sink:          "uuid-5678-123456",
@@ -97,12 +97,12 @@ func scheduleTrashcanBackup() *repository.Backup {
 
 func noopTrashcanBackup() *repository.Backup {
 	return &repository.Backup{
-		ID:                    "somerandom-id",
-		Status:                repository.Prepared,
-		TrashcanCleanupStatus: repository.ScheduledTrashcanCleanupStatus,
-		SourceProject:         "local-ability",
-		Strategy:              repository.Snapshot,
-		Type:                  repository.BigQuery,
+		ID:              "somerandom-id",
+		Status:          repository.Prepared,
+		TrashcanCleanup: repository.TrashcanCleanup{Status: repository.NoopCleanupTrashcanCleanupStatus},
+		SourceProject:   "local-ability",
+		Strategy:        repository.Snapshot,
+		Type:            repository.BigQuery,
 		SinkOptions: repository.SinkOptions{
 			TargetProject: "local-ability-backup",
 			Sink:          "uuid-5678-123456",
