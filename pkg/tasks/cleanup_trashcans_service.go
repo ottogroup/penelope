@@ -46,14 +46,21 @@ func (s *cleanupTrashcansService) Run(ctxIn context.Context) {
 		}
 		defer gcsClient.Close(ctx)
 
+		err = s.backupRepository.MarkTrashcanCleanup(ctx, backup.ID, repository.TrashcanCleanup{
+			Status:                   repository.InProgressCleanupTrashcanCleanupStatus,
+			StartInProgressTimestamp: time.Now(),
+		})
+		if err != nil {
+			return
+		}
+
 		err = gcsClient.DeleteObjectWithPrefix(ctx, backup.Sink, backup.GetTrashcanPath())
 		if err != nil {
 			errMsg := fmt.Sprintf("could not delete objects in trashcan for backup with id %s: %s", backup.ID, err)
 			glog.Errorf(errMsg)
 			err = s.backupRepository.MarkTrashcanCleanup(ctx, backup.ID, repository.TrashcanCleanup{
-				Status:        repository.ErrorCleanupTrashcanCleanupStatus,
-				ErrorMessage:  errMsg,
-				LastScheduled: time.Now(),
+				Status:       repository.ErrorCleanupTrashcanCleanupStatus,
+				ErrorMessage: errMsg,
 			})
 			if err != nil {
 				glog.Errorf("could not mark trashcan cleanup status to %s: %s", repository.ErrorCleanupTrashcanCleanupStatus, err)

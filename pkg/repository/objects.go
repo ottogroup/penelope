@@ -109,6 +109,8 @@ const (
 	ScheduledTrashcanCleanupStatus TrashcanCleanupStatus = "Scheduled"
 	// ErrorCleanupTrashcanCleanupStatus error during cleanup
 	ErrorCleanupTrashcanCleanupStatus TrashcanCleanupStatus = "Error"
+	// InProgressCleanupTrashcanCleanupStatus cleanup in progress
+	InProgressCleanupTrashcanCleanupStatus TrashcanCleanupStatus = "InProgress"
 )
 
 // Strategies for a backups

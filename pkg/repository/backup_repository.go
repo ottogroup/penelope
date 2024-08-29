@@ -64,6 +64,7 @@ func (d *defaultBackupRepository) MarkTrashcanCleanup(ctx context.Context, id st
 	columns := []string{
 		"trashcan_cleanup_status",
 		"trashcan_cleanup_error_message",
+		"trashcan_cleanup_start_in_progress_timestamp",
 	}
 
 	backup := &Backup{
