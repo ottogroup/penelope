@@ -9,6 +9,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
+	"strings"
 	"time"
 )
 
@@ -54,7 +55,21 @@ func (s *cleanupTrashcansService) Run(ctxIn context.Context) {
 			return
 		}
 
-		err = gcsClient.DeleteObjectWithPrefix(ctx, backup.Sink, backup.GetTrashcanPath())
+		trashcanPath := backup.GetTrashcanPath()
+		if strings.EqualFold(trashcanPath, "") {
+			errMsg := fmt.Sprintf("trashcan path is empty for backup with id %s", backup.ID)
+			glog.Errorf(errMsg)
+			err = s.backupRepository.MarkTrashcanCleanup(ctx, backup.ID, repository.TrashcanCleanup{
+				Status:       repository.ErrorCleanupTrashcanCleanupStatus,
+				ErrorMessage: errMsg,
+			})
+			if err != nil {
+				glog.Errorf("could not mark trashcan cleanup status to %s: %s", repository.ErrorCleanupTrashcanCleanupStatus, err)
+			}
+			return
+		}
+
+		err = gcsClient.DeleteObjectWithPrefix(ctx, backup.Sink, trashcanPath)
 		if err != nil {
 			errMsg := fmt.Sprintf("could not delete objects in trashcan for backup with id %s: %s", backup.ID, err)
 			glog.Errorf(errMsg)
@@ -68,7 +83,7 @@ func (s *cleanupTrashcansService) Run(ctxIn context.Context) {
 			return
 		}
 
-		err = gcsClient.CreateObject(ctx, backup.Sink, fmt.Sprintf("%s/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE", backup.GetTrashcanPath()), "")
+		err = gcsClient.CreateObject(ctx, backup.Sink, fmt.Sprintf("%s/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE", trashcanPath), "")
 		if err != nil {
 			glog.Errorf("could not create THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE object in trashcan: %s", err)
 			return
