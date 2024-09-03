@@ -48,8 +48,8 @@ func (s *cleanupTrashcansService) Run(ctxIn context.Context) {
 		defer gcsClient.Close(ctx)
 
 		err = s.backupRepository.MarkTrashcanCleanup(ctx, backup.ID, repository.TrashcanCleanup{
-			Status:                   repository.InProgressCleanupTrashcanCleanupStatus,
-			StartInProgressTimestamp: time.Now(),
+			Status:                repository.InProgressCleanupTrashcanCleanupStatus,
+			StartRunningTimestamp: time.Now(),
 		})
 		if err != nil {
 			return

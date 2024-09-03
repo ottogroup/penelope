@@ -5,4 +5,4 @@ ALTER TABLE backups
 ALTER TABLE backups
     ADD trashcan_cleanup_last_scheduled_timestamp TIMESTAMP DEFAULT NULL;
 ALTER TABLE backups
-    ADD trashcan_cleanup_running_timestamp TIMESTAMP DEFAULT NULL;
+    ADD trashcan_cleanup_start_running_timestamp TIMESTAMP DEFAULT NULL;

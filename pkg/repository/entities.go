@@ -113,10 +113,10 @@ type SnapshotOptions struct {
 
 // TrashcanCleanup status of trashcan cleanup
 type TrashcanCleanup struct {
-	Status                   TrashcanCleanupStatus `pg:"trashcan_cleanup_status"`
-	ErrorMessage             string                `pg:"trashcan_cleanup_error_message"`
-	LastScheduled            time.Time             `pg:"trashcan_cleanup_last_scheduled_timestamp"`
-	StartInProgressTimestamp time.Time             `pg:"trashcan_cleanup_start_in_progress_timestamp"`
+	Status                TrashcanCleanupStatus `pg:"trashcan_cleanup_status"`
+	ErrorMessage          string                `pg:"trashcan_cleanup_error_message"`
+	LastScheduled         time.Time             `pg:"trashcan_cleanup_last_scheduled_timestamp"`
+	StartRunningTimestamp time.Time             `pg:"trashcan_cleanup_start_running_timestamp"`
 }
 
 // MirrorOptions strategy backup options
