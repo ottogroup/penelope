@@ -324,7 +324,7 @@ watch(
               </tr>
               <tr>
                 <td>Sink bucket:</td>
-                <td><a :href="cloudStorageLink(backup?.sink_project ?? '', backup?.sink ?? '')"></a></td>
+                <td><a :href="cloudStorageLink(backup?.sink_project ?? '', backup?.sink ?? '')">{{ backup?.sink }}</a></td>
               </tr>
               <tr>
                 <td>Storage region:</td>
