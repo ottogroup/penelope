@@ -26,7 +26,20 @@ type ProcessorBuilder struct {
 }
 
 // NewProcessorBuilder created a new ProcessorBuilder
-func NewProcessorBuilder(creatingProcessorFactory processor.CreatingProcessorFactory, gettingProcessorFactory processor.GettingProcessorFactory, listingProcessorFactory processor.ListingProcessorFactory, updatingProcessorFactory processor.UpdatingProcessorFactory, restoringProcessorFactory processor.RestoringProcessorFactory, calculatingProcessorFactory processor.CalculatingProcessorFactory, complianceProcessorFactory processor.ComplianceProcessorFactory, bucketListingProcessorFactory processor.BucketListingProcessorFactory, datasetListingProcessorFactory processor.DatasetListingProcessorFactory, configRegionsProcessorFactory processor.ConfigRegionsProcessorFactory, configStorageClassesProcessorFactory processor.ConfigStorageClassesProcessorFactory, sourceProjectGetProcessorFactory processor.SourceProjectGetProcessorFactory, trashcanCleanUpProcessorFactory processor.TrashcanCleanUpProcessorFactory) *ProcessorBuilder {
+func NewProcessorBuilder(
+	creatingProcessorFactory processor.CreatingProcessorFactory,
+	gettingProcessorFactory processor.GettingProcessorFactory,
+	listingProcessorFactory processor.ListingProcessorFactory,
+	updatingProcessorFactory processor.UpdatingProcessorFactory,
+	restoringProcessorFactory processor.RestoringProcessorFactory,
+	calculatingProcessorFactory processor.CalculatingProcessorFactory,
+	complianceProcessorFactory processor.ComplianceProcessorFactory,
+	bucketListingProcessorFactory processor.BucketListingProcessorFactory,
+	datasetListingProcessorFactory processor.DatasetListingProcessorFactory,
+	configRegionsProcessorFactory processor.ConfigRegionsProcessorFactory,
+	configStorageClassesProcessorFactory processor.ConfigStorageClassesProcessorFactory,
+	sourceProjectGetProcessorFactory processor.SourceProjectGetProcessorFactory,
+	trashcanCleanUpProcessorFactory processor.TrashcanCleanUpProcessorFactory) *ProcessorBuilder {
 	return &ProcessorBuilder{
 		creatingProcessorFactory:             creatingProcessorFactory,
 		gettingProcessorFactory:              gettingProcessorFactory,
