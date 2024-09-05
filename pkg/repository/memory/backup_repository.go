@@ -13,7 +13,26 @@ type BackupRepository struct {
 	backups []*repository.Backup
 }
 
-// UpdateBackupStatus is not implemented
+func (r *BackupRepository) MarkTrashcanCleanup(_ context.Context, id string, status repository.TrashcanCleanup) error {
+	for _, backup := range r.backups {
+		if backup.ID == id {
+			backup.TrashcanCleanup = status
+			return nil
+		}
+	}
+	return nil
+}
+
+func (r *BackupRepository) GetBackupsByCleanupTrashcanStatus(_ context.Context, status repository.TrashcanCleanupStatus) ([]*repository.Backup, error) {
+	var backups []*repository.Backup
+	for _, backup := range r.backups {
+		if backup.TrashcanCleanup.Status == status {
+			backups = append(backups, backup)
+		}
+	}
+	return backups, nil
+}
+
 func (r *BackupRepository) UpdateBackup(ctxIn context.Context, updateFields repository.UpdateFields) error {
 	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).UpdateBackupStatus")
 	defer span.End()

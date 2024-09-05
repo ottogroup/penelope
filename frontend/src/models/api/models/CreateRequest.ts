@@ -1,8 +1,7 @@
-/* generated using openapi-typescript-codegen -- do no edit */
+/* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-
 import type { BackupStrategy } from './BackupStrategy';
 import type { BackupType } from './BackupType';
 import type { BigQueryOptions } from './BigQueryOptions';
@@ -12,7 +11,6 @@ import type { RecoveryPointObjective } from './RecoveryPointObjective';
 import type { RecoveryTimeObjective } from './RecoveryTimeObjective';
 import type { SnapshotOptions } from './SnapshotOptions';
 import type { TargetOptions } from './TargetOptions';
-
 export type CreateRequest = {
     type?: BackupType;
     strategy?: BackupStrategy;
@@ -24,6 +22,5 @@ export type CreateRequest = {
     gcs_options?: GCSOptions;
     recovery_point_objective?: RecoveryPointObjective;
     recovery_time_objective?: RecoveryTimeObjective;
-    status?: string;
 };
 

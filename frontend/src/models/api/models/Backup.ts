@@ -1,8 +1,7 @@
-/* generated using openapi-typescript-codegen -- do no edit */
+/* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-
 import type { AvailabilityClass } from './AvailabilityClass';
 import type { BackupStatus } from './BackupStatus';
 import type { BackupStrategy } from './BackupStrategy';
@@ -15,7 +14,7 @@ import type { RecoveryPointObjective } from './RecoveryPointObjective';
 import type { RecoveryTimeObjective } from './RecoveryTimeObjective';
 import type { SnapshotOptions } from './SnapshotOptions';
 import type { TargetOptions } from './TargetOptions';
-
+import type { TrashcanCleanupStatus } from './TrashcanCleanupStatus';
 export type Backup = {
     id?: string;
     type?: BackupType;
@@ -38,5 +37,8 @@ export type Backup = {
     data_availability_class?: AvailabilityClass;
     recovery_point_objective?: RecoveryPointObjective;
     recovery_time_objective?: RecoveryTimeObjective;
+    trashcan_cleanup_status?: TrashcanCleanupStatus;
+    trashcan_cleanup_error_message?: string;
+    trashcan_cleanup_last_scheduled_time?: string;
 };
 

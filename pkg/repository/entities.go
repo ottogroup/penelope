@@ -55,6 +55,7 @@ type Backup struct {
 	BackupOptions
 	EntityAudit
 	MirrorOptions
+	TrashcanCleanup
 }
 
 // GetTrashcanPath give a patho to object moved into trashcan
@@ -108,6 +109,14 @@ type BackupOptions struct {
 type SnapshotOptions struct {
 	LifetimeInDays   uint `pg:"snapshot_lifetime_in_days,use_zero"`
 	FrequencyInHours uint `pg:"snapshot_frequency_in_hours,use_zero"`
+}
+
+// TrashcanCleanup status of trashcan cleanup
+type TrashcanCleanup struct {
+	Status                TrashcanCleanupStatus `pg:"trashcan_cleanup_status"`
+	ErrorMessage          string                `pg:"trashcan_cleanup_error_message"`
+	LastScheduled         time.Time             `pg:"trashcan_cleanup_last_scheduled_timestamp"`
+	StartRunningTimestamp time.Time             `pg:"trashcan_cleanup_start_running_timestamp"`
 }
 
 // MirrorOptions strategy backup options

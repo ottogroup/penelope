@@ -22,6 +22,7 @@ type ProcessorBuilder struct {
 	datasetListingProcessorFactory       processor.DatasetListingProcessorFactory
 	configRegionsProcessorFactory        processor.ConfigRegionsProcessorFactory
 	configStorageClassesProcessorFactory processor.ConfigStorageClassesProcessorFactory
+	trashcanCleanUpProcessorFactory      processor.TrashcanCleanUpProcessorFactory
 }
 
 // NewProcessorBuilder created a new ProcessorBuilder
@@ -38,7 +39,7 @@ func NewProcessorBuilder(
 	configRegionsProcessorFactory processor.ConfigRegionsProcessorFactory,
 	configStorageClassesProcessorFactory processor.ConfigStorageClassesProcessorFactory,
 	sourceProjectGetProcessorFactory processor.SourceProjectGetProcessorFactory,
-) *ProcessorBuilder {
+	trashcanCleanUpProcessorFactory processor.TrashcanCleanUpProcessorFactory) *ProcessorBuilder {
 	return &ProcessorBuilder{
 		creatingProcessorFactory:             creatingProcessorFactory,
 		gettingProcessorFactory:              gettingProcessorFactory,
@@ -52,6 +53,7 @@ func NewProcessorBuilder(
 		configRegionsProcessorFactory:        configRegionsProcessorFactory,
 		configStorageClassesProcessorFactory: configStorageClassesProcessorFactory,
 		sourceProjectGetProcessorFactory:     sourceProjectGetProcessorFactory,
+		trashcanCleanUpProcessorFactory:      trashcanCleanUpProcessorFactory,
 	}
 }
 
@@ -137,4 +139,11 @@ func (p *ProcessorBuilder) ProcessorForConfigStorageClasses(ctx context.Context)
 		return nil, errors.New("factory not found")
 	}
 	return p.configStorageClassesProcessorFactory.CreateProcessor(ctx)
+}
+
+func (p *ProcessorBuilder) ProcessorForTrashcanCleanUp(ctx context.Context) (processor.Operation[requestobjects.TrashcanCleanUpRequest, requestobjects.TrashcanCleanUpResponse], error) {
+	if p.trashcanCleanUpProcessorFactory == nil {
+		return nil, errors.New("factory not found")
+	}
+	return p.trashcanCleanUpProcessorFactory.CreateProcessor(ctx)
 }

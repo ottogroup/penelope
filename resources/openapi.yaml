@@ -353,6 +353,21 @@ paths:
           description: Created
         '403':
           description: Forbidden
+  /trashcans/{backupId}/clean_up:
+    post:
+      summary: Clean up trashcan for backup sink
+      parameters:
+        - in: path
+          name: backupId
+          schema:
+            type: string
+          required: true
+          description: Backup ID
+      responses:
+        '204':
+          description: OK
+        '400':
+          description: Bad Request
 components:
   schemas:
     UserResponse:
@@ -422,6 +437,13 @@ components:
           $ref: '#/components/schemas/RecoveryPointObjective'
         recovery_time_objective:
           $ref: '#/components/schemas/RecoveryTimeObjective'
+        trashcan_cleanup_status:
+          $ref: '#/components/schemas/TrashcanCleanupStatus'
+        trashcan_cleanup_error_message:
+          type: string
+        trashcan_cleanup_last_scheduled_time:
+          type: string
+          format: date-time
     Job:
       type: object
       properties:
@@ -579,6 +601,12 @@ components:
         - Snapshot
         - Mirror
         - Oneshot
+    TrashcanCleanupStatus:
+        type: string
+        enum:
+          - Noop
+          - Scheduled
+          - Error
     BackupStatus:
       type: string
       enum:

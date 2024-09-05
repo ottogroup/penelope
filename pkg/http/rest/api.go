@@ -98,6 +98,12 @@ func createEndpoints(processorBuilder *builder.ProcessorBuilder, tokenSourceProv
 			[]string{http.MethodGet},
 		),
 		newAPIEndpoint(
+			fmt.Sprintf("%s/{backup_id}/clean_up", trashcansPath),
+			true,
+			actions.NewTrashcanCleanUp(processorBuilder).ServeHTTP,
+			[]string{http.MethodPost},
+		),
+		newAPIEndpoint(
 			backupPath,
 			true,
 			actions.NewListingBackupHandler(processorBuilder).ServeHTTP,

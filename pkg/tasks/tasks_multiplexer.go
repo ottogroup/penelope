@@ -26,6 +26,8 @@ const (
 	CheckJobsStuck = "check_jobs_stuck"
 	// CheckSinkProjectCompliance is handled by task that checks if backups are still immutable
 	CheckSinkProjectCompliance = "check_sink_project_compliance"
+	// CleanupTrashcans is handled by task that cleans up trashcan
+	CleanupTrashcans = "cleanup_trashcans"
 )
 
 // TaskRunner runs tasks
@@ -88,6 +90,13 @@ func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProj
 		service, err := newRescheduleJobsWithQuotaError(ctx, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new RescheduleJobsWithQuotaErrorService: %s", err)
+			return
+		}
+		service.Run(ctx)
+	case CleanupTrashcans:
+		service, err := newCleanupTrashcansService(ctx, tokenSourceProvider, credentialsProvider)
+		if err != nil {
+			glog.Errorf("could not instantiate new CleanupTrashcansService: %s", err)
 			return
 		}
 		service.Run(ctx)

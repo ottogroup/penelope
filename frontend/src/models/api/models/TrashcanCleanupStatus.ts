@@ -2,9 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type BigQueryOptions = {
-    dataset?: string;
-    table?: Array<string>;
-    excluded_tables?: Array<string>;
-};
-
+export enum TrashcanCleanupStatus {
+    NOOP = 'Noop',
+    SCHEDULED = 'Scheduled',
+    ERROR = 'Error',
+}

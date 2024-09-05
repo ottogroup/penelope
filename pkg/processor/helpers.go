@@ -53,15 +53,18 @@ func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job, sour
 	}
 
 	return requestobjects.BackupResponse{
-		ID:                    backup.ID,
-		Sink:                  backup.SinkOptions.Sink,
-		Status:                status.String(),
-		SinkProject:           backup.SinkOptions.TargetProject,
-		CreatedTimestamp:      formatTime(backup.CreatedTimestamp),
-		UpdatedTimestamp:      formatTime(backup.UpdatedTimestamp),
-		DeletedTimestamp:      formatTime(backup.DeletedTimestamp),
-		DataOwner:             sourceGCPProject.DataOwner,
-		DataAvailabilityClass: sourceGCPProject.AvailabilityClass,
+		ID:                               backup.ID,
+		Sink:                             backup.SinkOptions.Sink,
+		Status:                           status.String(),
+		SinkProject:                      backup.SinkOptions.TargetProject,
+		CreatedTimestamp:                 formatTime(backup.CreatedTimestamp),
+		UpdatedTimestamp:                 formatTime(backup.UpdatedTimestamp),
+		DeletedTimestamp:                 formatTime(backup.DeletedTimestamp),
+		DataOwner:                        sourceGCPProject.DataOwner,
+		DataAvailabilityClass:            sourceGCPProject.AvailabilityClass,
+		TrashcanCleanupStatus:            backup.TrashcanCleanup.Status.String(),
+		TrashcanCleanupErrorMessage:      backup.TrashcanCleanup.ErrorMessage,
+		TrashcanCleanupLastScheduledTime: formatTime(backup.TrashcanCleanup.LastScheduled),
 		CreateRequest: requestobjects.CreateRequest{
 			Type:                   backup.Type.String(),
 			Strategy:               backup.Strategy.String(),

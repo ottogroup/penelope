@@ -2,6 +2,7 @@ package mock
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,6 +23,11 @@ var (
 	OauthHTTPMock = NewMockedHTTPRequest("POST", "/o/oauth2/token", oauthResponse)
 	// ImpersonationHTTPMock request
 	ImpersonationHTTPMock = NewMockedHTTPRequest("POST", "/v1/projects/-/serviceAccounts/.*:generateAccessToken", impersonateResponse)
+
+	ListObjectsHTTPMockFunc = func(bucketName string) MockedHTTPRequest {
+		path := fmt.Sprintf("/storage/v1/b/%s/o", bucketName)
+		return NewMockedHTTPRequest("GET", path, listObjectsResponse)
+	}
 
 	// ObjectsExistsHTTPMock request
 	ObjectsExistsHTTPMock = NewMockedHTTPRequest("GET", "/storage/v1/b/.*/o", objectsExistsResponse)
@@ -294,6 +300,74 @@ Content-Type: application/json; charset=UTF-8
       }
     ]
   }
+}
+`
+
+	listObjectsResponse = `HTTP/1.1 200
+Content-Type: application/json; charset=UTF-8
+{
+  "kind": "storage#objects",
+  "items": [
+    {
+      "kind": "storage#object",
+      "id": "uuid-5678-123456/.trashcan_uuid-5678-123456//1724709325384603",
+      "selfLink": "https://www.googleapis.com/storage/v1/b/uuid-5678-123456/o/.trashcan_uuid-5678-123456%2F",
+      "mediaLink": "https://content-storage.googleapis.com/download/storage/v1/b/uuid-5678-123456/o/.trashcan_uuid-5678-123456%2F?generation=1724709325384603&alt=media",
+      "name": ".trashcan_uuid-5678-123456/",
+      "bucket": "uuid-5678-123456",
+      "generation": "1724709325384603",
+      "metageneration": "1",
+      "contentType": "text/plain",
+      "storageClass": "STANDARD",
+      "size": "0",
+      "md5Hash": "1B2M2Y8AsgTpgAmY7PhCfg==",
+      "crc32c": "AAAAAA==",
+      "etag": "CJvXuPXSk4gDEAE=",
+      "temporaryHold": false,
+      "eventBasedHold": false,
+      "timeCreated": "2024-08-26T21:55:25.425Z",
+      "updated": "2024-08-26T21:55:25.425Z",
+      "timeStorageClassUpdated": "2024-08-26T21:55:25.425Z"
+    },
+    {
+      "kind": "storage#object",
+      "id": "uuid-5678-123456/.trashcan_uuid-5678-123456/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE/1724709388143440",
+      "selfLink": "https://www.googleapis.com/storage/v1/b/uuid-5678-123456/o/.trashcan_uuid-5678-123456%2FTHIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE",
+      "mediaLink": "https://content-storage.googleapis.com/download/storage/v1/b/uuid-5678-123456/o/.trashcan_uuid-5678-123456%2FTHIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE?generation=1724709388143440&alt=media",
+      "name": ".trashcan_uuid-5678-123456/THIS_TRASHCAN_CONTAINS_DELETED_OBJECTS_FROM_SOURCE",
+      "bucket": "uuid-5678-123456",
+      "generation": "1724709388143440",
+      "metageneration": "1",
+      "contentType": "application/octet-stream",
+      "storageClass": "STANDARD",
+      "size": "0",
+      "md5Hash": "1B2M2Y8AsgTpgAmY7PhCfg==",
+      "crc32c": "AAAAAA==",
+      "etag": "CNCWr5PTk4gDEAE=",
+      "timeCreated": "2024-08-26T21:56:28.169Z",
+      "updated": "2024-08-26T21:56:28.169Z",
+      "timeStorageClassUpdated": "2024-08-26T21:56:28.169Z"
+    },
+    {
+      "kind": "storage#object",
+      "id": "uuid-5678-123456/.trashcan_uuid-5678-123456/file.txt/1724709421446103",
+      "selfLink": "https://www.googleapis.com/storage/v1/b/uuid-5678-123456/o/.trashcan_uuid-5678-123456%2Ffile.txt",
+      "mediaLink": "https://content-storage.googleapis.com/download/storage/v1/b/uuid-5678-123456/o/.trashcan_uuid-5678-123456%2Ffile.txt?generation=1724709421446103&alt=media",
+      "name": ".trashcan_uuid-5678-123456/file.txt",
+      "bucket": "uuid-5678-123456",
+      "generation": "1724709421446103",
+      "metageneration": "1",
+      "contentType": "text/plain",
+      "storageClass": "STANDARD",
+      "size": "12",
+      "md5Hash": "dKoTNf4rcU8FwuSLAem5Lw==",
+      "crc32c": "Z1bzyw==",
+      "etag": "CNfnn6PTk4gDEAE=",
+      "timeCreated": "2024-08-26T21:57:01.471Z",
+      "updated": "2024-08-26T21:57:01.471Z",
+      "timeStorageClassUpdated": "2024-08-26T21:57:01.471Z"
+    }
+  ]
 }
 `
 )

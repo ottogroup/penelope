@@ -139,6 +139,10 @@ type BackupResponse struct {
 
 	Jobs      []JobResponse `json:"jobs,omitempty"`
 	JobsTotal uint64        `json:"jobs_total,omitempty"`
+
+	TrashcanCleanupStatus            string `json:"trashcan_cleanup_status,omitempty"`
+	TrashcanCleanupErrorMessage      string `json:"trashcan_cleanup_error_message,omitempty"`
+	TrashcanCleanupLastScheduledTime string `json:"trashcan_cleanup_last_scheduled_time,omitempty"`
 }
 
 // JobResponse get backup job details
@@ -281,4 +285,11 @@ type ProjectSinkComplianceRequest struct {
 
 type ProjectSinkComplianceResponse struct {
 	Checks []ProjectSinkComplianceCheck `json:"checks"`
+}
+
+type TrashcanCleanUpRequest struct {
+	BackupID string `json:"backup_id"`
+}
+
+type TrashcanCleanUpResponse struct {
 }

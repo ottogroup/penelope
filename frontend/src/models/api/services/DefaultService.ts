@@ -1,4 +1,4 @@
-/* generated using openapi-typescript-codegen -- do no edit */
+/* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -13,13 +13,10 @@ import type { SourceProject } from '../models/SourceProject';
 import type { TargetOptions } from '../models/TargetOptions';
 import type { UpdateRequest } from '../models/UpdateRequest';
 import type { UserResponse } from '../models/UserResponse';
-
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
-
 export class DefaultService {
-
     /**
      * Get current user
      * @returns UserResponse OK
@@ -34,7 +31,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Get all backups
      * @param project Project ID
@@ -57,7 +53,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Create a new backup
      * @param requestBody
@@ -77,7 +72,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Update a backup
      * @param requestBody
@@ -97,7 +91,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Get a backup
      * @param backupId Backup ID
@@ -126,7 +119,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Calculate backup costs
      * @param requestBody
@@ -163,7 +155,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Checks backup compliance level
      * @param requestBody
@@ -199,7 +190,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Restore a backup
      * @param backupId Backup ID
@@ -225,7 +215,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Get all available backup regions
      * @returns any OK
@@ -242,7 +231,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Get all available backup storge classes
      * @returns any OK
@@ -259,7 +247,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Get all datasets
      * @param projectId Project ID
@@ -282,7 +269,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Get all buckets
      * @param projectId Project ID
@@ -305,7 +291,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Get source project
      * @param projectId Project ID
@@ -328,7 +313,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Run a task
      * @param task Task name
@@ -349,5 +333,24 @@ export class DefaultService {
             },
         });
     }
-
+    /**
+     * Clean up trashcan for backup sink
+     * @param backupId Backup ID
+     * @returns void
+     * @throws ApiError
+     */
+    public static postTrashcansCleanUp(
+        backupId: string,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/trashcans/{backupId}/clean_up',
+            path: {
+                'backupId': backupId,
+            },
+            errors: {
+                400: `Bad Request`,
+            },
+        });
+    }
 }

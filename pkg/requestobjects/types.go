@@ -26,6 +26,8 @@ const (
 	BucketListing RequestType = "BuckeListing"
 	// SourceProjectGet - get Source Project for given project ID
 	SourceProjectGet RequestType = "SourceProjectGet"
+	// Cleanup - cleanup trash can for a backup
+	Cleanup RequestType = "Cleanup"
 )
 
 func (s RequestType) String() string {

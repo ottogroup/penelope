@@ -461,6 +461,10 @@ type stubGcsClient struct {
 	fDeleteObjectsErr error
 }
 
+func (g *stubGcsClient) DeleteObjectWithPrefix(ctxIn context.Context, bucket string, objectPrefixName string) error {
+	panic("implement me")
+}
+
 func (g *stubGcsClient) GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error) {
 	panic("implement me")
 }

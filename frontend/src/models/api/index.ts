@@ -1,4 +1,4 @@
-/* generated using openapi-typescript-codegen -- do no edit */
+/* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -25,6 +25,7 @@ export { Role } from './models/Role';
 export type { SnapshotOptions } from './models/SnapshotOptions';
 export type { SourceProject } from './models/SourceProject';
 export type { TargetOptions } from './models/TargetOptions';
+export { TrashcanCleanupStatus } from './models/TrashcanCleanupStatus';
 export type { UpdateRequest } from './models/UpdateRequest';
 export type { UserResponse } from './models/UserResponse';
 

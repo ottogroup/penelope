@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
-import {Backup, CreateRequest, DefaultService, Job, JobStatus} from "@/models/api";
+import {Backup, CreateRequest, DefaultService, Job, JobStatus, TrashcanCleanupStatus} from "@/models/api";
 import {BackupType} from "@/models/api/models/BackupType";
 import {RestoreResponse} from "@/models/api/models/RestoreResponse";
 import {useNotificationsStore} from "@/stores";
 import {ref, watch} from "vue";
+import Notification from "@/models/notification";
+import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 
 const props = defineProps({
   id: {
     type: String,
   },
 });
+
+const notificationsStore = useNotificationsStore();
 
 const emits = defineEmits(['close']);
 const tab = ref();
@@ -21,6 +25,34 @@ const listIsLoading = ref(true);
 const backup = ref<Backup | undefined>(undefined);
 const backupForEval = ref<CreateRequest | undefined>(undefined);
 const jobItems = ref<{ job: Job; restore: RestoreResponse | undefined }[]>([]);
+const cleanupTrashcanDialog = ref(false);
+
+const confirmCleanupTrashcan = () => {
+  cleanupTrashcanDialog.value = true;
+};
+
+const cleanupTrashcan = () => {
+  if (backup.value?.id) {
+    DefaultService.postTrashcansCleanUp(backup.value?.id)
+      .then(() => {
+        notificationsStore.addNotification(
+          new Notification({
+            message: "Backup trashcan cleaned up",
+            color: "success",
+          }),
+        );
+        cleanupTrashcanDialog.value = false;
+        updateData();
+      })
+      .catch((err) => {
+        notificationsStore.handleError(err);
+      });
+  }
+}
+
+const cancelCleanupTrashcan = () => {
+  cleanupTrashcanDialog.value = false;
+};
 
 const updateData = () => {
   isLoading.value = true;
@@ -89,7 +121,7 @@ const loadJobs = ({page, itemsPerPage}: { page: number; itemsPerPage: number; so
               }) ?? [];
         })
         .catch((err) => {
-          useNotificationsStore().handleError(err);
+          notificationsStore.handleError(err);
         })
         .finally(() => {
           listIsLoading.value = false;
@@ -103,7 +135,7 @@ const loadRestore = (item: { job: Job; restore: RestoreResponse | undefined }) =
         item.restore = resp;
       })
       .catch((err) => {
-        useNotificationsStore().handleError(err);
+        notificationsStore.handleError(err);
       });
 };
 
@@ -121,6 +153,19 @@ const bigqueryTableLink = (project: string, dataset: string, table: string) => {
 
 const projectLink = (project: string) => {
   return `https://console.cloud.google.com/welcome?project=${project}`;
+};
+
+const translateTrashcanCleanupStatus = (status: TrashcanCleanupStatus | undefined) => {
+  switch (status) {
+    case TrashcanCleanupStatus.NOOP:
+      return "No cleanup scheduled";
+    case TrashcanCleanupStatus.ERROR:
+      return "Error";
+    case TrashcanCleanupStatus.SCHEDULED:
+      return "Scheduled";
+    default:
+      return "Unknown";
+  }
 };
 
 watch(
@@ -142,7 +187,7 @@ watch(
 </script>
 
 <template>
-  <v-dialog v-model="viewDialog" width="800">
+  <v-dialog v-model="viewDialog" width="800" v-if="!cleanupTrashcanDialog">
     <v-card title="Backup">
       <v-card-text v-if="isLoading">
         <v-progress-linear indeterminate/>
@@ -279,7 +324,7 @@ watch(
               </tr>
               <tr>
                 <td>Sink bucket:</td>
-                <td>{{ backup?.sink }}</td>
+                <td><a :href="cloudStorageLink(backup?.sink_project ?? '', backup?.sink ?? '')" target="_blank">{{ backup?.sink }}</a></td>
               </tr>
               <tr>
                 <td>Storage region:</td>
@@ -335,6 +380,30 @@ watch(
               <tr>
                 <td>Updated:</td>
                 <td>{{ backup?.updated }}</td>
+              </tr>
+              <tr>
+                <td colspan="2"><h4>Trashcan Cleanup</h4></td>
+              </tr>
+              <tr>
+                <td>Status:</td>
+                <td>{{ translateTrashcanCleanupStatus(backup?.trashcan_cleanup_status) }}</td>
+              </tr>
+              <tr v-if="backup?.trashcan_cleanup_status === TrashcanCleanupStatus.ERROR">
+                <td>Error Message:</td>
+                <td>{{ backup?.trashcan_cleanup_error_message?.split(':').pop() }}</td>
+              </tr>
+              <tr v-if="backup?.trashcan_cleanup_last_scheduled_time">
+                <td>Scheduled:</td>
+                <td>{{ backup?.trashcan_cleanup_last_scheduled_time }}</td>
+              </tr>
+              <tr v-if="backup?.trashcan_cleanup_status !== TrashcanCleanupStatus.SCHEDULED">
+                <td>Executed:</td>
+                <td>
+                  <v-btn v-bind="props" color="red" @click="confirmCleanupTrashcan()" variant="tonal">
+                    <v-icon>mdi-delete</v-icon>
+                    Trashcan
+                  </v-btn>
+                </td>
               </tr>
               </tbody>
             </v-table>
@@ -403,4 +472,15 @@ watch(
       </template>
     </v-card>
   </v-dialog>
+  <ConfirmDialog
+      v-model="cleanupTrashcanDialog"
+      :options="{
+        title: 'Cleanup trashcan',
+        message: 'Are you sure you want to cleanup trashcan?',
+        color: 'red',
+        confirmButtonText: 'Cleanup',
+        cancelButtonText: 'Cancel',
+      }"
+      @confirm="cleanupTrashcan"
+      @cancel="cancelCleanupTrashcan"></ConfirmDialog>
 </template>

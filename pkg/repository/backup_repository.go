@@ -47,12 +47,64 @@ type BackupRepository interface {
 	GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*MirrorRevision, error)
 	GetBigQueryOneShotSnapshots(ctxIn context.Context, status BackupStatus) ([]*Backup, error)
 	GetScheduledBackups(context.Context, BackupType) ([]*Backup, error)
+	GetBackupsByCleanupTrashcanStatus(ctx context.Context, status TrashcanCleanupStatus) ([]*Backup, error)
+	MarkTrashcanCleanup(ctx context.Context, id string, trashcanCleanup TrashcanCleanup) error
 }
 
 // defaultBackupRepository implements BackupRepository
 type defaultBackupRepository struct {
 	storageService *service.Service
 	ctx            context.Context
+}
+
+func (d *defaultBackupRepository) MarkTrashcanCleanup(ctx context.Context, id string, trashcanCleanup TrashcanCleanup) error {
+	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).MarkTrashcanCleanup")
+	defer span.End()
+
+	columns := []string{
+		"trashcan_cleanup_status",
+		"trashcan_cleanup_error_message",
+		"trashcan_cleanup_start_running_timestamp",
+	}
+
+	backup := &Backup{
+		ID:              id,
+		TrashcanCleanup: trashcanCleanup,
+	}
+
+	if !trashcanCleanup.LastScheduled.IsZero() {
+		columns = append(columns, "trashcan_cleanup_last_scheduled_timestamp")
+	}
+
+	_, err := d.storageService.DB().Model(backup).
+		Column(columns...).
+		WherePK().
+		Update()
+
+	if err != nil {
+		logQueryError("MarkTrashcanCleanup", err)
+		return fmt.Errorf("error during executing updating backup statemant: %s", err)
+	}
+
+	return nil
+}
+
+func (d *defaultBackupRepository) GetBackupsByCleanupTrashcanStatus(ctx context.Context, status TrashcanCleanupStatus) ([]*Backup, error) {
+	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).GetBackupsByCleanupTrashcanStatus")
+	defer span.End()
+
+	var backups []*Backup
+
+	err := d.storageService.DB().Model(&backups).
+		Where("trashcan_cleanup_status = ?", status).
+		Select()
+
+	if err != nil {
+		logQueryError("GetBackupsByCleanupTrashcanStatus", err)
+		return backups, fmt.Errorf("error during executing get backup by status statement: %s", err)
+	}
+
+	return backups, nil
 }
 
 // NewBackupRepository return instance of BackupRepository
