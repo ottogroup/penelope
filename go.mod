@@ -2,11 +2,11 @@ module github.com/ottogroup/penelope
 
 require (
 	cloud.google.com/go v0.115.1
-	cloud.google.com/go/bigquery v1.62.0
-	cloud.google.com/go/iam v1.2.0
+	cloud.google.com/go/bigquery v1.63.0
+	cloud.google.com/go/iam v1.2.1
 	cloud.google.com/go/logging v1.11.0
-	cloud.google.com/go/monitoring v1.21.0
-	cloud.google.com/go/resourcemanager v1.10.0
+	cloud.google.com/go/monitoring v1.21.1
+	cloud.google.com/go/resourcemanager v1.10.1
 	cloud.google.com/go/storage v1.43.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14
 	github.com/aws/aws-sdk-go v1.55.5
@@ -20,9 +20,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
 	go.opencensus.io v0.24.0
-	google.golang.org/api v0.195.0
-	google.golang.org/genproto v0.0.0-20240827150818-7e3bb234dfed
-	google.golang.org/grpc v1.66.0
+	google.golang.org/api v0.196.0
+	google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1
+	google.golang.org/grpc v1.66.2
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/dc0d/tinykv.v4 v4.0.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -30,7 +30,7 @@ require (
 )
 
 require (
-	cloud.google.com/go/auth v0.9.2 // indirect
+	cloud.google.com/go/auth v0.9.3 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/compute/metadata v0.5.0 // indirect
 	cloud.google.com/go/longrunning v0.6.0 // indirect
@@ -78,9 +78,9 @@ require (
 	golang.org/x/text v0.17.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
-	golang.org/x/xerrors v0.0.0-20240716161551-93cc26a95ae9 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240827150818-7e3bb234dfed // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240827150818-7e3bb234dfed // indirect
+	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	mellium.im/sasl v0.3.1 // indirect
 )
