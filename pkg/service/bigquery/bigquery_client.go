@@ -288,6 +288,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 	if err != nil {
 		return nil, err
 	}
+	partitionMetadataCollected := make(map[string]bool)
 	for {
 		var s tablePartition
 		err := rowIt.Next(&s)
@@ -305,12 +306,17 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 		if err != nil {
 			return nil, fmt.Errorf("GetTablePartitions failed for `%s.%s.%s`, because partition with %s is not supported", project, dataset, table, targetFieldInTablePartition)
 		}
+		if _, exists := partitionMetadataCollected[partition]; exists {
+			// tables that where updated multiple times in the same day are skipped
+			continue
+		}
 		partitionTable := fmt.Sprintf("%s$%s", table, partition)
 		tableMetadata, err := d.client.DatasetInProject(project, dataset).Table(partitionTable).Metadata(ctx)
 		if err != nil {
 			return []*Table{}, err
 		}
 		partitions = append(partitions, newTableEntry(partitionTable, tableMetadata))
+		partitionMetadataCollected[partition] = true
 	}
 	return partitions, nil
 }
