@@ -2,16 +2,14 @@ package bigquery
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	bq "cloud.google.com/go/bigquery"
-	"cloud.google.com/go/civil"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
-	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
@@ -215,35 +213,8 @@ func (d *defaultBigQueryClient) HasTablePartitions(ctxIn context.Context, projec
 }
 
 type tablePartition struct {
-	Total     int64          `bigquery:"total"`
-	TIMESTAMP time.Time      `bigquery:"T_TIMESTAMP"`
-	DATE      civil.Date     `bigquery:"T_DATE"`
-	TIME      civil.Time     `bigquery:"T_TIME"`
-	DATETIME  civil.DateTime `bigquery:"T_DATETIME"`
-}
-
-func (t *tablePartition) getPartitionFor(targetField string) (string, error) {
-	var partitionName string
-	switch targetField {
-	case "T_TIMESTAMP":
-		partitionName = fmt.Sprintf("%s%s%s",
-			zerofill(t.TIMESTAMP.Year()),
-			zerofill(int(t.TIMESTAMP.Month())),
-			zerofill(t.TIMESTAMP.Day()))
-	case "T_DATE":
-		partitionName = fmt.Sprintf("%s%s%s",
-			zerofill(t.DATE.Year),
-			zerofill(int(t.DATE.Month)),
-			zerofill(t.DATE.Day))
-	case "T_DATETIME":
-		partitionName = fmt.Sprintf("%s%s%s",
-			zerofill(t.DATETIME.Date.Year),
-			zerofill(int(t.DATETIME.Date.Month)),
-			zerofill(t.DATETIME.Date.Day))
-	default:
-		return "", fmt.Errorf("partition for target field %q is not supported", targetField)
-	}
-	return partitionName, nil
+	Total       int64  `bigquery:"total"`
+	PartitionID string `bigquery:"partition_id"`
 }
 
 // GetTablePartitions list all partitions in table
@@ -260,24 +231,9 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 		return nil, fmt.Errorf("GetTablePartitions failed for `%s.%s.%s`, because partition other then DAY is not supported", project, dataset, table)
 	}
 
-	timePartitioningField := "_PARTITIONTIME"
-	targetFieldInTablePartition := "T_TIMESTAMP"
-	if metadata.TimePartitioning.Field != "" {
-		timePartitioningField = metadata.TimePartitioning.Field
-		for _, schema := range metadata.Schema.Relax() {
-			if schema.Name == metadata.TimePartitioning.Field {
-				targetFieldInTablePartition = fmt.Sprintf("T_%s", schema.Type)
-				break
-			}
-		}
-	}
-
 	var partitions []*Table
-	q := fmt.Sprintf("SELECT COUNT(*) AS total, %s AS %s FROM `%s.%s.%s` WHERE %s IS NOT NULL GROUP BY %s",
-		timePartitioningField, targetFieldInTablePartition,
+	q := fmt.Sprintf("SELECT total_rows AS total, partition_id FROM `%s.%s.INFORMATION_SCHEMA.PARTITIONS` WHERE TABLE_NAME = '%s'",
 		project, dataset, table,
-		timePartitioningField,
-		targetFieldInTablePartition,
 	)
 
 	run, err := d.client.Query(q).Run(ctx)
@@ -292,20 +248,16 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 	for {
 		var s tablePartition
 		err := rowIt.Next(&s)
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
-		}
-		if err != iterator.Done && err != nil {
+		} else if err != nil {
 			return nil, err
 		}
 		if s.Total == 0 {
 			continue
 		}
 
-		partition, err := s.getPartitionFor(targetFieldInTablePartition)
-		if err != nil {
-			return nil, fmt.Errorf("GetTablePartitions failed for `%s.%s.%s`, because partition with %s is not supported", project, dataset, table, targetFieldInTablePartition)
-		}
+		partition := s.PartitionID
 		if _, exists := partitionMetadataCollected[partition]; exists {
 			// tables that where updated multiple times in the same day are skipped
 			continue
@@ -330,11 +282,10 @@ func (d *defaultBigQueryClient) GetDatasets(ctxIn context.Context, project strin
 	it.ProjectID = project
 	for {
 		dataset, err := it.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
-		}
-		if err != nil && err != iterator.Done {
-			return []string{}, errors.Wrap(err, fmt.Sprintf("Datasets.Next() failed for project %s", project))
+		} else if err != nil {
+			return []string{}, errors.Join(err, fmt.Errorf("Datasets.Next() failed for project %s", project))
 		}
 		if dataset == nil {
 			return datasets, fmt.Errorf("datasets are nil for project %s", project)
@@ -342,13 +293,6 @@ func (d *defaultBigQueryClient) GetDatasets(ctxIn context.Context, project strin
 		datasets = append(datasets, dataset.DatasetID)
 	}
 	return datasets, err
-}
-
-func zerofill(intToFill int) string {
-	if intToFill < 10 {
-		return "0" + strconv.Itoa(intToFill)
-	}
-	return strconv.Itoa(intToFill)
 }
 
 // GetDatasetDetails get the details of a bigquery dataset

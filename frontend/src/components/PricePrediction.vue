@@ -50,7 +50,7 @@ const pricePredictionOptions = ref<ApexOptions>({
 });
 
 const backupStatusIsDeleted = computed(() => {
-  return props.backup?.status === BackupStatus.FINISHED || props.backup?.status === BackupStatus.BACKUP_DELETED;
+  return props.backup?.status === BackupStatus.FINISHED || props.backup?.status === BackupStatus.BACKUP_DELETED || props.backup?.status === BackupStatus.BACKUP_SOURCE_DELETED
 });
 
 const updateData = () => {
