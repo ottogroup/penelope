@@ -258,6 +258,10 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 		}
 
 		partition := s.PartitionID
+		if partition == "" {
+			return nil, fmt.Errorf("GetTablePartitions failed for `%s.%s.%s`, because partition_id is empty", project, dataset, table)
+		}
+
 		if _, exists := partitionMetadataCollected[partition]; exists {
 			// tables that where updated multiple times in the same day are skipped
 			continue
