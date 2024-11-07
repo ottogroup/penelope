@@ -63,6 +63,8 @@ var (
 
 	GetBackUpSourceNotFoundForBigQueryMock     = NewMockedHTTPRequest("GET", "bigquery/v2/projects/.*/datasets/notExistingDataset", getBackUpSourceNotFoundResponseForBigQuery)
 	GetBackUpSourceNotFoundForCloudStorageMock = NewMockedHTTPRequest("GET", "/storage/v1/b/notExistingBucket", getBackUpSourceNotFoundResponseForCloudStorage)
+
+	TableMetadataPartitionResultHTTPMock = NewMockedHTTPRequest("GET", "/bigquery/v2/projects/.*/queries", getMetadataTablePartitionsQueryResponse)
 )
 
 const (
@@ -177,6 +179,12 @@ Content-Length: 386
 Content-Type: application/json; charset=UTF-8
 
 {"kind":"bigquery#getQueryResultsResponse","etag":"P0Ea2Yx1PihRPFrsH/Q3fA==","schema":{"fields":[{"name":"total","type":"INTEGER","mode":"NULLABLE"},{"name":"p","type":"TIMESTAMP","mode":"NULLABLE"}]},"jobReference":{"projectId":"local-ability-backup","jobID":"PYRwoNSDhUNuqUtVbxtkjbSvmx7","location":"EU"},"totalRows":"76","totalBytesProcessed":"0","jobComplete":true,"cacheHit":false}`
+
+	getMetadataTablePartitionsQueryResponse = `HTTP/2.0 200 OK
+Content-Length: 1462
+Content-Type: application/json; charset=UTF-8
+
+{"kind": "bigquery#getQueryResultsResponse", "etag": "P0Ea2Yx1PihRPFrsH/Q3fA==", "schema": {"fields": [{"name": "total", "fullname": "total", "type": "INTEGER", "mode": "NULLABLE", "description": "", "fields": [], "hasPermission": true, "dataPolicies": [], "maxLength": "0", "precision": "0", "scale": "0", "roundingMode": "ROUNDING_MODE_UNSPECIFIED", "collation": "", "defaultValueExpression": "", "isMeasure": false, "rangeElementType": {"type": ""}, "foreignTypeDefinition": "", "dataGovernanceTags": [], "identityColumnInfo": {"generatedMode": "GENERATED_MODE_UNSPECIFIED", "start": "", "increment": ""}}, {"name": "partition_id", "fullname": "partition_id", "type": "STRING", "mode": "NULLABLE", "description": "", "fields": [], "hasPermission": true, "dataPolicies": [], "maxLength": "0", "precision": "0", "scale": "0", "roundingMode": "ROUNDING_MODE_UNSPECIFIED", "collation": "", "defaultValueExpression": "", "isMeasure": false, "rangeElementType": {"type": ""}, "foreignTypeDefinition": "", "dataGovernanceTags": [], "identityColumnInfo": {"generatedMode": "GENERATED_MODE_UNSPECIFIED", "start": "", "increment": ""}}]}, "rows": [{"f": [{"v": "22498"}, {"v": "20190110"}]}, {"f": [{"v": "65"}, {"v": "20200229"}]}], "jobReference": {"projectId": "local-ability-backup", "jobID": "PYRwoNSDhUNuqUtVbxtkjbSvmx7", "location": "EU"}, "totalRows": "2", "totalBytesProcessed": "0", "jobComplete": true, "cacheHit": false}`
 
 	getExtractJobResultOkResponse = `HTTP/2.0 200 OK
 Content-Length: 1191
