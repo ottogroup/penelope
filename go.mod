@@ -1,7 +1,6 @@
 module github.com/ottogroup/penelope
 
 require (
-	cloud.google.com/go v0.116.0
 	cloud.google.com/go/bigquery v1.64.0
 	cloud.google.com/go/iam v1.2.2
 	cloud.google.com/go/logging v1.12.0
@@ -31,6 +30,7 @@ require (
 
 require (
 	cel.dev/expr v0.18.0 // indirect
+	cloud.google.com/go v0.116.0 // indirect
 	cloud.google.com/go/auth v0.10.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.5 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
