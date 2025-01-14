@@ -2,6 +2,7 @@ package bigquery
 
 import (
 	"context"
+	"crypto/sha1"
 	"errors"
 	"fmt"
 	"net/http"
@@ -24,12 +25,30 @@ type Table struct {
 	LastModifiedTime time.Time
 }
 
-func newTableEntry(name string, tableMetadata *bq.TableMetadata) *Table {
+func newTableEntry(name string, t tablePartition) *Table {
+	// Generate a short SHA from the last modified time as ETag from BigQuery API call changes
+	h := sha1.New()
+	h.Write([]byte(t.LastModifiedTime.String()))
+	shortSHA := fmt.Sprintf("%x", h.Sum(nil))[:8]
+
 	return &Table{
 		Name:             name,
-		Checksum:         tableMetadata.ETag,
-		SizeInBytes:      float64(tableMetadata.NumBytes),
-		LastModifiedTime: tableMetadata.LastModifiedTime,
+		Checksum:         shortSHA,
+		SizeInBytes:      float64(t.TotalLogicalBytes),
+		LastModifiedTime: t.LastModifiedTime,
+	}
+}
+func newTableEntryFromMetadata(name string, t *bq.TableMetadata) *Table {
+	// Generate a short SHA from the last modified time as ETag from BigQuery API call changes
+	h := sha1.New()
+	h.Write([]byte(t.LastModifiedTime.String()))
+	shortSHA := fmt.Sprintf("%x", h.Sum(nil))[:8]
+
+	return &Table{
+		Name:             name,
+		Checksum:         shortSHA,
+		SizeInBytes:      float64(t.NumBytes),
+		LastModifiedTime: t.LastModifiedTime,
 	}
 }
 
@@ -166,7 +185,7 @@ func (d *defaultBigQueryClient) GetTable(ctxIn context.Context, project string, 
 	if err != nil {
 		return &Table{}, err
 	}
-	return newTableEntry(table, tableMetadata), nil
+	return newTableEntryFromMetadata(table, tableMetadata), nil
 }
 
 // GetTablesInDataset list all tables in a dataset
@@ -179,10 +198,10 @@ func (d *defaultBigQueryClient) GetTablesInDataset(ctxIn context.Context, projec
 	tableIt := d.client.DatasetInProject(project, dataset).Tables(ctx)
 	for {
 		oTable, err := tableIt.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
-		if err != iterator.Done && err != nil {
+		if err != nil {
 			return nil, err
 		}
 		if oTable == nil {
@@ -194,7 +213,7 @@ func (d *defaultBigQueryClient) GetTablesInDataset(ctxIn context.Context, projec
 			return []*Table{}, err
 		}
 		if tableMetadata.Type == bq.RegularTable {
-			tables = append(tables, newTableEntry(oTable.TableID, tableMetadata))
+			tables = append(tables, newTableEntryFromMetadata(oTable.TableID, tableMetadata))
 		}
 	}
 	return tables, nil
@@ -213,8 +232,11 @@ func (d *defaultBigQueryClient) HasTablePartitions(ctxIn context.Context, projec
 }
 
 type tablePartition struct {
-	Total       int64  `bigquery:"total"`
-	PartitionID string `bigquery:"partition_id"`
+	TotalLogicalBytes int64     `bigquery:"total_logical_bytes"`
+	TotalRows         int64     `bigquery:"total_rows"`
+	PartitionID       string    `bigquery:"partition_id"`
+	TableName         string    `bigquery:"table_name"`
+	LastModifiedTime  time.Time `bigquery:"last_modified_time"`
 }
 
 // GetTablePartitions list all partitions in table
@@ -232,7 +254,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 	}
 
 	var partitions []*Table
-	q := fmt.Sprintf("SELECT total_rows AS total, partition_id FROM `%s.%s.INFORMATION_SCHEMA.PARTITIONS` WHERE TABLE_NAME = '%s'",
+	q := fmt.Sprintf("SELECT total_rows, total_logical_bytes, partition_id, table_name, last_modified_time FROM `%s.%s.INFORMATION_SCHEMA.PARTITIONS` WHERE TABLE_NAME = '%s'",
 		project, dataset, table,
 	)
 
@@ -253,7 +275,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 		} else if err != nil {
 			return nil, err
 		}
-		if s.Total == 0 {
+		if s.TotalRows == 0 {
 			continue
 		}
 
@@ -267,11 +289,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 			continue
 		}
 		partitionTable := fmt.Sprintf("%s$%s", table, partition)
-		tableMetadata, err := d.client.DatasetInProject(project, dataset).Table(partitionTable).Metadata(ctx)
-		if err != nil {
-			return []*Table{}, err
-		}
-		partitions = append(partitions, newTableEntry(partitionTable, tableMetadata))
+		partitions = append(partitions, newTableEntry(partitionTable, s))
 		partitionMetadataCollected[partition] = true
 	}
 	return partitions, nil
