@@ -72,8 +72,7 @@ const (
 Content-Length: 182
 Content-Type: application/json; charset=UTF-8
 
-{"error":{"code":404,"message":"Requested entity was not found.","errors":[{"message":"Requested entity was not found.","domain":"global","reason":"notFound"}],"status":"NOT_FOUND"}}
-`
+{"error":{"code":404,"message":"Requested entity was not found.","errors":[{"message":"Requested entity was not found.","domain":"global","reason":"notFound"}],"status":"NOT_FOUND"}}`
 
 	forbiddenResponse = `HTTP/2.0 403 Forbidden
 Content-Type: application/xml; charset=UTF-8
@@ -145,7 +144,7 @@ X-Guploader-Uploadid: AEnB2UpMl0d5zZ3a3BGxywGmwRNoQ01t2dcoMYM8bz50ZDej9V5zwT7oUA
 {"kind":"storage#bucket","id":"local-kebab-database","selfLink":"https://www.googleapis.com/storage/v1/b/test-bucket","projectNumber":"879716749172","name":"test-bucket","timeCreated":"2019-01-09T12:26:24.435Z","updated":"2020-02-13T19:59:03.859Z","metageneration":"4","iamConfiguration":{"bucketPolicyOnly":{"enabled":false},"uniformBucketLevelAccess":{"enabled":false}},"location":"EUROPE-WEST1","locationType":"region","storageClass":"STANDARD","etag":"CAQ="}`
 
 	objectsExistsResponse = `HTTP/2.0 200 OK
-Content-Length: 2658
+Content-Length: 2644
 Content-Type: application/json; charset=UTF-8
 X-Guploader-Uploadid: AEnB2UpMl0d5zZ3a3BGxywGmwRNoQ01t2dcoMYM8bz50ZDej9V5zwT7oUA0ncN6b2RSdlZletB5OinAuxCdKn-JvRGO-7lYCSPFVVRcWPKANcIVSjjfyxOI
 
@@ -313,6 +312,7 @@ Content-Type: application/json; charset=UTF-8
 
 	listObjectsResponse = `HTTP/1.1 200
 Content-Type: application/json; charset=UTF-8
+
 {
   "kind": "storage#objects",
   "items": [
