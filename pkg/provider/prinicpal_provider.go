@@ -64,12 +64,21 @@ func (p *defaultUserProvider) GetPrincipalForEmail(ctxIn context.Context, email 
 	var principalCache = make(map[string][]authmodel.ProjectRoleBinding)
 
 	// Populate the cache and deduplicate role bindings by project using the highest role only
+	// First, collect all role bindings for each user across all principal entries
+	userRoleBindings := make(map[string][]authmodel.ProjectRoleBinding)
+
 	for _, p := range principal {
+		// Append all role bindings for this user
+		userRoleBindings[p.User.Email] = append(userRoleBindings[p.User.Email], p.RoleBindings...)
+	}
+
+	// Now consolidate role bindings for each user by keeping highest role per project
+	for email, allBindings := range userRoleBindings {
 		// Create a map to track the highest role for each project for this user
 		projectRoleMap := make(map[string]authmodel.Role)
 
-		// Process new role bindings from the current principal
-		for _, roleBinding := range p.RoleBindings {
+		// Process all role bindings for this user
+		for _, roleBinding := range allBindings {
 			project := roleBinding.Project
 			newRole := roleBinding.Role
 
@@ -95,7 +104,7 @@ func (p *defaultUserProvider) GetPrincipalForEmail(ctxIn context.Context, email 
 		}
 
 		// Update the cache with the consolidated bindings
-		principalCache[p.User.Email] = consolidatedBindings
+		principalCache[email] = consolidatedBindings
 	}
 
 	if roleBindings, ok := principalCache[email]; ok {
