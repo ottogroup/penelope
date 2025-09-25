@@ -16,6 +16,16 @@ func (r Role) String() string {
 	return string(r)
 }
 
+func (r Role) IsHigher(role Role) bool {
+	if r == Owner && (role == Viewer || role == None) {
+		return true
+	}
+	if r == Viewer && role == None {
+		return true
+	}
+	return false
+}
+
 // User object
 type User struct {
 	Email string

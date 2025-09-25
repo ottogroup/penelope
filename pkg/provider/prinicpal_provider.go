@@ -61,10 +61,48 @@ func (p *defaultUserProvider) GetPrincipalForEmail(ctxIn context.Context, email 
 		return nil, fmt.Errorf("can not parse yaml file %s", err)
 	}
 
+	var principalCache = make(map[string][]authmodel.ProjectRoleBinding)
+
+	// Populate the cache and deduplicate role bindings by project using the highest role only
 	for _, p := range principal {
-		if p.User.Email == email {
-			return p, nil
+		// Create a map to track the highest role for each project for this user
+		projectRoleMap := make(map[string]authmodel.Role)
+
+		// Process new role bindings from the current principal
+		for _, roleBinding := range p.RoleBindings {
+			project := roleBinding.Project
+			newRole := roleBinding.Role
+
+			// Check if we already have a role for this project
+			if existingRole, exists := projectRoleMap[project]; exists {
+				// Keep the highest role
+				if newRole.IsHigher(existingRole) {
+					projectRoleMap[project] = newRole
+				}
+			} else {
+				// No existing role for this project, add the new one
+				projectRoleMap[project] = newRole
+			}
 		}
+
+		// Convert the map back to a slice of ProjectRoleBinding
+		var consolidatedBindings []authmodel.ProjectRoleBinding
+		for project, role := range projectRoleMap {
+			consolidatedBindings = append(consolidatedBindings, authmodel.ProjectRoleBinding{
+				Role:    role,
+				Project: project,
+			})
+		}
+
+		// Update the cache with the consolidated bindings
+		principalCache[p.User.Email] = consolidatedBindings
+	}
+
+	if roleBindings, ok := principalCache[email]; ok {
+		return &authmodel.Principal{
+			User:         authmodel.User{Email: email},
+			RoleBindings: roleBindings,
+		}, nil
 	}
 
 	return nil, fmt.Errorf("could not find user '%s' in provided path %s", email, config.DefaultProviderPrincipalForUserPathEnv.MustGet())
