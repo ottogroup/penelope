@@ -120,14 +120,14 @@ watch(
             <v-col>
               <h3>Source</h3>
               <v-text-field
-                label="RPO (hours)"
+                label="RPO (hours)*"
                 type="number"
                 hint="Recovery time objective: Minimal frequency a backup must be conducted."
                 v-model="backup!.recovery_point_objective"
                 :rules="[integerRequiredRule('Recovery point objective (hours)')]"
               ></v-text-field>
               <v-text-field
-                label="RTO (minutes)"
+                label="RTO (minutes)*"
                 type="number"
                 hint="Recovery time objective: The recovery process time duration needed to restore data from backup storage."
                 v-model="backup!.recovery_time_objective"
