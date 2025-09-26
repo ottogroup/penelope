@@ -81,7 +81,7 @@ func (c *complianceProcessor) Process(ctxIn context.Context, args *Argument[requ
 	ctx, span := trace.StartSpan(ctxIn, "(*calculatingProcessor).Process")
 	defer span.End()
 
-	var request requestobjects.ComplianceRequest = args.Request
+	var request = args.Request
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.Calculating, request.Project) {
 		return requestobjects.ComplianceResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Compliance.String(), args.Principal.User.Email, request.Project)
@@ -116,7 +116,7 @@ func (c *backupLocationCheck) Check(ctx context.Context, request requestobjects.
 		if err != nil {
 			return requestobjects.ComplianceCheck{}, err
 		}
-		details, err := bigQueryClient.GetDatasetDetails(ctx, request.BigQueryOptions.Dataset)
+		details, err := bigQueryClient.GetDatasetDetails(ctx, request.Project, request.BigQueryOptions.Dataset)
 		if err != nil {
 			return requestobjects.ComplianceCheck{}, err
 		}
