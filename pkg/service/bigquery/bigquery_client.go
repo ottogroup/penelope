@@ -64,7 +64,7 @@ type Client interface {
 	GetTablePartitions(ctxIn context.Context, project string, dataset string, table string) ([]*Table, error)
 	GetDatasets(ctxIn context.Context, project string) ([]string, error)
 	DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error
-	GetDatasetDetails(ctxIn context.Context, datasetId string) (*bq.DatasetMetadata, error)
+	GetDatasetDetails(ctxIn context.Context, project string, dataset string) (*bq.DatasetMetadata, error)
 }
 
 // defaultBigQueryClient represent BigqUEry Client implementation
@@ -318,9 +318,9 @@ func (d *defaultBigQueryClient) GetDatasets(ctxIn context.Context, project strin
 }
 
 // GetDatasetDetails get the details of a bigquery dataset
-func (d *defaultBigQueryClient) GetDatasetDetails(ctxIn context.Context, datasetId string) (*bq.DatasetMetadata, error) {
+func (d *defaultBigQueryClient) GetDatasetDetails(ctxIn context.Context, project string, dataset string) (*bq.DatasetMetadata, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).GetDatasetDetails")
 	defer span.End()
 
-	return d.client.Dataset(datasetId).Metadata(ctx)
+	return d.client.DatasetInProject(project, dataset).Metadata(ctx)
 }

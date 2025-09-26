@@ -47,8 +47,8 @@ Penelope consists of three main components:
 
 # Requirements
 
-* Go >= 1.19
-* PostgreSQL >= 10.15
+* Go >= 1.23
+* PostgreSQL >= 15
 * Google Service Account
 
 Because Penelope uses the Google Cloud SDK, you first have to set up your local environment to access GCP. You need
@@ -144,7 +144,7 @@ free to change the values, but be carefully with the handlers.
 
 ```yaml
 # app.yaml
-runtime: go119
+runtime: go125
 service: default
 handlers:
   - url: /

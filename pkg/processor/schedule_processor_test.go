@@ -453,7 +453,7 @@ func (t *testBigQueryClient) HasTablePartitions(c context.Context, project strin
 	return t.fDoesTableHasPartitions, nil
 }
 
-func (t *testBigQueryClient) GetDatasetDetails(ctxIn context.Context, datasetId string) (*bigquery.DatasetMetadata, error) {
+func (t *testBigQueryClient) GetDatasetDetails(ctxIn context.Context, project string, dataset string) (*bigquery.DatasetMetadata, error) {
 	panic("implement me")
 }
 
