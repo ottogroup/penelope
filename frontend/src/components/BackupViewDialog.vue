@@ -135,7 +135,6 @@ const loadRestore = (item: { job: Job; restore: (RestoreResponse & { isLoading?:
     .then((resp) => {
       item.restore = resp;
       item.restore.isLoading = false;
-      console.log(item.restore);
     })
     .catch((err) => {
       item.restore = { isLoading: false };
