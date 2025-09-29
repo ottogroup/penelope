@@ -5,6 +5,7 @@
 export enum BackupStatus {
     NOT_STARTED = 'NotStarted',
     PREPARED = 'Prepared',
+    RUNNING = 'Running',
     FINISHED = 'Finished',
     PAUSED = 'Paused',
     TO_DELETE = 'ToDelete',

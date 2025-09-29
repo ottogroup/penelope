@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import BackupEditDialog from "@/components/BackupEditDialog.vue";
 import BackupViewDialog from "@/components/BackupViewDialog.vue";
-import { Backup, DefaultService } from "@/models/api";
+import { Backup, BackupStatus, DefaultService } from "@/models/api";
 import { BackupType } from "@/models/api/models/BackupType";
 import { useNotificationsStore } from "@/stores";
 import { ref } from "vue";
 
 const notificationsStore = useNotificationsStore();
-const selectedItems = defineModel();
-const searchModel = defineModel<string|null>("search", { required: true });
+const selectedItems = defineModel<Backup[]>();
+const searchModel = defineModel<string | undefined>("search", { required: true });
 
 const viewDialogID = ref<string | undefined>(undefined);
 const editDialogID = ref<string | undefined>(undefined);
@@ -33,7 +33,10 @@ const updateData = async () => {
     .then((response) => {
       items.value = response.backups ?? [];
     })
-    .catch((err) => notificationsStore.handleError(err))
+    .catch((err) => {
+      isLoading.value = false;
+      notificationsStore.handleError(err);
+    })
     .finally(() => {
       isLoading.value = false;
     });
@@ -63,16 +66,27 @@ const projectLink = (project: string) => {
   <BackupEditDialog :id="editDialogID" @close="editDialogID = undefined" />
 
   <v-data-table
+    v-model="selectedItems"
     v-model:search="searchModel"
     :items="items"
     :headers="headers"
-    :filter-keys="['type','project', 'strategy', 'status']"
+    :filter-keys="['type', 'project', 'strategy', 'status']"
     show-select
     :loading="isLoading"
-    v-model="selectedItems"
     :items-per-page="25"
     show-current-page
+    return-object
   >
+    <template #header.data-table-select></template>
+    <template #[`item.data-table-select`]="{ toggleSelect, item, internalItem, isSelected }">
+      <v-checkbox
+        v-if="[BackupStatus.PAUSED, BackupStatus.RUNNING].includes(item?.status ?? '')"
+        :model-value="isSelected(internalItem)"
+        @click.stop="toggleSelect(internalItem)"
+        color="primary"
+        hide-details
+      ></v-checkbox>
+    </template>
     <template #[`item.edit`]="{ item }">
       <v-tooltip text="Edit Backup">
         <template #activator="{ props }">
