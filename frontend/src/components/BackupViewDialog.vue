@@ -179,6 +179,7 @@ watch(
   () => viewDialog.value,
   (value) => {
     if (!value) {
+      tab.value = "details";
       emits("close");
     }
   },
@@ -501,6 +502,7 @@ watch(
 
             <template v-else-if="backup?.type === BackupType.BIG_QUERY">
               <v-data-table-server
+                @update:options="loadJobs"
                 :items-length="backup?.jobs_total ?? 0"
                 :items="jobItems"
                 :headers="[
