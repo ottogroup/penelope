@@ -64,7 +64,7 @@ type Client interface {
 	HasTablePartitions(ctxIn context.Context, project string, dataset string, table string) (bool, error)
 	GetTablePartitions(ctxIn context.Context, project string, dataset string, table string) ([]*Table, error)
 	GetDatasets(ctxIn context.Context, project string) ([]string, error)
-	DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error
+	DeleteExtractJob(ctxIn context.Context, extractJobID repository.ExtractJobID) error
 	GetDatasetDetails(ctxIn context.Context, project string, dataset string) (*bq.DatasetMetadata, error)
 }
 
@@ -75,11 +75,17 @@ type defaultBigQueryClient struct {
 	targetProjectID string
 }
 
-func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error {
+func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID repository.ExtractJobID) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).DeleteExtractJob")
 	defer span.End()
 
-	job, err := d.client.JobFromIDLocation(ctx, extractJobID, location)
+	var err error
+	var job *bq.Job
+	if extractJobID.HasLocation() {
+		job, err = d.client.JobFromIDLocation(ctx, extractJobID.Location(), extractJobID.JobID())
+	} else {
+		job, err = d.client.JobFromID(ctx, extractJobID.String())
+	}
 	if err != nil {
 		return err
 	}
@@ -151,7 +157,6 @@ func (d *defaultBigQueryClient) GetExtractJobStatus(ctxIn context.Context, extra
 	var err error
 	var job *bq.Job
 	if extractJobID.HasLocation() {
-		// schema based on Job v2 id format: <location>.<job_id>
 		job, err = d.client.JobFromIDLocation(ctx, extractJobID.Location(), extractJobID.JobID())
 	} else {
 		job, err = d.client.JobFromID(ctx, extractJobID.String())

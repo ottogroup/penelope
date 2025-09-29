@@ -3,12 +3,13 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/secret"
 	bq "github.com/ottogroup/penelope/pkg/service/bigquery"
 	"go.opencensus.io/trace"
-	"regexp"
-	"time"
 
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/processor"
@@ -422,7 +423,7 @@ func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *re
 	if err == nil {
 		for _, job := range jobs {
 			if job.ForeignJobID.BigQueryID.String() != "" {
-				err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID.String(), backup.Region)
+				err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID)
 				if err != nil {
 					glog.Warningf("[FAIL] Error deleting extract job %s: %s", job.ForeignJobID.BigQueryID.String(), err)
 					continue
