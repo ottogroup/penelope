@@ -11,6 +11,7 @@ const notificationsStore = useNotificationsStore();
 const tableKey = ref(0);
 const selectedItems = ref([]);
 const showCreateDialog = ref(false);
+const search = ref('');
 
 const onAddBackup = () => {
   showCreateDialog.value = true;
@@ -102,27 +103,44 @@ const onDelete = () => {
 <template>
   <BackupCreateDialog v-model="showCreateDialog" />
 
-  <v-btn-group class="ma-2">
-    <v-btn @click="onAddBackup">
-      <v-icon>mdi-plus</v-icon>
-      Create Backup
-    </v-btn>
-    <v-btn @click="onRefreshTable">
-      <v-icon>mdi-refresh</v-icon>
-      Refresh
-    </v-btn>
-    <v-btn @click="onPlay" :disabled="selectedItems.length == 0">
-      <v-icon>mdi-play</v-icon>
-      Resume
-    </v-btn>
-    <v-btn @click="onPause" :disabled="selectedItems.length == 0">
-      <v-icon>mdi-pause</v-icon>
-      Pause
-    </v-btn>
-    <v-btn @click="onDelete" :disabled="selectedItems.length == 0">
-      <v-icon>mdi-delete</v-icon>
-      Delete
-    </v-btn>
-  </v-btn-group>
-  <BackupTable :key="tableKey" v-model="selectedItems" />
+  <v-row align="center" class="ma-2">
+    <v-col cols="auto">
+      <v-btn-group>
+        <v-btn @click="onAddBackup">
+          <v-icon>mdi-plus</v-icon>
+          Create Backup
+        </v-btn>
+        <v-btn @click="onRefreshTable">
+          <v-icon>mdi-refresh</v-icon>
+          Refresh
+        </v-btn>
+        <v-btn @click="onPlay" :disabled="selectedItems.length == 0">
+          <v-icon>mdi-play</v-icon>
+          Resume
+        </v-btn>
+        <v-btn @click="onPause" :disabled="selectedItems.length == 0">
+          <v-icon>mdi-pause</v-icon>
+          Pause
+        </v-btn>
+        <v-btn @click="onDelete" :disabled="selectedItems.length == 0">
+          <v-icon>mdi-delete</v-icon>
+          Delete
+        </v-btn>
+      </v-btn-group>
+    </v-col>
+    <v-spacer></v-spacer>
+    <v-col cols="4">
+      <v-text-field
+        v-model="search"
+        density="compact"
+        label="Search"
+        prepend-inner-icon="mdi-magnify"
+        clearable
+        flat
+        hide-details
+        single-line
+      ></v-text-field>
+    </v-col>
+  </v-row>
+  <BackupTable :key="tableKey" v-model="selectedItems" v-model:search="search" />
 </template>

@@ -7,8 +7,8 @@ import { useNotificationsStore } from "@/stores";
 import { ref } from "vue";
 
 const notificationsStore = useNotificationsStore();
-
 const selectedItems = defineModel();
+const searchModel = defineModel<string|null>("search", { required: true });
 
 const viewDialogID = ref<string | undefined>(undefined);
 const editDialogID = ref<string | undefined>(undefined);
@@ -63,12 +63,15 @@ const projectLink = (project: string) => {
   <BackupEditDialog :id="editDialogID" @close="editDialogID = undefined" />
 
   <v-data-table
+    v-model:search="searchModel"
     :items="items"
     :headers="headers"
+    :filter-keys="['type','project', 'strategy', 'status']"
     show-select
     :loading="isLoading"
     v-model="selectedItems"
     :items-per-page="25"
+    show-current-page
   >
     <template #[`item.edit`]="{ item }">
       <v-tooltip text="Edit Backup">
