@@ -82,7 +82,7 @@ func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJ
 	var err error
 	var job *bq.Job
 	if extractJobID.HasLocation() {
-		job, err = d.client.JobFromIDLocation(ctx, extractJobID.Location(), extractJobID.JobID())
+		job, err = d.client.JobFromIDLocation(ctx, extractJobID.JobID(), extractJobID.Location())
 	} else {
 		job, err = d.client.JobFromID(ctx, extractJobID.String())
 	}
