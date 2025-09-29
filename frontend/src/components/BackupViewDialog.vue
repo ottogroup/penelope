@@ -180,6 +180,7 @@ watch(
   (value) => {
     if (!value) {
       tab.value = "details";
+      jobItems.value = []
       emits("close");
     }
   },
