@@ -437,7 +437,7 @@ func (*testBigQueryClient) ExtractTableToGcsAsAvro(c context.Context, dataset, t
 	panic("implement me")
 }
 
-func (*testBigQueryClient) GetExtractJobStatus(c context.Context, extractJobID string) (*bigquery.JobStatus, error) {
+func (*testBigQueryClient) GetExtractJobStatus(c context.Context, extractJobID repository.ExtractJobID) (*bigquery.JobStatus, error) {
 	panic("implement me")
 }
 

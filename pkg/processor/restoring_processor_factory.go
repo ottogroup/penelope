@@ -58,7 +58,7 @@ func (l restoringProcessor) Process(ctxIn context.Context, args *Argument[reques
 	ctx, span := trace.StartSpan(ctxIn, "(restoringProcessor).Process")
 	defer span.End()
 
-	var request requestobjects.RestoreRequest = args.Request
+	var request = args.Request
 
 	backup, err := l.BackupRepository.GetBackup(ctx, request.BackupID)
 	if err != nil {

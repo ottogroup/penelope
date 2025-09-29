@@ -3,6 +3,8 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/processor"
@@ -12,7 +14,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
-	"reflect"
 )
 
 type jobStatusService struct {
@@ -84,7 +85,7 @@ func (j *jobStatusService) checkBigQueryBackupJob(ctxIn context.Context, job *re
 	ctx, span := trace.StartSpan(ctxIn, "(*jobStatusService).checkBigQueryBackupJob")
 	defer span.End()
 
-	extractJobID := string(job.ForeignJobID.BigQueryID)
+	extractJobID := job.ForeignJobID.BigQueryID
 	if len(extractJobID) == 0 {
 		return fmt.Errorf("could not check status of job with id %s without bigquery extractJobStatus for backup with id %s ", job.ID, job.BackupID)
 	}
@@ -120,7 +121,7 @@ func (j *jobStatusService) checkBigQueryBackupJob(ctxIn context.Context, job *re
 		return fmt.Errorf("extract job %s has unpredictable state for job with id %s to %s", extractJobID, state.String(), job.ID)
 	}
 
-	err = j.scheduleProcessor.UpdateJob(ctx, backupType, job.ID, state, extractJobID)
+	err = j.scheduleProcessor.UpdateJob(ctx, backupType, job.ID, state, extractJobID.String())
 	if err != nil {
 		return fmt.Errorf("could not update status of job with id %s to %s: %s", job.ID, state, err)
 	}
