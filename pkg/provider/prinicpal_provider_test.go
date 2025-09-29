@@ -35,10 +35,10 @@ func TestDefaultUserProvider_GetPrincipalForUser_Found(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "some@email.de", principal.User.Email)
 	assert.Len(t, principal.RoleBindings, 2)
-	assert.Equal(t, "local-account", principal.RoleBindings[0].Project)
-	assert.Equal(t, model.Owner, principal.RoleBindings[0].Role)
-	assert.Equal(t, "local-ability", principal.RoleBindings[1].Project)
-	assert.Equal(t, model.Viewer, principal.RoleBindings[1].Role)
+	assert.ElementsMatch(t, principal.RoleBindings, []model.ProjectRoleBinding{
+		{Project: "local-account", Role: model.Owner},
+		{Project: "local-ability", Role: model.Viewer},
+	})
 }
 
 func TestDefaultUserProvider_GetPrincipalForUser_NotFound(t *testing.T) {
