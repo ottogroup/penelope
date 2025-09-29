@@ -5,14 +5,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/auth/model"
 	"github.com/ottogroup/penelope/pkg/provider"
 	"go.opencensus.io/trace"
 	"gopkg.in/dc0d/tinykv.v4"
-	"net/http"
-	"strings"
-	"time"
 )
 
 var principalCache = tinykv.New(time.Minute * 5)
@@ -58,17 +59,17 @@ func (p *defaultPrincipalRetriever) RetrieveCurrentPrincipal(ctxIn context.Conte
 		return nil, fmt.Errorf("job JWT in malformed expected 3 parts got %d", len(splits))
 	}
 
-	jwtToken := jwtToken{Body: &body{}}
+	parsedToken := jwtToken{Body: &body{}}
 
 	if decodedBody, err := base64.RawStdEncoding.DecodeString(splits[1]); err != nil {
 		return nil, err
-	} else if err := json.Unmarshal(decodedBody, jwtToken.Body); err != nil {
+	} else if err := json.Unmarshal(decodedBody, parsedToken.Body); err != nil {
 		return nil, err
 	}
 
-	userEmail := jwtToken.Body.Email
+	userEmail := strings.ToLower(parsedToken.Body.Email)
 	if userEmail == "" {
-		return nil, fmt.Errorf("email not found in request token %+v", jwtToken.Body)
+		return nil, fmt.Errorf("email not found in request token %+v", parsedToken.Body)
 	}
 
 	if !config.CompanyDomains.Exist() {
@@ -88,7 +89,7 @@ func (p *defaultPrincipalRetriever) RetrieveCurrentPrincipal(ctxIn context.Conte
 		return nil, err
 	}
 
-	principalCache.Put(token, principal)
+	_ = principalCache.Put(token, principal)
 	return principal, nil
 }
 

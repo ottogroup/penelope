@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"go.opencensus.io/trace"
 	"google.golang.org/api/googleapi"
-	"strings"
-	"time"
 )
 
 // BigQueryJobCreator prepares jobs for BigQuery
@@ -157,7 +158,7 @@ func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *reposi
 				continue
 			}
 		} else if len(resultingTables) == 0 {
-			glog.Infof("list tables resulted an empty list")
+			glog.Infof("backup with id %s list tables for %s resulted an empty list", backup.ID, t)
 			continue
 		}
 		flattenedTables = append(flattenedTables, resultingTables...)

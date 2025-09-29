@@ -11,6 +11,7 @@ import (
 	bq "cloud.google.com/go/bigquery"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opencensus.io/trace"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
@@ -56,14 +57,14 @@ func newTableEntryFromMetadata(name string, t *bq.TableMetadata) *Table {
 type Client interface {
 	IsInitialized(ctxIn context.Context) bool
 	ExtractTableToGcsAsAvro(ctxIn context.Context, dataset, table, gcsURI string) *bq.Extractor
-	GetExtractJobStatus(ctxIn context.Context, extractJobID string) (*bq.JobStatus, error)
+	GetExtractJobStatus(ctxIn context.Context, extractJobID repository.ExtractJobID) (*bq.JobStatus, error)
 	DoesDatasetExists(ctxIn context.Context, project string, dataset string) (bool, error)
 	GetTable(ctxIn context.Context, project string, dataset string, table string) (*Table, error)
 	GetTablesInDataset(ctxIn context.Context, project string, dataset string) ([]*Table, error)
 	HasTablePartitions(ctxIn context.Context, project string, dataset string, table string) (bool, error)
 	GetTablePartitions(ctxIn context.Context, project string, dataset string, table string) ([]*Table, error)
 	GetDatasets(ctxIn context.Context, project string) ([]string, error)
-	DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error
+	DeleteExtractJob(ctxIn context.Context, extractJobID repository.ExtractJobID) error
 	GetDatasetDetails(ctxIn context.Context, project string, dataset string) (*bq.DatasetMetadata, error)
 }
 
@@ -74,11 +75,17 @@ type defaultBigQueryClient struct {
 	targetProjectID string
 }
 
-func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error {
+func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID repository.ExtractJobID) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).DeleteExtractJob")
 	defer span.End()
 
-	job, err := d.client.JobFromIDLocation(ctx, extractJobID, location)
+	var err error
+	var job *bq.Job
+	if extractJobID.HasLocation() {
+		job, err = d.client.JobFromIDLocation(ctx, extractJobID.Location(), extractJobID.JobID())
+	} else {
+		job, err = d.client.JobFromID(ctx, extractJobID.String())
+	}
 	if err != nil {
 		return err
 	}
@@ -143,14 +150,21 @@ func (d *defaultBigQueryClient) ExtractTableToGcsAsAvro(ctxIn context.Context, d
 }
 
 // GetExtractJobStatus return status for extract job
-func (d *defaultBigQueryClient) GetExtractJobStatus(ctxIn context.Context, extractJobID string) (*bq.JobStatus, error) {
+func (d *defaultBigQueryClient) GetExtractJobStatus(ctxIn context.Context, extractJobID repository.ExtractJobID) (*bq.JobStatus, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).GetExtractJobStatus")
 	defer span.End()
 
-	job, err := d.client.JobFromID(ctx, extractJobID)
+	var err error
+	var job *bq.Job
+	if extractJobID.HasLocation() {
+		job, err = d.client.JobFromIDLocation(ctx, extractJobID.Location(), extractJobID.JobID())
+	} else {
+		job, err = d.client.JobFromID(ctx, extractJobID.String())
+	}
 	if err != nil {
 		return &bq.JobStatus{}, err
 	}
+
 	status, err := job.Status(ctx)
 	if err != nil {
 		return &bq.JobStatus{}, err

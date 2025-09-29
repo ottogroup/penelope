@@ -3,6 +3,8 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/processor"
@@ -12,7 +14,6 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
-	"reflect"
 )
 
 type jobScheduleService struct {
@@ -111,7 +112,7 @@ func (j *jobScheduleService) scheduleBigQueryBackupJob(ctxIn context.Context, jo
 	glog.Infof("Successfully created bigquery extractJob with id %s for job %s", extractJobID, job.ID)
 
 	state := repository.Scheduled
-	err = j.scheduleProcessor.UpdateJob(ctx, job.Type, job.ID, state, extractJobID)
+	err = j.scheduleProcessor.UpdateJob(ctx, job.Type, job.ID, state, extractJobID.String())
 	if err != nil {
 		return fmt.Errorf("could not update status of job with id %s to %s: %s", job.ID, state, err)
 	}

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -141,11 +142,39 @@ type CloudStorageOptions struct {
 // ExtractJobID  for GCS technology
 type ExtractJobID string
 
+func NewExtractJobIDWithLocation(jobId, location string) ExtractJobID {
+	if len(location) > 0 {
+		return ExtractJobID(fmt.Sprintf("%s.%s", location, jobId))
+	}
+
+	return ExtractJobID(jobId)
+}
+
 // TransferJobID  for BigQuery technology
 type TransferJobID string
 
 func (j ExtractJobID) String() string {
 	return string(j)
+}
+
+func (j ExtractJobID) HasLocation() bool {
+	return len(strings.Split(j.String(), ".")) == 2
+}
+
+func (j ExtractJobID) Location() string {
+	if j.HasLocation() {
+		return strings.Split(j.String(), ".")[0]
+	}
+
+	return ""
+}
+
+func (j ExtractJobID) JobID() string {
+	if j.HasLocation() {
+		return strings.Split(j.String(), ".")[1]
+	}
+
+	return ""
 }
 
 func (j TransferJobID) String() string {

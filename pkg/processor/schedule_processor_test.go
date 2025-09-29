@@ -409,7 +409,7 @@ type testBigQueryClient struct {
 	fGetTableErr            error
 }
 
-func (t *testBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID string, location string) error {
+func (t *testBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID repository.ExtractJobID) error {
 	panic("implement me")
 }
 
@@ -437,7 +437,7 @@ func (*testBigQueryClient) ExtractTableToGcsAsAvro(c context.Context, dataset, t
 	panic("implement me")
 }
 
-func (*testBigQueryClient) GetExtractJobStatus(c context.Context, extractJobID string) (*bigquery.JobStatus, error) {
+func (*testBigQueryClient) GetExtractJobStatus(c context.Context, extractJobID repository.ExtractJobID) (*bigquery.JobStatus, error) {
 	panic("implement me")
 }
 

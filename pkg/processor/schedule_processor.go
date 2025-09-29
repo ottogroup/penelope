@@ -3,12 +3,13 @@ package processor
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"go.opencensus.io/trace"
-	"time"
 )
 
 // TrashcanEntry moved objects into trashcan

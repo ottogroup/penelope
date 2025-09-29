@@ -2,10 +2,11 @@ package bigquery
 
 import (
 	"context"
-	"github.com/ottogroup/penelope/pkg/http/mock"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/ottogroup/penelope/pkg/http/mock"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -38,6 +39,6 @@ func TestNewBigQueryClient(t *testing.T) {
 type mockImpersonatedTokenConfigProvider struct {
 }
 
-func (mi *mockImpersonatedTokenConfigProvider) GetTargetPrincipalForProject(ctxIn context.Context, projectID string) (string, []string, error) {
+func (mi *mockImpersonatedTokenConfigProvider) GetTargetPrincipalForProject(_ context.Context, _ string) (string, []string, error) {
 	return "example@test-project-backup.iam.gserviceaccount.com", nil, nil
 }

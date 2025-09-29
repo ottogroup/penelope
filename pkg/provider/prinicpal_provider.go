@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ottogroup/penelope/pkg/config"
 	authmodel "github.com/ottogroup/penelope/pkg/http/auth/model"
@@ -68,8 +69,9 @@ func (p *defaultUserProvider) GetPrincipalForEmail(ctxIn context.Context, email 
 	userRoleBindings := make(map[string][]authmodel.ProjectRoleBinding)
 
 	for _, p := range principal {
+		eml := strings.ToLower(p.User.Email)
 		// Append all role bindings for this user
-		userRoleBindings[p.User.Email] = append(userRoleBindings[p.User.Email], p.RoleBindings...)
+		userRoleBindings[eml] = append(userRoleBindings[eml], p.RoleBindings...)
 	}
 
 	// Now consolidate role bindings for each user by keeping highest role per project

@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
+	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opencensus.io/trace"
 	"google.golang.org/api/googleapi"
-	"net/http"
 )
 
 // ExtractJobHandler represent exporting data from BigQuery
@@ -29,7 +31,7 @@ func NewExtractJobHandler(ctxIn context.Context, tokenSourceProvider impersonate
 }
 
 // CreateAvroJob start a BigQuery job that export data in AVRO format
-func (e *ExtractJobHandler) CreateAvroJob(ctxIn context.Context, dataset, table, sinkURI string) (string, error) {
+func (e *ExtractJobHandler) CreateAvroJob(ctxIn context.Context, dataset, table, sinkURI string) (repository.ExtractJobID, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*ExtractJobHandler).CreateAvroJob")
 	defer span.End()
 
@@ -40,11 +42,11 @@ func (e *ExtractJobHandler) CreateAvroJob(ctxIn context.Context, dataset, table,
 		return "", err
 	}
 
-	return job.ID(), nil
+	return repository.NewExtractJobIDWithLocation(job.ID(), job.Location()), nil
 }
 
-// GetStatusOfJob get actuall status for a BigQuery job
-func (e *ExtractJobHandler) GetStatusOfJob(ctxIn context.Context, extractJobID string) (ExtractJobState, error) {
+// GetStatusOfJob get actual status for a BigQuery job
+func (e *ExtractJobHandler) GetStatusOfJob(ctxIn context.Context, extractJobID repository.ExtractJobID) (ExtractJobState, error) {
 	ctx, span := trace.StartSpan(ctxIn, "(*ExtractJobHandler).GetStatusOfJob")
 	defer span.End()
 
@@ -69,11 +71,11 @@ func (e *ExtractJobHandler) GetStatusOfJob(ctxIn context.Context, extractJobID s
 
 // DeleteExtractJob delete a BigQuery job
 // If job does not exist, it returns nil
-func (e *ExtractJobHandler) DeleteExtractJob(ctx context.Context, jobID string, location string) error {
+func (e *ExtractJobHandler) DeleteExtractJob(ctx context.Context, jobID repository.ExtractJobID) error {
 	ctx, span := trace.StartSpan(ctx, "(*ExtractJobHandler).DeleteExtractJob")
 	defer span.End()
 
-	err := e.bq.DeleteExtractJob(ctx, jobID, location)
+	err := e.bq.DeleteExtractJob(ctx, jobID)
 	var googleAPIErr *googleapi.Error
 	if err != nil && errors.As(err, &googleAPIErr) && googleAPIErr.Code == http.StatusNotFound {
 		return nil

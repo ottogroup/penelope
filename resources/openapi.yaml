@@ -612,6 +612,7 @@ components:
       enum:
         - NotStarted
         - Prepared
+        - Running
         - Finished
         - Paused
         - ToDelete
