@@ -2,6 +2,7 @@
 import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
+import { copyToClipboard } from "@/helpers/clipboard";
 import { Backup, CreateRequest, DefaultService, Job, JobStatus, TrashcanCleanupStatus } from "@/models/api";
 import { BackupType } from "@/models/api/models/BackupType";
 import { RestoreResponse } from "@/models/api/models/RestoreResponse";
@@ -98,10 +99,6 @@ const headers = [
     title: "Foreign Job ID",
     key: "job.foreign_job_id",
   },
-  {
-    title: "Actions",
-    key: "action",
-  },
 ];
 
 const loadJobs = ({ page, itemsPerPage }: { page: number; itemsPerPage: number; sortBy: string }) => {
@@ -197,7 +194,7 @@ watch(
 </script>
 
 <template>
-  <v-dialog v-model="viewDialog" width="800" v-if="!cleanupTrashcanDialog">
+  <v-dialog v-model="viewDialog" v-if="!cleanupTrashcanDialog" max-height="75VH" max-width="950px">
     <v-card title="Backup">
       <v-card-text v-if="isLoading">
         <v-progress-linear indeterminate />
@@ -206,6 +203,7 @@ watch(
         <v-tabs v-model="tab">
           <v-tab value="details">Details</v-tab>
           <v-tab value="jobs">Jobs</v-tab>
+          <v-tab value="recovery">Recovery</v-tab>
         </v-tabs>
         <v-window v-model="tab">
           <v-window-item value="details">
@@ -447,25 +445,19 @@ watch(
               item-value="job.id"
             >
               <template #[`item.job.status`]="{ item }">
-                    <v-icon color="warning" v-if="item.job.status === JobStatus.SCHEDULED"
-                      >mdi-clock-outline</v-icon
-                    >
-                    <v-icon color="success" v-else-if="item.job.status === JobStatus.FINISHED_OK"
-                      >mdi-check</v-icon
-                    >
-                    <v-icon
-                      color="error"
-                      v-else-if="
-                        item.job.status === JobStatus.ERROR ||
-                        item.job.status === JobStatus.FINISHED_ERROR ||
-                        item.job.status === JobStatus.FINISHED_QUOTA_ERROR
-                      "
-                      >mdi-close-circle-outline
-                    </v-icon>
-                    <v-icon color="success" v-else-if="item.job.status === JobStatus.JOB_DELETED"
-                      >mdi-check</v-icon
-                    >
-                    <v-icon color="grey"  v-else>mdi-close-circle-outline</v-icon>
+                <v-icon color="warning" v-if="item.job.status === JobStatus.SCHEDULED">mdi-clock-outline</v-icon>
+                <v-icon color="success" v-else-if="item.job.status === JobStatus.FINISHED_OK">mdi-check</v-icon>
+                <v-icon
+                  color="error"
+                  v-else-if="
+                    item.job.status === JobStatus.ERROR ||
+                    item.job.status === JobStatus.FINISHED_ERROR ||
+                    item.job.status === JobStatus.FINISHED_QUOTA_ERROR
+                  "
+                  >mdi-close-circle-outline
+                </v-icon>
+                <v-icon color="success" v-else-if="item.job.status === JobStatus.JOB_DELETED">mdi-check</v-icon>
+                <v-icon color="grey" v-else>mdi-close-circle-outline</v-icon>
               </template>
               <template #[`item.action`]="{ item, internalItem, toggleExpand, isExpanded }">
                 <v-btn
@@ -479,31 +471,103 @@ watch(
                   show restore commands
                 </v-btn>
               </template>
-              <template v-slot:expanded-row="{ columns, item }">
-                <tr>
-                  <td :colspan="columns.length">
-                    <template
-                      v-if="
-                        item.restore &&
-                        !item.restore?.isLoading &&
-                        item.restore?.actions &&
-                        item.restore?.actions.length > 0
-                      "
-                    >
-                      <span v-for="action in item.restore?.actions">
-                        <code> {{ action.action }}</code>
-                        <br />
-                      </span>
-                    </template>
-                    <template v-else-if="item.restore && item.restore.isLoading">
-                      <v-progress-circular size="small" :indeterminate="true" color="primary" />
-                      Loading restore commands
-                    </template>
-                    <template v-else> No restore commands available </template>
-                  </td>
-                </tr>
-              </template>
             </v-data-table-server>
+          </v-window-item>
+          <v-window-item value="recovery">
+            <template v-if="backup?.type === BackupType.CLOUD_STORAGE">
+              <v-card>
+                <v-card-text>
+                  <p>Use the following command to restore your Cloud Storage backup:</p>
+                  <v-textarea
+                    readonly
+                    outlined
+                    :model-value="`gcloud transfer jobs create gs://${backup.sink} gs://<TARGET_BUCKET_NAME>`"
+                    append-inner-icon="mdi-content-copy"
+                    hint="Replace <TARGET_BUCKET_NAME> with your desired target bucket name."
+                    persistent-hint
+                    @click:append-inner="
+                      () => {
+                        copyToClipboard(
+                          `gcloud transfer jobs create gs://${backup?.sink} gs://<TARGET_BUCKET_NAME>`,
+                          notificationsStore.addNotification,
+                        );
+                      }
+                    "
+                  >
+                  </v-textarea>
+                </v-card-text>
+              </v-card>
+            </template>
+
+            <template v-else-if="backup?.type === BackupType.BIG_QUERY">
+              <v-data-table-server
+                :items-length="backup?.jobs_total ?? 0"
+                :items="jobItems"
+                :headers="[
+                  { title: 'Source', key: 'job.source' },
+                  { title: 'Updated', key: 'job.updated' },
+                  { title: 'Actions', key: 'action' },
+                ]"
+                :loading="listIsLoading"
+                item-value="job.id"
+              >
+                <template #[`item.action`]="{ item, internalItem, toggleExpand, isExpanded }">
+                  <v-btn
+                    v-if="!isExpanded(internalItem)"
+                    variant="outlined"
+                    prepend-icon="mdi-code-greater-than-or-equal"
+                    @click="
+                      loadRestore(item);
+                      toggleExpand(internalItem);
+                    "
+                  >
+                    Generate commands
+                  </v-btn>
+                </template>
+                <template v-slot:expanded-row="{ columns, item }">
+                  <tr>
+                    <td :colspan="columns.length">
+                      <template
+                        v-if="
+                          item.restore &&
+                          !(item.restore as any)?.isLoading &&
+                          item.restore?.actions &&
+                          item.restore?.actions.length > 0
+                        "
+                      >
+                        <v-textarea
+                          v-for="(action, idx) in item.restore?.actions"
+                          :key="idx"
+                          readonly
+                          outlined
+                          :model-value="action?.action"
+                          append-inner-icon="mdi-content-copy"
+                          @click:append-inner="
+                            () => {
+                              copyToClipboard(action?.action, notificationsStore.addNotification);
+                            }
+                          "
+                        >
+                        </v-textarea>
+                      </template>
+                      <template v-else-if="item.restore && (item.restore as any).isLoading">
+                        Loading restore commands
+                        <v-progress-circular size="small" :indeterminate="true" color="primary" />
+                      </template>
+                      <template v-else> No restore commands available </template>
+                    </td>
+                  </tr>
+                </template>
+              </v-data-table-server>
+            </template>
+
+            <template v-else>
+              <v-card>
+                <v-card-text>
+                  <p>Recovery options are not available for this backup type.</p>
+                </v-card-text>
+              </v-card>
+            </template>
           </v-window-item>
         </v-window>
       </v-card-text>
