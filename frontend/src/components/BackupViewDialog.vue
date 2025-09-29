@@ -447,16 +447,13 @@ watch(
               item-value="job.id"
             >
               <template #[`item.job.status`]="{ item }">
-                <v-tooltip :text="item.job.status">
-                  <template #activator="{ props }">
-                    <v-icon v-bind="props" color="warning" v-if="item.job.status === JobStatus.SCHEDULED"
+                    <v-icon color="warning" v-if="item.job.status === JobStatus.SCHEDULED"
                       >mdi-clock-outline</v-icon
                     >
-                    <v-icon v-bind="props" color="success" v-else-if="item.job.status === JobStatus.FINISHED_OK"
+                    <v-icon color="success" v-else-if="item.job.status === JobStatus.FINISHED_OK"
                       >mdi-check</v-icon
                     >
                     <v-icon
-                      v-bind="props"
                       color="error"
                       v-else-if="
                         item.job.status === JobStatus.ERROR ||
@@ -465,12 +462,10 @@ watch(
                       "
                       >mdi-close-circle-outline
                     </v-icon>
-                    <v-icon v-bind="props" color="warning" v-else-if="item.job.status === JobStatus.JOB_DELETED"
-                      >mdi-delete</v-icon
+                    <v-icon color="success" v-else-if="item.job.status === JobStatus.JOB_DELETED"
+                      >mdi-check</v-icon
                     >
-                    <v-icon v-bind="props" v-else>mdi-close-circle-outline</v-icon>
-                  </template>
-                </v-tooltip>
+                    <v-icon color="grey"  v-else>mdi-close-circle-outline</v-icon>
               </template>
               <template #[`item.action`]="{ item, internalItem, toggleExpand, isExpanded }">
                 <v-btn
