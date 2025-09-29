@@ -143,7 +143,11 @@ type CloudStorageOptions struct {
 type ExtractJobID string
 
 func NewExtractJobIDWithLocation(jobId, location string) ExtractJobID {
-	return ExtractJobID(fmt.Sprintf("%s.%s", location, jobId))
+	if len(location) > 0 {
+		return ExtractJobID(fmt.Sprintf("%s.%s", location, jobId))
+	}
+
+	return ExtractJobID(jobId)
 }
 
 // TransferJobID  for BigQuery technology
@@ -158,11 +162,19 @@ func (j ExtractJobID) HasLocation() bool {
 }
 
 func (j ExtractJobID) Location() string {
-	return strings.Split(j.String(), ".")[0]
+	if j.HasLocation() {
+		return strings.Split(j.String(), ".")[0]
+	}
+
+	return ""
 }
 
 func (j ExtractJobID) JobID() string {
-	return strings.Split(j.String(), ".")[1]
+	if j.HasLocation() {
+		return strings.Split(j.String(), ".")[1]
+	}
+
+	return ""
 }
 
 func (j TransferJobID) String() string {
