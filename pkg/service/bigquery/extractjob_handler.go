@@ -23,7 +23,10 @@ func NewExtractJobHandler(ctxIn context.Context, tokenSourceProvider impersonate
 	defer span.End()
 
 	bgClient, err := NewBigQueryClient(ctx, tokenSourceProvider, srcProjectID, targetProjectID)
-	if err != nil || bgClient == nil || !bgClient.IsInitialized(ctx) {
+	if err != nil {
+		return &ExtractJobHandler{}, fmt.Errorf("can not create instance of ExtractJobHandler: %s", err)
+	}
+	if bgClient == nil || !bgClient.IsInitialized(ctx) {
 		return &ExtractJobHandler{}, fmt.Errorf("can not create instance of ExtractJobHandler with unititialized Client")
 	}
 
