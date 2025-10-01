@@ -186,7 +186,43 @@ func (d *defaultJobRepository) GetBackupRestoreJobs(ctxIn context.Context, backu
 
 	// For snapshot jobs
 	if backup.Strategy == Snapshot {
+		// Get the reference job's timestamp based on whether jobID is provided
+		var referenceTimestampQuery *orm.Query
+		if jobID == "" {
+			// When jobId is empty, get the most recent FinishedOk job's timestamp
+			referenceTimestampQuery = db.ModelContext(ctxIn, (*Job)(nil)).
+				Column("audit_created_timestamp").
+				Where("backup_id = ?", backupID).
+				Where("status = ?", FinishedOk).
+				Order("audit_created_timestamp DESC").
+				Limit(1)
+		} else {
+			// When jobId is provided, use its timestamp
+			referenceTimestampQuery = db.ModelContext(ctxIn, (*Job)(nil)).
+				Column("audit_created_timestamp").
+				Where("id = ?", jobID)
+		}
 
+		// Create the job_latest CTE
+		jobLatestQuery := db.ModelContext(ctxIn, (*Job)(nil)).
+			Column("source").
+			ColumnExpr("MAX(id) AS id").
+			Where("backup_id = ?", backupID).
+			Where("audit_created_timestamp <= (?)", referenceTimestampQuery).
+			Group("source")
+
+		// Main query with CTE and JOIN
+		err = db.ModelContext(ctxIn).
+			With("job_latest", jobLatestQuery).
+			TableExpr("job_latest jl").
+			Column("j.*").
+			Join("INNER JOIN jobs j USING (id)").
+			Where("j.audit_deleted_timestamp IS NULL").
+			Select(&jobs)
+
+		if err != nil {
+			return jobs, fmt.Errorf("error during executing GetBackupRestoreJobs statement for snapshot: %s", err)
+		}
 	} else if backup.Strategy == Mirror {
 		// To determine the jobs to restore for a backup we use a restore point which is defined by a jobID.
 		// If jobID is empty, we take the most recent FinishedOk job for the backup as restore point.
