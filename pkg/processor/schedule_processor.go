@@ -28,7 +28,7 @@ type ScheduleProcessor interface {
 	GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*repository.MirrorRevision, error)
 	GetScheduledBackups(context.Context, repository.BackupType) ([]*repository.Backup, error)
 	GetByStatusAndAfter(context.Context, []repository.JobStatus, int) ([]*repository.Job, error)
-	GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.JobPage) ([]*repository.Job, error)
+	GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.Page) ([]*repository.Job, error)
 	UpdateJob(ctxIn context.Context, backupType repository.BackupType, jobID string, status repository.JobStatus, externalID string) error
 	UpdateBackupStatus(ctxIn context.Context, id string, status repository.BackupStatus) error
 	UpdateLastCleanupTime(ctxIn context.Context, backupID string, lastCleanupTime time.Time) error
@@ -170,7 +170,7 @@ func (d *defaultScheduleProcessor) GetByStatusAndAfter(ctxIn context.Context, st
 	return d.jobRepository.GetByStatusAndBefore(ctxIn, status, deltaHours)
 }
 
-func (d *defaultScheduleProcessor) GetJobsForBackupID(ctxIn context.Context, backupID string, page repository.JobPage) ([]*repository.Job, error) {
+func (d *defaultScheduleProcessor) GetJobsForBackupID(ctxIn context.Context, backupID string, page repository.Page) ([]*repository.Job, error) {
 	return d.jobRepository.GetJobsForBackupID(ctxIn, backupID, page)
 }
 

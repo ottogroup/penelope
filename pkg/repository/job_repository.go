@@ -3,12 +3,13 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
 	"go.opencensus.io/trace"
-	"time"
 )
 
 // JobStatistics for a job
@@ -17,8 +18,8 @@ type JobStatistics map[JobStatus]uint64
 // AllJobs will fetch all jobs
 const AllJobs = -101
 
-// JobPage represent what subset of jobs to fetch
-type JobPage struct {
+// Page represent what subset of rows to fetch
+type Page struct {
 	// Size how many elements to fetch, value AllJobs will fetch all
 	Size   int
 	Number int
@@ -34,10 +35,12 @@ type JobRepository interface {
 	GetByJobTypeAndStatus(context.Context, BackupType, ...JobStatus) ([]*Job, error)
 	GetByStatusAndBefore(context.Context, []JobStatus, int) ([]*Job, error)
 	PatchJobStatus(ctx context.Context, patch JobPatch) error
-	GetJobsForBackupID(ctx context.Context, backupID string, jobPage JobPage) ([]*Job, error)
+	GetJobsForBackupID(ctx context.Context, backupID string, jobPage Page, status ...JobStatus) ([]*Job, error)
 	GetMostRecentJobForBackupID(ctxIn context.Context, backupID string, status ...JobStatus) (*Job, error)
 	GetBackupRestoreJobs(ctx context.Context, backupID, jobID string) ([]*Job, error)
 	GetStatisticsForBackupID(ctx context.Context, backupID string) (JobStatistics, error)
+	GetJobCountForBackupID(ctx context.Context, backupID string) (int, error)
+	GetRecoverableJobCountForBackupID(ctx context.Context, backupID string) (int, error)
 }
 
 // defaultJobRepository implements JobRepository
@@ -119,17 +122,20 @@ func (d *defaultJobRepository) GetJob(ctxIn context.Context, jobID string) (*Job
 }
 
 // GetJobsForBackupID get all backup jobs
-func (d *defaultJobRepository) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage JobPage) ([]*Job, error) {
+func (d *defaultJobRepository) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage Page, status ...JobStatus) ([]*Job, error) {
 	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetJobsForBackupID")
 	defer span.End()
 
 	var jobs []*Job
 	db := d.storageService.DB()
 
-	query := db.Model(&jobs).Where("backup_id = ?", backupID)
+	query := db.Model(&jobs).Where("backup_id = ?", backupID).Order("audit_created_timestamp DESC")
 	if jobPage.Size != AllJobs {
 		offset := jobPage.Number * jobPage.Size
 		query = query.Offset(offset).Limit(jobPage.Size)
+	}
+	if len(status) > 0 {
+		query = query.Where("status in (?)", pg.In(status))
 	}
 	err := query.Select()
 	if err != nil {
@@ -171,29 +177,105 @@ func (d *defaultJobRepository) GetBackupRestoreJobs(ctxIn context.Context, backu
 	var jobs []*Job
 	db := d.storageService.DB()
 
-	subselect := db.Model().
-		Table("source_metadata").
-		Column("*").
-		ColumnExpr("rank() over (partition by source order by audit_created_timestamp desc) as inner_rank").
-		Where("backup_id = ?", backupID)
-
-	if jobID != "" {
-		auditCreatedTimestamp := db.Model(&Job{}).Column("audit_created_timestamp").Where("id = ?", jobID)
-		subselect = subselect.Where("to_timestamp(to_char(audit_created_timestamp, 'YYYY-MM-DD HH24:MI'), 'YYYY-MM-DD HH24:MI') <= (?)", auditCreatedTimestamp)
-	} else {
-		subselect = subselect.Where("to_timestamp(to_char(audit_created_timestamp, 'YYYY-MM-DD HH24:MI'), 'YYYY-MM-DD HH24:MI') <= NOW()")
+	backup := new(Backup)
+	err := db.Model(backup).Where("id = ?", backupID).Select()
+	if err != nil {
+		logQueryError("GetBackup", err)
+		return nil, err
 	}
 
-	err := db.Model().TableExpr("(?) AS s", subselect).
-		Column("j.*").
-		Join("LEFT JOIN source_metadata_jobs as smj on s.id=smj.source_metadata_id").
-		Join("LEFT JOIN jobs j on smj.job_id = j.id").
-		Where("inner_rank = 1 AND j.backup_id is NOT NULL").
-		Where("s.operation != 'Delete'").
-		Select(&jobs)
+	// For snapshot jobs
+	if backup.Strategy == Snapshot {
+		// Get the reference job's timestamp based on whether jobID is provided
+		var referenceTimestampQuery *orm.Query
+		if jobID == "" {
+			// When jobId is empty, get the most recent FinishedOk job's timestamp
+			referenceTimestampQuery = db.ModelContext(ctxIn, (*Job)(nil)).
+				Column("audit_created_timestamp").
+				Where("backup_id = ?", backupID).
+				Where("status = ?", FinishedOk).
+				Order("audit_created_timestamp DESC").
+				Limit(1)
+		} else {
+			// When jobId is provided, use its timestamp
+			referenceTimestampQuery = db.ModelContext(ctxIn, (*Job)(nil)).
+				Column("audit_created_timestamp").
+				Where("id = ?", jobID)
+		}
 
-	if err != nil {
-		return jobs, fmt.Errorf("error during executing GetBackupRestoreJobs statement: %s", err)
+		// Create the job_latest CTE
+		jobLatestQuery := db.ModelContext(ctxIn, (*Job)(nil)).
+			Column("source").
+			ColumnExpr("MAX(id) AS id").
+			Where("backup_id = ?", backupID).
+			Where("audit_created_timestamp <= (?)", referenceTimestampQuery).
+			Group("source")
+
+		// Main query with CTE and JOIN
+		err = db.ModelContext(ctxIn).
+			With("job_latest", jobLatestQuery).
+			TableExpr("job_latest jl").
+			Column("j.*").
+			Join("INNER JOIN jobs j USING (id)").
+			Where("j.audit_deleted_timestamp IS NULL").
+			Select(&jobs)
+
+		if err != nil {
+			return jobs, fmt.Errorf("error during executing GetBackupRestoreJobs statement for snapshot: %s", err)
+		}
+	} else if backup.Strategy == Mirror {
+		// To determine the jobs to restore for a backup we use a restore point which is defined by a jobID.
+		// If jobID is empty, we take the most recent FinishedOk job for the backup as restore point.
+		// If jobID is provided, we use it directly as restore point.
+		// Based on the restore point we determine the source_metadata entries which are relevant for the restore.
+		// We do this by first get the source_metadata associated with the job via a source_metadata_jobs lookup and selecting all preceding source_metadata entries for each source.
+		// For each source of the selected source_metadata we take the latest source_metadata.
+		// Finally, we get all jobs which are linked to those source_metadata entries and where the operation is not "Delete" so there is actually something to restore.
+
+		// Create the job_of_interest CTE based on whether jobID is provided
+		var jobOfInterestQuery *orm.Query
+		if jobID == "" {
+			// When jobId is empty, get the most recent FinishedOk job
+			jobOfInterestQuery = db.ModelContext(ctxIn, (*Job)(nil)).
+				Column("id").
+				Where("backup_id = ?", backupID).
+				Where("status = ?", FinishedOk).
+				Order("id DESC").
+				Limit(1)
+		} else {
+			// When jobId is provided, use it directly
+			jobOfInterestQuery = db.ModelContext(ctxIn).ColumnExpr("? as id", jobID)
+		}
+
+		// Create the source_metadata_jobs to source_metadata CTE
+		smjSmQuery := db.ModelContext(ctxIn).
+			TableExpr("source_metadata_jobs smj").
+			Column("sm.id", "sm.source").
+			Join("JOIN source_metadata sm ON smj.source_metadata_id >= sm.id").
+			Where("sm.backup_id = ?", backupID).
+			Where("smj.job_id IN (?)", jobOfInterestQuery)
+
+		// Create the latest source_metadata CTE
+		smLatestQuery := db.ModelContext(ctxIn).
+			TableExpr("smj_sm").
+			ColumnExpr("MAX(smj_sm.id) AS id").
+			Group("smj_sm.source")
+
+		err = db.ModelContext(ctxIn).
+			With("smj_sm", smjSmQuery).
+			With("sm_latest", smLatestQuery).
+			TableExpr("sm_latest sml").
+			Column("j.*").
+			Join("JOIN source_metadata sm ON sml.id = sm.id").
+			Join("JOIN source_metadata_jobs smj ON smj.source_metadata_id = sml.id").
+			Join("JOIN jobs j ON smj.job_id = j.id").
+			Where("sm.operation != ?", "Delete"). // remove deleted table/partition when the last operation was delete
+			Where("sm.audit_deleted_timestamp IS NULL"). // only keep recoverable entries
+			Select(&jobs)
+
+		if err != nil {
+			return jobs, fmt.Errorf("error during executing GetBackupRestoreJobs statement: %s", err)
+		}
 	}
 
 	return jobs, nil
@@ -337,4 +419,46 @@ func (d *defaultJobRepository) GetStatisticsForBackupID(ctxIn context.Context, b
 		jobStatistics[result.Status] = result.Count
 	}
 	return jobStatistics, nil
+}
+
+// GetJobCountForBackupID counts total job count for a backup
+func (d *defaultJobRepository) GetJobCountForBackupID(ctxIn context.Context, backupID string) (int, error) {
+	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetJobCountForBackupID")
+	defer span.End()
+
+	var result int
+
+	err := d.storageService.DB().
+		Model((*Job)(nil)).
+		ColumnExpr("count(*) AS count").
+		Where("backup_id = ?", backupID).
+		Select(&result)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return result, nil
+}
+
+// GetRecoverableJobCountForBackupID counts total recoverable job count for a backup
+func (d *defaultJobRepository) GetRecoverableJobCountForBackupID(ctxIn context.Context, backupID string) (int, error) {
+	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetRecoverableJobCountForBackupID")
+	defer span.End()
+
+	var result int
+
+	err := d.storageService.DB().
+		Model((*Job)(nil)).
+		ColumnExpr("count(*) AS count").
+		Where("backup_id = ?", backupID).
+		Where("status = ?", FinishedOk).
+		Where("audit_deleted_timestamp IS NULL").
+		Select(&result)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return result, nil
 }

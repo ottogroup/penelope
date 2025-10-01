@@ -96,13 +96,15 @@ export class DefaultService {
      * @param backupId Backup ID
      * @param size Size of job page
      * @param page Page of job page
+     * @param jobStatuses Comma separated list of job statuses to filter jobs
      * @returns Backup OK
      * @throws ApiError
      */
-    public static getBackups1(
+    public static getSingleBackup(
         backupId: string,
         size?: number,
         page?: number,
+        jobStatuses?: string,
     ): CancelablePromise<Backup> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -113,6 +115,7 @@ export class DefaultService {
             query: {
                 'size': size,
                 'page': page,
+                'job_statuses': jobStatuses,
             },
             errors: {
                 400: `Bad Request`,

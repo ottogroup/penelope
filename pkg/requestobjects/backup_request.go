@@ -1,8 +1,9 @@
 package requestobjects
 
 import (
-	"github.com/ottogroup/penelope/pkg/provider"
 	"time"
+
+	"github.com/ottogroup/penelope/pkg/provider"
 )
 
 type AvailabilityClass string
@@ -34,8 +35,9 @@ type ListRequest struct {
 
 // GetRequest get backup details
 type GetRequest struct {
-	BackupID string
-	Page     Page
+	BackupID  string
+	JobStatus []string
+	Page      Page
 }
 
 // DeleteRequest remove bucket an all files within next 60 days
@@ -137,8 +139,9 @@ type BackupResponse struct {
 	UpdatedTimestamp string `json:"updated,omitempty"`
 	DeletedTimestamp string `json:"deleted,omitempty"`
 
-	Jobs      []JobResponse `json:"jobs,omitempty"`
-	JobsTotal uint64        `json:"jobs_total,omitempty"`
+	Jobs                 []JobResponse `json:"jobs,omitempty"`
+	JobsTotal            uint64        `json:"jobs_total,omitempty"`
+	RecoverableJobsTotal uint64        `json:"recoverable_jobs_total,omitempty"`
 
 	TrashcanCleanupStatus            string `json:"trashcan_cleanup_status,omitempty"`
 	TrashcanCleanupErrorMessage      string `json:"trashcan_cleanup_error_message,omitempty"`

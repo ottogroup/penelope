@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+
 	"github.com/ottogroup/penelope/pkg/provider"
 
 	"github.com/go-pg/pg/v10"
@@ -61,7 +62,7 @@ func (l gettingProcessor) Process(ctxIn context.Context, args *Argument[requesto
 	ctx, span := trace.StartSpan(ctxIn, "(gettingProcessor).Process")
 	defer span.End()
 
-	var request requestobjects.GetRequest = args.Request
+	var request = args.Request
 
 	backup, err := l.BackupRepository.GetBackup(ctx, request.BackupID)
 	if err != nil {
@@ -78,31 +79,49 @@ func (l gettingProcessor) Process(ctxIn context.Context, args *Argument[requesto
 		return requestobjects.BackupResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Getting.String(), args.Principal.User.Email, backup.TargetProject)
 	}
 
-	jobPage := repository.JobPage{Size: request.Page.Size, Number: request.Page.Number}
+	jobPage := repository.Page{Size: request.Page.Size, Number: request.Page.Number}
 	if jobPage.Size == 0 || jobPage.Size < 0 {
 		jobPage.Size = 100
 	}
 	if jobPage.Number < 0 {
 		jobPage.Size = 0
 	}
-	jobs, err := l.JobRepository.GetJobsForBackupID(ctx, backup.ID, jobPage)
+	var jobStatuses []repository.JobStatus
+	for _, status := range request.JobStatus {
+		var isValid bool
+		for _, validStatus := range repository.JobStatuses {
+			if string(validStatus) == status {
+				isValid = true
+				break
+			}
+		}
+		if isValid {
+			jobStatuses = append(jobStatuses, repository.JobStatus(status))
+		}
+	}
+
+	jobs, err := l.JobRepository.GetJobsForBackupID(ctx, backup.ID, jobPage, jobStatuses...)
 	if err != nil {
 		return requestobjects.BackupResponse{}, errors.Wrapf(err, "job repository GetBackupJobs failed  %s", request.BackupID)
 	}
-	jobsStats, err := l.JobRepository.GetStatisticsForBackupID(ctx, backup.ID)
+
+	jobCount, err := l.JobRepository.GetJobCountForBackupID(ctx, backup.ID)
 	if err != nil {
 		return requestobjects.BackupResponse{}, errors.Wrapf(err, "job repository GetStatisticsForBackupID failed  %s", request.BackupID)
 	}
-	var countedJobs uint64
-	for _, status := range repository.JobStatutses {
-		countedJobs += jobsStats[status]
+
+	recoverableJobCount, err := l.JobRepository.GetRecoverableJobCountForBackupID(ctx, backup.ID)
+	if err != nil {
+		return requestobjects.BackupResponse{}, errors.Wrapf(err, "job repository GetStatisticsForBackupID failed  %s", request.BackupID)
 	}
+
 	sourceProject, err := l.sourceGCPProjectProvider.GetSourceGCPProject(ctx, backup.SourceProject)
 	if err != nil {
 		return requestobjects.BackupResponse{}, errors.Wrapf(err, "sourceGCPProjectProvider GetSourceGCPProject failed  %s", backup.SourceProject)
 	}
 
 	res := mapBackupToResponse(backup, jobs, sourceProject)
-	res.JobsTotal = countedJobs
+	res.JobsTotal = uint64(jobCount)
+	res.RecoverableJobsTotal = uint64(recoverableJobCount)
 	return res, err
 }

@@ -33,6 +33,7 @@ export type Backup = {
     deleted?: string;
     jobs?: Array<Job>;
     jobs_total?: number;
+    recoverable_jobs_total?: number;
     data_owner?: string;
     data_availability_class?: AvailabilityClass;
     recovery_point_objective?: RecoveryPointObjective;

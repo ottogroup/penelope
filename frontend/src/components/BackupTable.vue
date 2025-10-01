@@ -23,6 +23,9 @@ const headers = [
   { title: "Source", key: "source" },
   { title: "Sink Project", key: "sink_project" },
   { title: "Sink bucket", key: "sink" },
+  { title: "Data availability class", key: "data_availability_class" },
+  { title: "Recovery requirements", key: "recovery_point_objective" },
+  { title: "Created", key: "created" },
   { title: "Strategy", key: "strategy" },
   { title: "Status", key: "status" },
 ];
@@ -109,6 +112,19 @@ const projectLink = (project: string) => {
     </template>
     <template #[`item.sink_project`]="{ item }">
       <a :href="projectLink(item.sink_project ?? '')" target="_blank">{{ item.sink_project }} </a>
+    </template>
+    <template #[`item.created`]="{ item }">
+      {{ item.created ? new Date(item.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' + new Date(item.created).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }) : '' }}
+
+    </template>
+    <template #[`item.data_availability_class`]="{ item }">
+      {{ item.data_availability_class }}
+    </template>
+    <template #[`item.recovery_point_objective`]="{ item }">
+      <ul>
+        <li>RPO: {{ item.recovery_point_objective }} h</li>
+        <li>RTO: {{ item.recovery_time_objective }} min</li>
+      </ul>
     </template>
     <template #[`item.source`]="{ item }">
       <template v-if="item.type === BackupType.BIG_QUERY">

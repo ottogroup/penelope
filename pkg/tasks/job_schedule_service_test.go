@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ottogroup/penelope/pkg/service/gcs"
 
 	"github.com/ottogroup/penelope/pkg/http/mock"
 	"github.com/ottogroup/penelope/pkg/processor"
@@ -65,7 +66,7 @@ func (m *MockScheduleProcessor) GetEntriesInTrashcanBefore(ctxIn context.Context
 	panic("implement me")
 }
 
-func (m *MockScheduleProcessor) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.JobPage) ([]*repository.Job, error) {
+func (m *MockScheduleProcessor) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.Page) ([]*repository.Job, error) {
 	panic("implement me")
 }
 

@@ -3,9 +3,10 @@ package memory
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opencensus.io/trace"
-	"time"
 )
 
 // JobRepository is a client to a backup job
@@ -61,7 +62,7 @@ func (r *JobRepository) GetByStatusAndBefore(ctxIn context.Context, status []rep
 }
 
 // GetJobsForBackupID get all backup jobs
-func (r *JobRepository) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.JobPage) (jobs []*repository.Job, err error) {
+func (r *JobRepository) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage repository.Page, status ...repository.JobStatus) (jobs []*repository.Job, err error) {
 	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetJobsForBackupID")
 	defer span.End()
 
@@ -173,4 +174,19 @@ func (r *JobRepository) PatchJobStatus(ctxIn context.Context, patch repository.J
 	j.BigQueryID = patch.BigQueryID
 	j.ForeignJobID = patch.ForeignJobID
 	return nil
+}
+
+func (r *JobRepository) GetJobCountForBackupID(ctxIn context.Context, backupID string) (int, error) {
+	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetJobCountForBackupID")
+	defer span.End()
+
+	panic("implement me")
+
+}
+
+func (r *JobRepository) GetRecoverableJobCountForBackupID(ctxIn context.Context, backupID string) (int, error) {
+	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetRecoverableJobCountForBackupID")
+	defer span.End()
+
+	panic("implement me")
 }
