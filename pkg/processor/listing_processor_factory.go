@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+
 	"github.com/ottogroup/penelope/pkg/provider"
 
 	"github.com/golang/glog"
@@ -53,7 +54,7 @@ func (l listingProcessor) Process(ctxIn context.Context, args *Argument[requesto
 	ctx, span := trace.StartSpan(ctxIn, "(listingProcessor).Process")
 	defer span.End()
 
-	var request requestobjects.ListRequest = args.Request
+	var request = args.Request
 
 	backupFilter := repository.BackupFilter{Project: request.Project}
 	backups, err := l.BackupRepository.GetBackups(ctx, backupFilter)

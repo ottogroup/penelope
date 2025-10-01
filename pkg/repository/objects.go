@@ -119,8 +119,8 @@ var Strategies = []Strategy{Snapshot, Mirror}
 // BackupTypes source for a backup
 var BackupTypes = []BackupType{BigQuery, CloudStorage}
 
-// JobStatutses available job statuses
-var JobStatutses = []JobStatus{NotScheduled, Scheduled, Error, Pending, FinishedOk, FinishedError, FinishedQuotaError, JobDeleted}
+// JobStatuses available job statuses
+var JobStatuses = []JobStatus{NotScheduled, Scheduled, Error, Pending, FinishedOk, FinishedError, FinishedQuotaError, JobDeleted}
 
 func (s BackupType) String() string {
 	return string(s)

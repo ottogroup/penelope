@@ -1,9 +1,10 @@
 package repository
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultJobRepository_AddJob_Simple(t *testing.T) {
@@ -213,7 +214,7 @@ func TestDefaultJobRepository_GetJobsForBackupID(t *testing.T) {
 	err := repository.AddJobs(ctx, jobs)
 	assert.NoError(t, err)
 
-	page := JobPage{
+	page := Page{
 		Size:   5,
 		Number: 0,
 	}
@@ -252,7 +253,7 @@ func TestDefaultJobRepository_GetJobsForBackupID_PageSize(t *testing.T) {
 	err := repository.AddJobs(ctx, jobs)
 	assert.NoError(t, err)
 
-	page := JobPage{
+	page := Page{
 		Size:   3,
 		Number: 0,
 	}
@@ -261,7 +262,7 @@ func TestDefaultJobRepository_GetJobsForBackupID_PageSize(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, jobsForBackupID, 3)
 
-	page = JobPage{
+	page = Page{
 		Size:   3,
 		Number: 1,
 	}
@@ -270,7 +271,7 @@ func TestDefaultJobRepository_GetJobsForBackupID_PageSize(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, jobsForBackupID, 1)
 
-	page = JobPage{
+	page = Page{
 		Size:   3,
 		Number: 2,
 	}
@@ -279,7 +280,7 @@ func TestDefaultJobRepository_GetJobsForBackupID_PageSize(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, jobsForBackupID, 0)
 
-	page = JobPage{
+	page = Page{
 		Size:   AllJobs,
 		Number: 0,
 	}

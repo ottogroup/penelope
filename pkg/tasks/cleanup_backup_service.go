@@ -189,7 +189,7 @@ func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backup 
 	}
 
 	// errors are ignored from here after because they are not crucial
-	jobPage := repository.JobPage{Size: repository.AllJobs}
+	jobPage := repository.Page{Size: repository.AllJobs}
 	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
 	if err == nil {
 		glog.Infof("Deleting transfer jobs for backup %s", backup.ID)
@@ -418,7 +418,7 @@ func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *re
 	}
 
 	// errors are ignored from here after because they are not crucial
-	jobPage := repository.JobPage{Size: repository.AllJobs}
+	jobPage := repository.Page{Size: repository.AllJobs}
 	jobs, err := j.scheduleProcessor.GetJobsForBackupID(ctx, backup.ID, jobPage)
 	if err == nil {
 		for _, job := range jobs {

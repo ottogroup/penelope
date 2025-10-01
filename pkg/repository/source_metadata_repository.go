@@ -3,11 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-pg/pg/v10"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
 	"go.opencensus.io/trace"
-	"time"
 )
 
 // SourceMetadataRepository defines operation for SourceMetadata

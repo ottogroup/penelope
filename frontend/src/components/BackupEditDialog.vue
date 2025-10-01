@@ -42,7 +42,7 @@ const backupStatusIsDeleted = computed(() => {
 const updateData = () => {
   isLoading.value = true;
   if (props.id) {
-    DefaultService.getBackups1(props.id!)
+    DefaultService.getSingleBackup(props.id!)
       .then((response) => {
         backup.value = response;
       })

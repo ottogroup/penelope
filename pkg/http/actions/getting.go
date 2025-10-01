@@ -5,6 +5,7 @@ import (
 	"html"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -51,6 +52,9 @@ func (dl *GettingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 			return
 		}
 		request.Page.Number = i
+	}
+	if q.Get("job_statuses") != "" {
+		request.JobStatus = strings.Split(q.Get("job_statuses"), ",")
 	}
 
 	handleRequestByProcessor(ctx, w, r, request, http.StatusOK, dl.processorBuilder.ProcessorForGetting)

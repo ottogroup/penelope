@@ -81,6 +81,7 @@ paths:
   /backups/{backupId}:
     get:
       summary: Get a backup
+      operationId: GetSingleBackup
       parameters:
         - in: path
           name: backupId
@@ -100,6 +101,12 @@ paths:
             type: integer
           required: false
           description: Page of job page
+        - in: query
+          name: job_statuses
+          schema:
+            type: string
+          required: false
+          description: Comma separated list of job statuses to filter jobs
       responses:
         '200':
           description: OK
@@ -428,6 +435,8 @@ components:
           items:
             $ref: '#/components/schemas/Job'
         jobs_total:
+          type: integer
+        recoverable_jobs_total:
           type: integer
         data_owner:
           type: string

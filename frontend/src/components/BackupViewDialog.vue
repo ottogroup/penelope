@@ -3,7 +3,7 @@ import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import { copyToClipboard } from "@/helpers/clipboard";
-import { Backup, CreateRequest, DefaultService, Job, JobStatus, TrashcanCleanupStatus } from "@/models/api";
+import { Backup, BackupStatus, CreateRequest, DefaultService, Job, JobStatus, TrashcanCleanupStatus } from "@/models/api";
 import { BackupType } from "@/models/api/models/BackupType";
 import { RestoreResponse } from "@/models/api/models/RestoreResponse";
 import Notification from "@/models/notification";
@@ -23,9 +23,12 @@ const tab = ref();
 const viewDialog = ref(false);
 const isLoading = ref(true);
 const listIsLoading = ref(true);
+const recoveryIsLoading = ref(false);
 const backup = ref<Backup | undefined>(undefined);
 const backupForEval = ref<CreateRequest | undefined>(undefined);
 const jobItems = ref<{ job: Job; restore: RestoreResponse | undefined }[]>([]);
+const recoverableJobItems = ref<{ job: Job; restore: RestoreResponse | undefined }[]>([]);
+const restoreActions = ref<string[]>([]);
 const cleanupTrashcanDialog = ref(false);
 
 const confirmCleanupTrashcan = () => {
@@ -58,7 +61,7 @@ const cancelCleanupTrashcan = () => {
 const updateData = () => {
   isLoading.value = true;
   if (props.id) {
-    DefaultService.getBackups1(props.id!)
+    DefaultService.getSingleBackup(props.id!)
       .then((response) => {
         backup.value = response;
         backupForEval.value = {
@@ -86,18 +89,22 @@ const headers = [
   {
     title: "Status",
     key: "job.status",
+    sortable: false,
   },
   {
     title: "Source",
     key: "job.source",
+    sortable: false,
   },
   {
     title: "Updated",
     key: "job.updated",
+    sortable: false,
   },
   {
     title: "Foreign Job ID",
     key: "job.foreign_job_id",
+    sortable: false,
   },
 ];
 
@@ -110,7 +117,7 @@ const loadJobs = ({ page, itemsPerPage }: { page: number; itemsPerPage: number; 
       }) ?? [];
     listIsLoading.value = false;
   } else {
-    DefaultService.getBackups1(props.id!, itemsPerPage, page)
+    DefaultService.getSingleBackup(props.id!, itemsPerPage, page-1)
       .then((resp) => {
         jobItems.value =
           resp.jobs?.map((j: Job) => {
@@ -126,23 +133,45 @@ const loadJobs = ({ page, itemsPerPage }: { page: number; itemsPerPage: number; 
   }
 };
 
-const loadRestore = (item: { job: Job; restore: (RestoreResponse & { isLoading?: boolean }) | undefined }) => {
-  item.restore = { isLoading: true };
-  DefaultService.getRestore(backup.value?.id!, item.job.id)
+const loadRecoverableJobs = ({ page, itemsPerPage }: { page: number; itemsPerPage: number; sortBy: string }) => {
+  listIsLoading.value = true;
+  if (page === 1) {
+    recoverableJobItems.value =
+      backup.value?.jobs?.slice(0, itemsPerPage).map((j: Job) => {
+        return { job: j, restore: undefined };
+      }) ?? [];
+    listIsLoading.value = false;
+  } else {
+    DefaultService.getSingleBackup(props.id!, itemsPerPage, page-1, JobStatus.FINISHED_OK)
+      .then((resp) => {
+        recoverableJobItems.value =
+          resp.jobs?.map((j: Job) => {
+            return { job: j, restore: undefined };
+          }) ?? [];
+      })
+      .catch((err) => {
+        notificationsStore.handleError(err);
+      })
+      .finally(() => {
+        listIsLoading.value = false;
+      });
+  }
+};
+
+const loadRestore = (jobId?: string) => {
+  recoveryIsLoading.value = true;
+  DefaultService.getRestore(backup.value?.id!, jobId)
     .then((resp) => {
-      item.restore = resp;
-      item.restore.isLoading = false;
+      restoreActions.value = resp?.actions?.map((a) => a.action).filter(Boolean) ?? [];
+      recoveryIsLoading.value = true;
     })
     .catch((err) => {
-      item.restore = { isLoading: false };
+      restoreActions.value = [];
+      recoveryIsLoading.value = false;
       notificationsStore.handleError(err);
     })
     .finally(() => {
-      if (item.restore) {
-        item.restore.isLoading = false;
-      } else {
-        item.restore = { isLoading: false };
-      }
+      recoveryIsLoading.value = false;
     });
 };
 
@@ -180,7 +209,9 @@ watch(
   (value) => {
     if (!value) {
       tab.value = "details";
-      jobItems.value = []
+      jobItems.value = [];
+      restoreActions.value = [];
+      recoverableJobItems.value = [];
       emits("close");
     }
   },
@@ -203,9 +234,9 @@ watch(
       </v-card-text>
       <v-card-text v-else>
         <v-tabs v-model="tab">
-          <v-tab value="details">Details</v-tab>
-          <v-tab value="jobs">Jobs</v-tab>
-          <v-tab value="recovery">Recovery</v-tab>
+          <v-tab value="details" :rounded="false">Details</v-tab>
+          <v-tab value="jobs" :rounded="false">Jobs</v-tab>
+          <v-tab value="recovery" :rounded="false" v-if="backup?.status !== BackupStatus.BACKUP_DELETED">Recovery</v-tab>
         </v-tabs>
         <v-window v-model="tab">
           <v-window-item value="details">
@@ -440,7 +471,7 @@ watch(
           <v-window-item value="jobs">
             <v-data-table-server
               @update:options="loadJobs"
-              :items-length="backup?.jobs_total ?? 0"
+              :items-length="backup?.jobs_total ? backup?.jobs_total : 0"
               :items="jobItems"
               :headers="headers"
               :loading="listIsLoading"
@@ -461,21 +492,13 @@ watch(
                 <v-icon color="success" v-else-if="item.job.status === JobStatus.JOB_DELETED">mdi-check</v-icon>
                 <v-icon color="grey" v-else>mdi-close-circle-outline</v-icon>
               </template>
-              <template #[`item.action`]="{ item, internalItem, toggleExpand, isExpanded }">
-                <v-btn
-                  v-if="backup?.type === BackupType.BIG_QUERY && !isExpanded(internalItem)"
-                  variant="outlined"
-                  @click="
-                    loadRestore(item);
-                    toggleExpand(internalItem);
-                  "
-                >
-                  show restore commands
-                </v-btn>
-              </template>
             </v-data-table-server>
           </v-window-item>
           <v-window-item value="recovery">
+            <p class="pa-2 text-button text-center text-info">
+              <v-icon size="small">mdi-information-variant-circle-outline</v-icon>
+              Recovery commands needs to be executed from entitled principals to recover data
+            </p>
             <template v-if="backup?.type === BackupType.CLOUD_STORAGE">
               <v-card>
                 <v-card-text>
@@ -502,64 +525,58 @@ watch(
             </template>
 
             <template v-else-if="backup?.type === BackupType.BIG_QUERY">
+              <v-row>
+                <v-col>
+                  <v-textarea
+                    placeholder="Recovery commands will be shown here once you select a job or use the 'Recovery until now' button."
+                    readonly
+                    outlined
+                    :loading="recoveryIsLoading"
+                    :model-value="restoreActions.join('\n\n')"
+                    append-inner-icon="mdi-content-copy"
+                    @click:append-inner="
+                      () => {
+                        copyToClipboard(restoreActions.join('\n\n'), notificationsStore.addNotification);
+                      }
+                    "
+                  >
+                  </v-textarea>
+                </v-col>
+              </v-row>
+              <v-row no-gutters>
+                <v-col cols="3">
+                  <v-btn variant="outlined" prepend-icon="mdi-code-greater-than-or-equal" @click="loadRestore()">
+                    Recovery until now
+                  </v-btn>
+                </v-col>
+                <v-col>
+                  <div class=" pl-4 text-subtitle-1">
+                    Recovery commands are generated for backup either from the latest job run or at the timestamp of the
+                    selected BigQuery job. The latter will omit any backup jobs after the selected timestamp.
+                  </div>
+                </v-col>
+              </v-row>
               <v-data-table-server
-                @update:options="loadJobs"
-                :items-length="backup?.jobs_total ?? 0"
-                :items="jobItems"
+                @update:options="loadRecoverableJobs"
+                :items-length="backup?.recoverable_jobs_total ? backup?.recoverable_jobs_total : 0"
+                :items="recoverableJobItems"
                 :headers="[
-                  { title: 'Source', key: 'job.source' },
-                  { title: 'Updated', key: 'job.updated' },
-                  { title: 'Actions', key: 'action' },
+                  { title: 'Source', key: 'job.source', sortable: false },
+                  { title: 'Updated', key: 'job.updated', sortable: false },
+                  { title: 'Actions', key: 'action', sortable: false },
                 ]"
                 :loading="listIsLoading"
                 item-value="job.id"
               >
-                <template #[`item.action`]="{ item, internalItem, toggleExpand, isExpanded }">
+                <template #[`item.action`]="{ item, internalItem, isExpanded }">
                   <v-btn
-                    v-if="!isExpanded(internalItem)"
+                    :disabled="isExpanded(internalItem)"
                     variant="outlined"
                     prepend-icon="mdi-code-greater-than-or-equal"
-                    @click="
-                      loadRestore(item);
-                      toggleExpand(internalItem);
-                    "
+                    @click="loadRestore(item.job.id)"
                   >
-                    Generate commands
+                    Recovery until this job
                   </v-btn>
-                </template>
-                <template v-slot:expanded-row="{ columns, item }">
-                  <tr>
-                    <td :colspan="columns.length">
-                      <template
-                        v-if="
-                          item.restore &&
-                          !(item.restore as any)?.isLoading &&
-                          item.restore?.actions &&
-                          item.restore?.actions.length > 0
-                        "
-                      >
-                        <v-textarea
-                          v-for="(action, idx) in item.restore?.actions"
-                          :key="idx"
-                          readonly
-                          outlined
-                          :model-value="action?.action"
-                          append-inner-icon="mdi-content-copy"
-                          @click:append-inner="
-                            () => {
-                              copyToClipboard(action?.action, notificationsStore.addNotification);
-                            }
-                          "
-                        >
-                        </v-textarea>
-                      </template>
-                      <template v-else-if="item.restore && (item.restore as any).isLoading">
-                        Loading restore commands
-                        <v-progress-circular size="small" :indeterminate="true" color="primary" />
-                      </template>
-                      <template v-else> No restore commands available </template>
-                    </td>
-                  </tr>
                 </template>
               </v-data-table-server>
             </template>
