@@ -463,14 +463,14 @@ func TestDefaultJobRepository_GetStatisticsForBackupID(t *testing.T) {
 
 func TestDefaultJobRepository_GetBackupRestoreJobs(t *testing.T) {
 	backups := []Backup{
-		{ID: "backup-id-1"},
+		{ID: "backup-id-1", Strategy: Mirror},
 	}
 	jobs := []Job{
-		{ID: "job-id-1", BackupID: "backup-id-1", Status: Scheduled, Type: BigQuery, Source: "amount_budget_plan", EntityAudit: EntityAudit{CreatedTimestamp: time.Now()}},
-		{ID: "job-id-2", BackupID: "backup-id-1", Status: Scheduled, Type: BigQuery, Source: "amount_budget_plan", EntityAudit: EntityAudit{CreatedTimestamp: time.Now()}},
+		{ID: "job-id-1", BackupID: "backup-id-1", Status: Scheduled, Type: BigQuery, Source: "partition$20190102", EntityAudit: EntityAudit{CreatedTimestamp: time.Now().Add(1 * time.Hour)}},
+		{ID: "job-id-2", BackupID: "backup-id-1", Status: Scheduled, Type: BigQuery, Source: "partition$20190101", EntityAudit: EntityAudit{CreatedTimestamp: time.Now()}},
 	}
 	metadata := []SourceMetadata{
-		{ID: 1, BackupID: "backup-id-1", Source: "partition$20190102", SourceChecksum: "111", Operation: Add.String(), CreatedTimestamp: time.Now().AddDate(0, 0, -1)},
+		{ID: 1, BackupID: "backup-id-1", Source: "partition$20190102", SourceChecksum: "111", Operation: Add.String(), CreatedTimestamp: time.Now().AddDate(0, 0, -1).Add(1 * time.Hour)},
 		{ID: 2, BackupID: "backup-id-1", Source: "partition$20190101", SourceChecksum: "111", Operation: Delete.String(), CreatedTimestamp: time.Now().AddDate(0, 0, -1)},
 	}
 	metadataJobs := []SourceMetadataJob{
