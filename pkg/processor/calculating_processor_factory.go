@@ -58,7 +58,7 @@ func (c *calculatingProcessor) Process(ctxIn context.Context, args *Argument[req
 	ctx, span := trace.StartSpan(ctxIn, "(*calculatingProcessor).Process")
 	defer span.End()
 
-	var request *requestobjects.CalculateRequest = &args.Request
+	var request = &args.Request
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.Calculating, request.Project) {
 		return requestobjects.CalculatedResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Calculating.String(), args.Principal.User.Email, request.Project)
