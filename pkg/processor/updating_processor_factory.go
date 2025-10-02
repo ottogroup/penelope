@@ -152,13 +152,13 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 		}
 	}
 
-	if backup.Strategy == "Mirror" {
+	if backup.Strategy == repository.Mirror {
 		err = client.UpdateBucket(ctx, backup.Sink, request.MirrorTTL, request.ArchiveTTM)
 		if err != nil {
 			return requestobjects.UpdateResponse{}, fmt.Errorf("updatingProcessor.Process UpdateBucket for Mirror failed: %v", err)
 		}
 	}
-	if backup.Strategy == "Snapshot" {
+	if backup.Strategy == repository.Snapshot {
 		err = client.UpdateBucket(ctx, backup.Sink, request.SnapshotTTL, request.ArchiveTTM)
 		if err != nil {
 			return requestobjects.UpdateResponse{}, fmt.Errorf("updatingProcessor.Process UpdateBucket for Snapshot failed: %v", err)

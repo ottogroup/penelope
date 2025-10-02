@@ -83,7 +83,7 @@ const projectLink = (project: string) => {
     <template #header.data-table-select></template>
     <template #[`item.data-table-select`]="{ toggleSelect, item, internalItem, isSelected }">
       <v-checkbox
-        v-if="[BackupStatus.PAUSED, BackupStatus.RUNNING].includes(item?.status ?? '')"
+        v-if="[BackupStatus.PAUSED, BackupStatus.RUNNING, BackupStatus.NOT_STARTED].includes(item?.status ?? '')"
         :model-value="isSelected(internalItem)"
         @click.stop="toggleSelect(internalItem)"
         color="primary"
@@ -93,14 +93,24 @@ const projectLink = (project: string) => {
     <template #[`item.edit`]="{ item }">
       <v-tooltip text="Edit Backup">
         <template #activator="{ props }">
-          <v-icon v-bind="props" @click="editDialogID = item.id">mdi-wrench</v-icon>
+          <v-icon
+            v-bind="props"
+            :disabled="[BackupStatus.BACKUP_DELETED, BackupStatus.BACKUP_SOURCE_DELETED].includes(item?.status ?? '')"
+            @click="editDialogID = item.id"
+            >mdi-wrench</v-icon
+          >
         </template>
       </v-tooltip>
     </template>
     <template #[`item.view`]="{ item }">
       <v-tooltip text="View details">
         <template #activator="{ props }">
-          <v-icon v-bind="props" @click="viewDialogID = item.id">mdi-view-list</v-icon>
+          <v-icon
+            v-bind="props"
+            :disabled="[BackupStatus.BACKUP_DELETED, BackupStatus.BACKUP_SOURCE_DELETED].includes(item?.status ?? '')"
+            @click="viewDialogID = item.id"
+            >mdi-view-list</v-icon
+          >
         </template>
       </v-tooltip>
     </template>
@@ -114,8 +124,18 @@ const projectLink = (project: string) => {
       <a :href="projectLink(item.sink_project ?? '')" target="_blank">{{ item.sink_project }} </a>
     </template>
     <template #[`item.created`]="{ item }">
-      {{ item.created ? new Date(item.created).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ', ' + new Date(item.created).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }) : '' }}
-
+      {{
+        item.created
+          ? new Date(item.created).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+            ", " +
+            new Date(item.created).toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            })
+          : ""
+      }}
     </template>
     <template #[`item.data_availability_class`]="{ item }">
       {{ item.data_availability_class }}

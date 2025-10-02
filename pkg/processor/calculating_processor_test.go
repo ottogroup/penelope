@@ -23,9 +23,9 @@ func TestCalculatingProcessor_Process_expect0(t *testing.T) {
 	calculatorContext := givenATestBigQueryCalculatorContext()
 	calculatorContext.BigQuery.fGetTable = &bq.Table{Name: "gcp_billing_export_v1_01E0E5_3EB3D2_2206EC$20190101", SizeInBytes: 0}
 	calculatorContext.addPriceForStorage(9999, 0, calculateRequest.TargetOptions.StorageClass, calculateRequest.TargetOptions.Region)
-	calcuator := bigQueryCalculator{bigQueryClient: &calculatorContext.BigQuery, baseCalculator: baseCalculator{billingClient: &calculatorContext.Billing}}
+	calculator := bigQueryCalculator{bigQueryClient: &calculatorContext.BigQuery, baseCalculator: baseCalculator{billingClient: &calculatorContext.Billing}}
 	// When
-	calculateResponse, err := calcuator.calculateCost(context.Background(), &calculateRequest)
+	calculateResponse, err := calculator.calculateCost(context.Background(), &calculateRequest)
 	// Then
 	if err != nil {
 		t.Errorf(fmt.Sprintf("calculateCost failed. Err %+v", err))
