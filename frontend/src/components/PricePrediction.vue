@@ -117,7 +117,7 @@ watch(
     <small>
       Estimate of Network Data Transfer costs for a full backup of {{ pricePrediction[0].size_in_gb.toFixed(2) }} GB:
 <!-- This is a rough estimate because network costs are negligible compared to storage costs     -->
-      <b v-if="0.02 * pricePrediction[0].size_in_gb > 0">{{ 0.02 * pricePrediction[0].size_in_gb }}€ - {{ 0.05 * pricePrediction[0].size_in_gb }}€</b>
+      <b v-if="0.02 * pricePrediction[0].size_in_gb > 0">{{ (0.02 * pricePrediction[0].size_in_gb).toFixed(2) }}€ - {{ (0.05 * pricePrediction[0].size_in_gb).toFixed(2) }}€</b>
       <b v-else>~0€</b>
     </small>
   </template>
