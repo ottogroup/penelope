@@ -43,7 +43,7 @@ func NewCloudBillingClient(ctxIn context.Context) (Client, error) {
 	return &defaultCloudBillingClient{client: client, ctx: ctx}, nil
 }
 
-// GetServiceSkuBySKU get actual service SKU by skuID
+// GetServiceSkuBySKUId get actual service SKU by skuID
 func (c *defaultCloudBillingClient) GetServiceSkuBySKUId(skuID string) (*gcpBilling.Sku, error) {
 	gcpCloudStorageName := "services/95FF-2EF5-5EA1"
 	skus, err := c.client.Services.Skus.List(gcpCloudStorageName).CurrencyCode("EUR").Do()

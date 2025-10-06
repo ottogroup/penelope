@@ -123,16 +123,14 @@ const onDelete = () => {
         </v-btn>
         <v-btn
           @click="onPause"
-          :disabled="
-            selectedItems.length == 0 || selectedItems.some((item) => item.status !== BackupStatus.RUNNING)
-          "
+          :disabled="selectedItems.length == 0 || selectedItems.some((item) => !(item.status === BackupStatus.RUNNING || item.status === BackupStatus.NOT_STARTED))"
         >
           <v-icon>mdi-pause</v-icon>
           Pause
         </v-btn>
         <v-btn
           @click="onDelete"
-          :disabled="selectedItems.length == 0 || selectedItems.some((item) => item.status !== BackupStatus.PAUSED)"
+          :disabled="selectedItems.length == 0 || selectedItems.some((item) => !(item.status === BackupStatus.RUNNING || item.status === BackupStatus.NOT_STARTED))"
         >
           <v-icon>mdi-delete</v-icon>
           Delete
