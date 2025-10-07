@@ -293,7 +293,7 @@ func TestPrepareBackupJobsService_BigQueryMirror_MetadataRepositoryTracksDeleted
 
 	normalizedStdErr := strings.ToLower(stdErr)
 	if strings.Contains(normalizedStdErr, "fail") || strings.Contains(normalizedStdErr, "error") {
-		t.Fatalf(fmt.Sprintf("service.Run failed: %s", stdErr))
+		t.Fatalf("service.Run failed: %s", stdErr)
 	}
 
 	require.NoError(t, err)
