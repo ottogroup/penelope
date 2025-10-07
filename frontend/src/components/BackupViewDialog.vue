@@ -213,7 +213,7 @@ const translateTrashcanCleanupStatus = (status: TrashcanCleanupStatus | undefine
 };
 
 const restoreActionsUnix = computed(() => {
-  return restoreActions.value.map((a) => a?.replace(/\\"/g, `'`));
+  return restoreActions.value.map((a) => a?.replace(/"/g, `'`));
 });
 
 watch(
