@@ -23,7 +23,7 @@ const notificationsStore = useNotificationsStore();
 const props = defineProps<{ backup?: CreateRequest | undefined }>();
 
 const isLoading = ref(false);
-const pricePrediction = ref<{ name: string; data: number[]; size_in_gb: number }[]>([]);
+const pricePrediction = ref<{ name: string; data: { value: number; name: string }[]; size_in_gb: number }[]>([]);
 
 const chartOptions = ref({
   title: {
@@ -92,7 +92,9 @@ const updateData = () => {
         pricePrediction.value = [
           {
             name: `€ at month for ${size_in_gb.toFixed(2)} GB`,
-            data: resp.costs?.map((c) => Number(p.cost!.toFixed(2))) ?? [],
+            data: resp.costs?.map((p) => {
+              return { value: Number(p.cost!.toFixed(2)), name: `${p.period}` }
+            }) ?? [],
             size_in_gb: size_in_gb,
           },
         ];
@@ -100,14 +102,11 @@ const updateData = () => {
         chartOptions.value.series = [{
           name: `€ at month for ${size_in_gb.toFixed(2)} GB`,
           type: "line",
-            data: resp.costs?.map((p) => {
-            return { value: Number(p.cost!.toFixed(2)), name: `${p.period}` }
-          }),
+          data: pricePrediction.value[0]?.data ?? [],
         }];
-        
+
         // Generate xAxis data from API response
         chartOptions.value.xAxis.data = resp.costs?.map((p) => `${p.period}`) ?? [];
-
       })
       .catch(() => {
         notificationsStore.addNotification(
@@ -132,7 +131,7 @@ watch(
 );
 </script>
 
- <template v-if="!backupStatusIsDeleted && (pricePrediction.length > 0 || isLoading)">
+<template v-if="!backupStatusIsDeleted && (pricePrediction.length > 0 || isLoading)">
   <h4>Cost prediction</h4>
   <v-progress-linear v-if="isLoading" indeterminate />
   <VChart :option="pricePrediction.length === 0 ? {} : chartOptions" :style="{ height: `250px`, width: `400px` }" />

@@ -390,7 +390,7 @@ watch(
             </v-col>
           </v-row>
         </v-form>
-        <v-row>
+        <v-row v-if="evalutingBackup">
           <v-col>
             <PricePrediction :backup="evalutingBackup" />
           </v-col>
