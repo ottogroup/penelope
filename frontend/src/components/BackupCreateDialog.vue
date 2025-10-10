@@ -199,7 +199,8 @@ watch(
 <template>
   <v-dialog v-model="model" width="800">
     <v-card title="Create backup" :loading="isLoading">
-      <v-card-text>
+    <PricePrediction> </PricePrediction>
+      <v-card-text v-if="false">
         <v-form :disabled="isLoading" v-model="isValid" fast-fail @submit.prevent>
           <v-row>
             <v-col>
