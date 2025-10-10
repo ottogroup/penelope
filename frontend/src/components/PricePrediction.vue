@@ -2,51 +2,66 @@
 import { BackupStatus, CreateRequest, DefaultService } from "@/models/api";
 import Notification from "@/models/notification";
 import { useNotificationsStore } from "@/stores";
-import { ApexOptions } from "apexcharts";
 import { computed, ref, watch } from "vue";
-import VueApexCharts from "vue3-apexcharts";
+import { use } from "echarts/core";
+import { CanvasRenderer } from "echarts/renderers";
+import { LineChart } from "echarts/charts";
+import { TitleComponent, TooltipComponent, LegendComponent, GridComponent } from "echarts/components";
+import VChart from "vue-echarts";
+
+use([
+  LineChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  CanvasRenderer,
+]);
 
 const notificationsStore = useNotificationsStore();
 
-const props = defineProps<{ backup: CreateRequest | undefined }>();
+const props = defineProps<{ backup?: CreateRequest | undefined }>();
 
 const isLoading = ref(false);
-const pricePrediction = ref<{ name: string; data: number[]; size_in_gb: number }[]>([]);
-const pricePredictionOptions = ref<ApexOptions>({
-  yaxis: {
-    title: {
-      text: "Price",
-    },
-    min: 0,
-    decimalsInFloat: 2,
+const pricePrediction = ref<{ name: string; data: { value: number; name: string }[]; size_in_gb: number }[]>([]);
+
+const chartOptions = ref({
+  title: {
+    text: "",
   },
-  stroke: {
-    curve: "straight",
-  },
-  chart: {
-    animations: {
-      enabled: false,
+  tooltip: {
+    trigger: "axis",
+    axisPointer: {
+      type: "cross",
     },
-    toolbar: {
-      show: false,
-      tools: {
-        download: false,
-      },
-    },
-  },
-  grid: {
-    row: {
-      colors: ["#f3f3f3"],
-      opacity: 0.5,
-    },
-  },
-  dataLabels: {
-    enabled: false,
   },
   legend: {
-    show: true,
-    showForSingleSeries: true,
+    show: false,
   },
+  grid: {
+    left: "3%",
+    right: "5%",
+    bottom: "5%",
+  },
+  xAxis: {
+    type: "category",
+    boundaryGap: false,
+    name: "Months",
+    nameLocation: "middle",
+    nameGap: 30,
+    data: [] as string[],
+  },
+  yAxis: {
+    type: "value",
+    name: "Costs in €",
+    nameLocation: "middle",
+    nameGap: 50,
+    nameTextStyle: {
+      fontWeight: "bold",
+      color: "#333",
+    },
+  },
+  series: [] as any[],
 });
 
 const backupStatusIsDeleted = computed(() => {
@@ -77,10 +92,21 @@ const updateData = () => {
         pricePrediction.value = [
           {
             name: `€ at month for ${size_in_gb.toFixed(2)} GB`,
-            data: resp.costs?.map((c) => c.cost!) ?? [],
+            data: resp.costs?.map((p) => {
+              return { value: Number(p.cost!.toFixed(2)), name: `${p.period}` }
+            }) ?? [],
             size_in_gb: size_in_gb,
           },
         ];
+
+        chartOptions.value.series = [{
+          name: `€ at month for ${size_in_gb.toFixed(2)} GB`,
+          type: "line",
+          data: pricePrediction.value[0]?.data ?? [],
+        }];
+
+        // Generate xAxis data from API response
+        chartOptions.value.xAxis.data = resp.costs?.map((p) => `${p.period}`) ?? [];
       })
       .catch(() => {
         notificationsStore.addNotification(
@@ -105,20 +131,19 @@ watch(
 );
 </script>
 
-<template>
-  <template v-if="!backupStatusIsDeleted && (pricePrediction.length > 0 || isLoading)">
-    <h4>Cost prediction</h4>
-    <v-progress-linear v-if="isLoading" indeterminate />
-    <VueApexCharts type="area" :options="pricePredictionOptions" :series="pricePrediction" />
-    <small>
-      Cost calculation based on current amount of data.
-      <b>Additional written data will increase pricing</b>
-    </small>
-    <small>
-      Estimate of Network Data Transfer costs for a full backup of {{ pricePrediction[0].size_in_gb.toFixed(2) }} GB:
-<!-- This is a rough estimate because network costs are negligible compared to storage costs     -->
-      <b v-if="0.02 * pricePrediction[0].size_in_gb > 0">{{ (0.02 * pricePrediction[0].size_in_gb).toFixed(2) }}€ - {{ (0.05 * pricePrediction[0].size_in_gb).toFixed(2) }}€</b>
-      <b v-else>~0€</b>
-    </small>
-  </template>
+<template v-if="!backupStatusIsDeleted && (pricePrediction.length > 0 || isLoading)">
+  <h4>Cost prediction</h4>
+  <v-progress-linear v-if="isLoading" indeterminate />
+  <VChart :option="pricePrediction.length === 0 ? {} : chartOptions" :style="{ height: `250px`, width: `400px` }" />
+  <small>
+    Cost calculation based on current amount of data.
+    <b>Additional written data will increase pricing</b>
+  </small><br>
+  <small v-if="pricePrediction[0]?.size_in_gb">
+    Estimate of Network Data Transfer costs for a full backup of {{ pricePrediction[0]?.size_in_gb.toFixed(2) }} GB:
+    <!-- This is a rough estimate because network costs are negligible compared to storage costs     -->
+    <b v-if="0.02 * pricePrediction[0]?.size_in_gb > 0">{{ (0.02 * pricePrediction[0]?.size_in_gb).toFixed(2) }}€ - {{
+      (0.05 * pricePrediction[0].size_in_gb).toFixed(2) }}€</b>
+    <b v-else>~0€</b>
+  </small>
 </template>
