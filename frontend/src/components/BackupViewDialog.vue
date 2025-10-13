@@ -3,12 +3,20 @@ import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import { copyToClipboard } from "@/helpers/clipboard";
-import { Backup, BackupStatus, CreateRequest, DefaultService, Job, JobStatus, TrashcanCleanupStatus } from "@/models/api";
+import {
+  Backup,
+  BackupStatus,
+  CreateRequest,
+  DefaultService,
+  Job,
+  JobStatus,
+  TrashcanCleanupStatus,
+} from "@/models/api";
 import { BackupType } from "@/models/api/models/BackupType";
 import { RestoreResponse } from "@/models/api/models/RestoreResponse";
 import Notification from "@/models/notification";
 import { useNotificationsStore } from "@/stores";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps({
   id: {
@@ -117,7 +125,7 @@ const loadJobs = ({ page, itemsPerPage }: { page: number; itemsPerPage: number; 
       }) ?? [];
     listIsLoading.value = false;
   } else {
-    DefaultService.getSingleBackup(props.id!, itemsPerPage, page-1)
+    DefaultService.getSingleBackup(props.id!, itemsPerPage, page - 1)
       .then((resp) => {
         jobItems.value =
           resp.jobs?.map((j: Job) => {
@@ -142,7 +150,7 @@ const loadRecoverableJobs = ({ page, itemsPerPage }: { page: number; itemsPerPag
       }) ?? [];
     listIsLoading.value = false;
   } else {
-    DefaultService.getSingleBackup(props.id!, itemsPerPage, page-1, JobStatus.FINISHED_OK)
+    DefaultService.getSingleBackup(props.id!, itemsPerPage, page - 1, JobStatus.FINISHED_OK)
       .then((resp) => {
         recoverableJobItems.value =
           resp.jobs?.map((j: Job) => {
@@ -204,6 +212,10 @@ const translateTrashcanCleanupStatus = (status: TrashcanCleanupStatus | undefine
   }
 };
 
+const restoreActionsUnix = computed(() => {
+  return restoreActions.value.map((a) => a?.replace(/"/g, `'`));
+});
+
 watch(
   () => viewDialog.value,
   (value) => {
@@ -236,7 +248,9 @@ watch(
         <v-tabs v-model="tab">
           <v-tab value="details" :rounded="false">Details</v-tab>
           <v-tab value="jobs" :rounded="false">Jobs</v-tab>
-          <v-tab value="recovery" :rounded="false" v-if="backup?.status !== BackupStatus.BACKUP_DELETED">Recovery</v-tab>
+          <v-tab value="recovery" :rounded="false" v-if="backup?.status !== BackupStatus.BACKUP_DELETED"
+            >Recovery</v-tab
+          >
         </v-tabs>
         <v-window v-model="tab">
           <v-window-item value="details">
@@ -449,7 +463,7 @@ watch(
                   <td>{{ backup?.trashcan_cleanup_last_scheduled_time }}</td>
                 </tr>
                 <tr v-if="backup?.trashcan_cleanup_status !== TrashcanCleanupStatus.SCHEDULED">
-                  <td>Executed:</td>
+                  <td></td>
                   <td>
                     <v-btn v-bind="props" color="red" @click="confirmCleanupTrashcan()" variant="tonal">
                       <v-icon>mdi-delete</v-icon>
@@ -507,18 +521,31 @@ watch(
                     readonly
                     outlined
                     :model-value="`gcloud transfer jobs create gs://${backup.sink} gs://<TARGET_BUCKET_NAME>`"
-                    append-inner-icon="mdi-content-copy"
                     hint="Replace <TARGET_BUCKET_NAME> with your desired target bucket name."
                     persistent-hint
-                    @click:append-inner="
-                      () => {
-                        copyToClipboard(
-                          `gcloud transfer jobs create gs://${backup?.sink} gs://<TARGET_BUCKET_NAME>`,
-                          notificationsStore.addNotification,
-                        );
-                      }
-                    "
                   >
+                    <template #append-inner>
+                      <v-menu>
+                        <template #activator="{ props }">
+                          <v-btn v-bind="props" size="small" icon="mdi-dots-vertical" variant="text"></v-btn>
+                        </template>
+                        <v-list>
+                          <v-list-item
+                            link
+                            prepend-icon="mdi-content-copy"
+                            @click="
+                              () => {
+                                copyToClipboard(
+                                  `gcloud transfer jobs create gs://${backup?.sink} gs://<TARGET_BUCKET_NAME>`,
+                                  notificationsStore.addNotification,
+                                );
+                              }
+                            "
+                            >Copy
+                          </v-list-item>
+                        </v-list>
+                      </v-menu>
+                    </template>
                   </v-textarea>
                 </v-card-text>
               </v-card>
@@ -533,13 +560,33 @@ watch(
                     outlined
                     :loading="recoveryIsLoading"
                     :model-value="restoreActions.join('\n\n')"
-                    append-inner-icon="mdi-content-copy"
-                    @click:append-inner="
-                      () => {
-                        copyToClipboard(restoreActions.join('\n\n'), notificationsStore.addNotification);
-                      }
-                    "
                   >
+                    <template #append-inner>
+                      <v-menu>
+                        <template #activator="{ props }">
+                          <v-btn v-bind="props" size="small" icon="mdi-dots-vertical" variant="text"></v-btn>
+                        </template>
+                        <v-list>
+                          <v-list-item
+                            link
+                            prepend-icon="mdi-content-copy"
+                            @click="
+                              () => copyToClipboard(restoreActionsUnix.join('\n\n'), notificationsStore.addNotification)
+                            "
+                          >
+                            Copy für Bash (Unix)
+                          </v-list-item>
+                          <v-list-item
+                            link
+                            prepend-icon="mdi-content-copy"
+                            @click="
+                              () => copyToClipboard(restoreActions.join('\n\n'), notificationsStore.addNotification)
+                            "
+                            >Copy for Command Prompt (Windows)
+                          </v-list-item>
+                        </v-list>
+                      </v-menu>
+                    </template>
                   </v-textarea>
                 </v-col>
               </v-row>
@@ -550,7 +597,7 @@ watch(
                   </v-btn>
                 </v-col>
                 <v-col>
-                  <div class=" pl-4 text-subtitle-1">
+                  <div class="pl-4 text-subtitle-1">
                     Recovery commands are generated for backup either from the latest job run or at the timestamp of the
                     selected BigQuery job. The latter will omit any backup jobs after the selected timestamp.
                   </div>

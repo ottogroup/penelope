@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -28,7 +27,7 @@ func TestCalculatingProcessor_Process_expect0(t *testing.T) {
 	calculateResponse, err := calculator.calculateCost(context.Background(), &calculateRequest)
 	// Then
 	if err != nil {
-		t.Errorf(fmt.Sprintf("calculateCost failed. Err %+v", err))
+		t.Errorf("calculateCost failed. Err %+v", err)
 	}
 	if len(calculateResponse.Costs) != 12 {
 		t.Errorf("CalculateResponse expected costs for whole year")
@@ -62,7 +61,7 @@ func TestCalculatingProcessor_Process_expectOne(t *testing.T) {
 	calculateResponse, err := calcuator.calculateCost(context.Background(), &calculateRequest)
 	// Then
 	if err != nil {
-		t.Errorf(fmt.Sprintf("calculateCost failed. Err %+v", err))
+		t.Errorf("calculateCost failed. Err %+v", err)
 	}
 	if len(calculateResponse.Costs) != 1 {
 		t.Errorf("CalculateResponse expected one cost")
