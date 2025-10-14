@@ -1,7 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
+ 
 export enum AvailabilityClass {
     /**
      * A1 Irrelevant - A recovery test SHOULD be conducted after changes to the backup process.

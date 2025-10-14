@@ -3,6 +3,7 @@ import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import { copyToClipboard } from "@/helpers/clipboard";
+import { detectOperatingSystem } from "@/helpers/os-detection";
 import {
   Backup,
   BackupStatus,
@@ -28,6 +29,7 @@ const notificationsStore = useNotificationsStore();
 
 const emits = defineEmits(["close"]);
 const tab = ref();
+const commandTab = ref(detectOperatingSystem());
 const viewDialog = ref(false);
 const isLoading = ref(true);
 const listIsLoading = ref(true);
@@ -212,8 +214,20 @@ const translateTrashcanCleanupStatus = (status: TrashcanCleanupStatus | undefine
   }
 };
 
-const restoreActionsUnix = computed(() => {
-  return restoreActions.value.map((a) => a?.replace(/"/g, `'`));
+const currentBigQueryCommand = computed(() => {
+if (commandTab.value === "unix") {
+    return restoreActions.value.map((a) => a?.replace(/"/g, `'`)).join('\n\n');
+  } else {
+    return restoreActions.value.join('\n\n');
+  }
+});
+
+const currentCloudStorageCommand = computed(() => {
+  if (commandTab.value === "unix") {
+    return `gcloud transfer jobs create gs://${backup.value?.sink} gs://<TARGET_BUCKET_NAME>`;
+  } else {
+    return `gcloud transfer jobs create gs://${backup.value?.sink} gs://<TARGET_BUCKET_NAME>`;
+  }
 });
 
 watch(
@@ -221,6 +235,7 @@ watch(
   (value) => {
     if (!value) {
       tab.value = "details";
+      commandTab.value = detectOperatingSystem();
       jobItems.value = [];
       restoreActions.value = [];
       recoverableJobItems.value = [];
@@ -294,7 +309,7 @@ watch(
                   <td>Tables:</td>
                   <td>
                     <ul>
-                      <li v-for="table in backup?.bigquery_options?.table">
+                      <li v-for="table in backup?.bigquery_options?.table" :key="table">
                         Table:
                         <a
                           :href="
@@ -316,7 +331,7 @@ watch(
                   <td>Excluded tables:</td>
                   <td>
                     <ul>
-                      <li v-for="table in backup?.bigquery_options?.excluded_tables">
+                      <li v-for="table in backup?.bigquery_options?.excluded_tables" :key="table">
                         Table:
                         <a
                           :href="
@@ -338,7 +353,7 @@ watch(
                   <td>Included prefixes:</td>
                   <td>
                     <ul>
-                      <li v-for="prefix in backup?.gcs_options?.include_prefixes">
+                      <li v-for="prefix in backup?.gcs_options?.include_prefixes" :key="prefix">
                         {{ prefix }}
                       </li>
                     </ul>
@@ -353,7 +368,7 @@ watch(
                   <td>Excluded prefixes:</td>
                   <td>
                     <ul>
-                      <li v-for="prefix in backup?.gcs_options?.exclude_prefixes">
+                      <li v-for="prefix in backup?.gcs_options?.exclude_prefixes" :key="prefix">
                         {{ prefix }}
                       </li>
                     </ul>
@@ -517,34 +532,29 @@ watch(
               <v-card>
                 <v-card-text>
                   <p>Use the following command to restore your Cloud Storage backup:</p>
+                  <v-tabs v-model="commandTab" class="mb-4">
+                    <v-tab rounded="0" value="unix">Unix/Linux</v-tab>
+                    <v-tab rounded="0" value="windows">Windows</v-tab>
+                  </v-tabs>
                   <v-textarea
                     readonly
                     outlined
-                    :model-value="`gcloud transfer jobs create gs://${backup.sink} gs://<TARGET_BUCKET_NAME>`"
+                    :model-value="currentCloudStorageCommand"
                     hint="Replace <TARGET_BUCKET_NAME> with your desired target bucket name."
                     persistent-hint
                   >
                     <template #append-inner>
-                      <v-menu>
-                        <template #activator="{ props }">
-                          <v-btn v-bind="props" size="small" icon="mdi-dots-vertical" variant="text"></v-btn>
-                        </template>
-                        <v-list>
-                          <v-list-item
-                            link
-                            prepend-icon="mdi-content-copy"
-                            @click="
-                              () => {
-                                copyToClipboard(
-                                  `gcloud transfer jobs create gs://${backup?.sink} gs://<TARGET_BUCKET_NAME>`,
-                                  notificationsStore.addNotification,
-                                );
-                              }
-                            "
-                            >Copy
-                          </v-list-item>
-                        </v-list>
-                      </v-menu>
+                      <v-btn
+                        size="small"
+                        icon="mdi-content-copy"
+                        variant="text"
+                        @click="() => {
+                          copyToClipboard(
+                            currentCloudStorageCommand,
+                            notificationsStore.addNotification,
+                          );
+                        }"
+                      ></v-btn>
                     </template>
                   </v-textarea>
                 </v-card-text>
@@ -554,38 +564,24 @@ watch(
             <template v-else-if="backup?.type === BackupType.BIG_QUERY">
               <v-row>
                 <v-col>
+                  <v-tabs v-model="commandTab" class="mb-4">
+                    <v-tab rounded="0" value="unix">Unix/Linux</v-tab>
+                    <v-tab rounded="0" value="windows">Windows</v-tab>
+                  </v-tabs>
                   <v-textarea
                     placeholder="Recovery commands will be shown here once you select a job or use the 'Recovery until now' button."
                     readonly
                     outlined
                     :loading="recoveryIsLoading"
-                    :model-value="restoreActions.join('\n\n')"
+                    :model-value="currentBigQueryCommand"
                   >
                     <template #append-inner>
-                      <v-menu>
-                        <template #activator="{ props }">
-                          <v-btn v-bind="props" size="small" icon="mdi-dots-vertical" variant="text"></v-btn>
-                        </template>
-                        <v-list>
-                          <v-list-item
-                            link
-                            prepend-icon="mdi-content-copy"
-                            @click="
-                              () => copyToClipboard(restoreActionsUnix.join('\n\n'), notificationsStore.addNotification)
-                            "
-                          >
-                            Copy für Bash (Unix)
-                          </v-list-item>
-                          <v-list-item
-                            link
-                            prepend-icon="mdi-content-copy"
-                            @click="
-                              () => copyToClipboard(restoreActions.join('\n\n'), notificationsStore.addNotification)
-                            "
-                            >Copy for Command Prompt (Windows)
-                          </v-list-item>
-                        </v-list>
-                      </v-menu>
+                      <v-btn
+                        size="small"
+                        icon="mdi-content-copy"
+                        variant="text"
+                        @click="() => copyToClipboard(currentBigQueryCommand, notificationsStore.addNotification)"
+                      ></v-btn>
                     </template>
                   </v-textarea>
                 </v-col>
