@@ -153,7 +153,7 @@ const projectLink = (project: string) => {
           item.bigquery_options?.dataset
         }}</a>
         <ul>
-          <li v-for="table in item.bigquery_options?.table">
+          <li v-for="(table, idx) in item.bigquery_options?.table" :key="idx">
             Table:
             <a
               :href="bigqueryTableLink(item.project ?? '', item.bigquery_options?.dataset ?? '', table)"

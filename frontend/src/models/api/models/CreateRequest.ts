@@ -1,7 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
-/* eslint-disable */
+ 
 import type { BackupStrategy } from './BackupStrategy';
 import type { BackupType } from './BackupType';
 import type { BigQueryOptions } from './BigQueryOptions';

@@ -106,7 +106,7 @@ func mapToRestoreResponse(backup *repository.Backup, jobs []*repository.Job) (re
 		var backupType string
 		if backup.Type == repository.BigQuery {
 			backupType = "bq"
-			action += fmt.Sprintf(`bq --location=EU load --project_id "%s" --source_format=AVRO %s.%s "%s"`,
+			action += fmt.Sprintf(`bq --location=EU load --project_id "%s" --source_format=AVRO "%s.%s" "%s"`,
 				backup.SourceProject,
 				backup.BigQueryOptions.Dataset,
 				job.Source,

@@ -23,7 +23,7 @@ onMounted(() => {
       if (routerStore.returnUrl == "") {
         routerStore.returnUrl = "/";
       }
-      navigateTo(router, { path: routerStore.returnUrl }).then((_) => principalStore.finalizePrincipal());
+      navigateTo(router, { path: routerStore.returnUrl }).then(() => principalStore.finalizePrincipal());
     })
     .catch(() => (loginFailed.value = true));
 });
