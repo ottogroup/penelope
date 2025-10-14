@@ -64,7 +64,7 @@ watch(
     <h4>Compliance checks</h4>
     <v-progress-linear v-if="isLoading" indeterminate/>
     <v-list>
-      <v-list-item v-for="check in complianceChecks">
+      <v-list-item v-for="(check, idx) in complianceChecks" :key="idx">
         <v-list-item-title class="text-wrap">
           {{ check.description }}
         </v-list-item-title>

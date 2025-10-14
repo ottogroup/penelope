@@ -308,7 +308,7 @@ watch(
                   <td>Tables:</td>
                   <td>
                     <ul>
-                      <li v-for="table in backup?.bigquery_options?.table">
+                      <li v-for="table in backup?.bigquery_options?.table" :key="table">
                         Table:
                         <a
                           :href="
@@ -330,7 +330,7 @@ watch(
                   <td>Excluded tables:</td>
                   <td>
                     <ul>
-                      <li v-for="table in backup?.bigquery_options?.excluded_tables">
+                      <li v-for="table in backup?.bigquery_options?.excluded_tables" :key="table">
                         Table:
                         <a
                           :href="
@@ -352,7 +352,7 @@ watch(
                   <td>Included prefixes:</td>
                   <td>
                     <ul>
-                      <li v-for="prefix in backup?.gcs_options?.include_prefixes">
+                      <li v-for="prefix in backup?.gcs_options?.include_prefixes" :key="prefix">
                         {{ prefix }}
                       </li>
                     </ul>
@@ -367,7 +367,7 @@ watch(
                   <td>Excluded prefixes:</td>
                   <td>
                     <ul>
-                      <li v-for="prefix in backup?.gcs_options?.exclude_prefixes">
+                      <li v-for="prefix in backup?.gcs_options?.exclude_prefixes" :key="prefix">
                         {{ prefix }}
                       </li>
                     </ul>
@@ -543,9 +543,9 @@ watch(
                     persistent-hint
                   >
                     <template #append-inner>
-                      <v-btn 
-                        size="small" 
-                        icon="mdi-content-copy" 
+                      <v-btn
+                        size="small"
+                        icon="mdi-content-copy"
                         variant="text"
                         @click="() => {
                           copyToClipboard(
@@ -575,9 +575,9 @@ watch(
                     :model-value="currentBigQueryCommand"
                   >
                     <template #append-inner>
-                      <v-btn 
-                        size="small" 
-                        icon="mdi-content-copy" 
+                      <v-btn
+                        size="small"
+                        icon="mdi-content-copy"
                         variant="text"
                         @click="() => copyToClipboard(currentBigQueryCommand, notificationsStore.addNotification)"
                       ></v-btn>
