@@ -3,6 +3,7 @@ import ComplianceCheck from "@/components/ComplianceCheck.vue";
 import PricePrediction from "@/components/PricePrediction.vue";
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import { copyToClipboard } from "@/helpers/clipboard";
+import { detectOperatingSystem } from "@/helpers/os-detection";
 import {
   Backup,
   BackupStatus,
@@ -28,7 +29,7 @@ const notificationsStore = useNotificationsStore();
 
 const emits = defineEmits(["close"]);
 const tab = ref();
-const commandTab = ref("unix");
+const commandTab = ref(detectOperatingSystem());
 const viewDialog = ref(false);
 const isLoading = ref(true);
 const listIsLoading = ref(true);
@@ -234,7 +235,7 @@ watch(
   (value) => {
     if (!value) {
       tab.value = "details";
-      commandTab.value = "unix";
+      commandTab.value = detectOperatingSystem();
       jobItems.value = [];
       restoreActions.value = [];
       recoverableJobItems.value = [];
