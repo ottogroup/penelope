@@ -50,7 +50,7 @@ const updateData = async () => {
   };
   evalutingBackup.value = undefined;
   isLoading.value = true;
-  sourceProjects.value = principalStore.principal.getProjects();
+  sourceProjects.value = principalStore.principal.getProjects().sort() ?? [];
   Promise.all([DefaultService.getConfigRegions(), DefaultService.getConfigStorageClasses()])
     .then(([regionResponse, storageClassResponse]) => {
       storageClasses.value =
@@ -135,6 +135,9 @@ const apiRequestBody = () => {
       region: request.value.target?.region,
       dual_region: request.value.target?.dual_region,
       archive_ttm: Number(request.value.target?.archive_ttm),
+    },
+    mirror_options: {
+      lifetime_in_days: Number(request.value.mirror_options?.lifetime_in_days),
     },
     snapshot_options: {
       lifetime_in_days: Number(request.value.snapshot_options?.lifetime_in_days),
@@ -384,7 +387,7 @@ watch(
                   label="Mirror TTL"
                   type="number"
                   hint="After X days data will be deleted. Default is 0."
-                  v-model="request.snapshot_options!.lifetime_in_days"
+                  v-model="request.mirror_options!.lifetime_in_days"
                 ></v-text-field>
               </template>
             </v-col>

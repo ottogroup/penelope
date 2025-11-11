@@ -62,7 +62,7 @@ const saveBackup = () => {
   isLoading.value = true;
   const req: UpdateRequest = {
     backup_id: props.id!,
-    mirror_ttl: Number(backup.value.snapshot_options?.lifetime_in_days),
+    mirror_ttl: Number(backup.value.mirror_options?.lifetime_in_days),
     snapshot_ttl: Number(backup.value.snapshot_options?.lifetime_in_days),
     archive_ttm: Number(backup.value.target?.archive_ttm),
     include_path: backup.value.gcs_options?.include_prefixes,
@@ -200,7 +200,7 @@ watch(
                   label="Mirror TTL"
                   type="number"
                   hint="After X days data will be deleted. Default is 0."
-                  v-model="backup!.snapshot_options!.lifetime_in_days"
+                  v-model="backup!.mirror_options!.lifetime_in_days"
                 ></v-text-field>
               </template>
             </v-col>
