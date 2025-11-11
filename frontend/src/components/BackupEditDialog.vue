@@ -28,6 +28,7 @@ const backup = ref<Backup>({
   target: {
     archive_ttm: 0,
   },
+  mirror_options: {},
   snapshot_options: {},
   recovery_point_objective: 0,
   recovery_time_objective: 0,

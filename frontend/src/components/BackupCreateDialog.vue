@@ -35,6 +35,7 @@ const request = ref<CreateRequest>({
   gcs_options: {},
   bigquery_options: {},
   target: {},
+  mirror_options: {},
   snapshot_options: {},
 });
 const isValid = ref(false);
@@ -46,6 +47,7 @@ const updateData = async () => {
     gcs_options: {},
     bigquery_options: {},
     target: {},
+    mirror_options: {},
     snapshot_options: {},
   };
   evalutingBackup.value = undefined;
