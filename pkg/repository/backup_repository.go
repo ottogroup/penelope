@@ -293,6 +293,9 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 	if fields.Status != "" {
 		columns = append(columns, "status")
 	}
+	if fields.Description != "" {
+		columns = append(columns, "description")
+	}
 
 	result, err := d.storageService.DB().
 		Model(backup).
