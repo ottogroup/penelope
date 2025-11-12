@@ -17,5 +17,5 @@ func Test_MakeResponseForArchiveTTM(t *testing.T) {
 	assert.Equal(t, backupResponse.TargetOptions.ArchiveTTM, backup.ArchiveTTM)
 	body, err := json.Marshal(&backupResponse)
 	assert.Nil(t, err, "expected no error")
-	assert.Equal(t, string(`{"id":"","recovery_point_objective":0,"recovery_time_objective":0,"target":{"archive_ttm":123},"snapshot_options":{},"mirror_options":{},"bigquery_options":{},"gcs_options":{},"status":"","sink":"","sink_project":"","data_owner":"","data_availability_class":""}`), string(body))
+	assert.Equal(t, string(`{"id":"","recovery_point_objective":0,"recovery_time_objective":0,"target":{"archive_ttm":123},"snapshot_options":{},"mirror_options":{},"bigquery_options":{},"gcs_options":{},"description":"","status":"","sink":"","sink_project":"","data_owner":"","data_availability_class":""}`), string(body))
 }
