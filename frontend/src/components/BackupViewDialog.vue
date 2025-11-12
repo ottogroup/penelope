@@ -428,6 +428,10 @@ watch(
                   <td colspan="2"><h4>Details</h4></td>
                 </tr>
                 <tr>
+                  <td>Description:</td>
+                  <td>{{ backup?.description ?? "n/a" }}</td>
+                </tr>
+                <tr>
                   <td>Strategy:</td>
                   <td>{{ backup?.strategy }}</td>
                 </tr>

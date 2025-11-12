@@ -41,6 +41,7 @@ type Backup struct {
 	tableName struct{} `pg:"backups,alias:b"`
 
 	ID                     string       `pg:"id,pk"`
+	Description            string       `pg:"description"`
 	Status                 BackupStatus `pg:"status"`
 	Type                   BackupType   `pg:"type"`
 	RecoveryPointObjective int          `pg:"recovery_point_objective"`

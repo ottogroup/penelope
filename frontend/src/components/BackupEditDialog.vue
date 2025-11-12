@@ -17,6 +17,7 @@ const emits = defineEmits(['close']);
 const viewDialog = ref(false);
 const isLoading = ref(true);
 const backup = ref<Backup>({
+  description: "",
   gcs_options: {
     include_prefixes: [],
     exclude_prefixes: [],
@@ -63,6 +64,7 @@ const saveBackup = () => {
   isLoading.value = true;
   const req: UpdateRequest = {
     backup_id: props.id!,
+    description: backup.value.description,
     mirror_ttl: Number(backup.value.mirror_options?.lifetime_in_days),
     snapshot_ttl: Number(backup.value.snapshot_options?.lifetime_in_days),
     archive_ttm: Number(backup.value.target?.archive_ttm),
@@ -119,7 +121,7 @@ watch(
         <v-form :disabled="isLoading || backupStatusIsDeleted" v-model="isValid" fast-fail @submit.prevent>
           <v-row>
             <v-col>
-              <h3>Source</h3>
+              <h3 class="mb-1">Source</h3>
               <v-text-field
                 label="RPO (hours)*"
                 type="number"
@@ -170,7 +172,7 @@ watch(
               </template>
             </v-col>
             <v-col>
-              <h3>Target</h3>
+              <h3 class="mb-1">Target</h3>
               <v-text-field
                 label="Archive TTM"
                 type="number"
@@ -179,7 +181,12 @@ watch(
               ></v-text-field>
             </v-col>
             <v-col>
-              <h3>Details</h3>
+              <h3 class="mb-1">Details</h3>
+              <v-text-field
+                class="mb-2"
+                label="Description"
+                v-model="backup.description"
+              ></v-text-field>
               <template v-if="backup?.strategy == BackupStrategy.SNAPSHOT">
                 <v-text-field
                   label="Snapshot TTL"

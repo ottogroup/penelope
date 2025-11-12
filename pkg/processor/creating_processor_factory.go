@@ -179,6 +179,7 @@ func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, requ
 	sinkName := fmt.Sprintf("bkp_%s_%s", suffix, id)
 	backup := repository.Backup{
 		ID:            id,
+		Description:   request.Description,
 		Status:        repository.NotStarted,
 		Type:          repository.BackupType(request.Type),
 		Strategy:      repository.Strategy(strategy),

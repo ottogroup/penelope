@@ -55,6 +55,7 @@ type RestoreRequest struct {
 // UpdateRequest change backup
 type UpdateRequest struct {
 	BackupID               string `json:"backup_id"`
+	Description            string `json:"description,omitempty"`
 	Status                 string `json:"status,omitempty"`
 	MirrorTTL              uint   `json:"mirror_ttl,omitempty"`
 	SnapshotTTL            uint   `json:"snapshot_ttl,omitempty"`
@@ -71,6 +72,7 @@ type UpdateRequest struct {
 
 // CreateRequest make a new backup
 type CreateRequest struct {
+	Description            string        `json:"description,omitempty"`
 	Type                   string        `json:"type,omitempty"`
 	Strategy               string        `json:"strategy,omitempty"`
 	Project                string        `json:"project,omitempty"`
@@ -129,6 +131,7 @@ type BackupResponse struct {
 	ID string `json:"id"`
 	CreateRequest
 
+	Description           string                     `json:"description"`
 	Status                string                     `json:"status"`
 	Sink                  string                     `json:"sink"`
 	SinkProject           string                     `json:"sink_project"`

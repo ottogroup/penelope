@@ -32,6 +32,7 @@ const loadingDatasetNames = ref(false);
 const datasetNames = ref<string[]>([]);
 
 const request = ref<CreateRequest>({
+  description: "",
   gcs_options: {},
   bigquery_options: {},
   target: {},
@@ -44,6 +45,7 @@ const evalutingBackup = ref<CreateRequest | undefined>();
 
 const updateData = async () => {
   request.value = {
+    description: "",
     gcs_options: {},
     bigquery_options: {},
     target: {},
@@ -128,6 +130,7 @@ const updateSourceFields = () => {
 const apiRequestBody = () => {
   const req: CreateRequest = {
     project: request.value.project,
+    description: request.value.description,
     recovery_point_objective: Number(request.value.recovery_point_objective),
     recovery_time_objective: Number(request.value.recovery_time_objective),
     type: request.value.type,
@@ -208,7 +211,7 @@ watch(
         <v-form :disabled="isLoading" v-model="isValid" fast-fail @submit.prevent>
           <v-row>
             <v-col>
-              <h3>Source</h3>
+              <h3 class="mb-1">Source</h3>
               <v-select
                 class="mb-2"
                 label="Project*"
@@ -309,7 +312,7 @@ watch(
               </template>
             </v-col>
             <v-col>
-              <h3>Target</h3>
+              <h3 class="mb-1">Target</h3>
               <v-select
                 class="mb-2"
                 label="Storage class*"
@@ -341,7 +344,12 @@ watch(
               ></v-text-field>
             </v-col>
             <v-col>
-              <h3>Details</h3>
+              <h3 class="mb-1">Details</h3>
+              <v-text-field
+                class="mb-2"
+                label="Description"
+                v-model="request.description"
+              ></v-text-field>
               <v-select
                 class="mb-2"
                 label="Strategy*"

@@ -2,8 +2,9 @@ package processor
 
 import (
 	"fmt"
-	"github.com/ottogroup/penelope/pkg/provider"
 	"time"
+
+	"github.com/ottogroup/penelope/pkg/provider"
 
 	"github.com/google/uuid"
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -54,6 +55,7 @@ func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job, sour
 
 	return requestobjects.BackupResponse{
 		ID:                               backup.ID,
+		Description:                      backup.Description,
 		Sink:                             backup.SinkOptions.Sink,
 		Status:                           status.String(),
 		SinkProject:                      backup.SinkOptions.TargetProject,
