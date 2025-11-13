@@ -3,11 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
 	"go.opencensus.io/trace"
-	"time"
 )
 
 // TODO include defer .close() for .conn() in each method
@@ -19,6 +20,7 @@ type BackupFilter struct {
 // UpdateFields what is changing
 type UpdateFields struct {
 	BackupID               string
+	Description            string
 	Status                 BackupStatus
 	IncludePath            []string
 	ExcludePath            []string
@@ -231,8 +233,9 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 	defer span.End()
 
 	backup := &Backup{
-		ID:     fields.BackupID,
-		Status: fields.Status,
+		ID:          fields.BackupID,
+		Description: fields.Description,
+		Status:      fields.Status,
 		SnapshotOptions: SnapshotOptions{
 			LifetimeInDays: fields.SnapshotTTL,
 		},
@@ -289,6 +292,9 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 	}
 	if fields.Status != "" {
 		columns = append(columns, "status")
+	}
+	if fields.Description != "" {
+		columns = append(columns, "description")
 	}
 
 	result, err := d.storageService.DB().

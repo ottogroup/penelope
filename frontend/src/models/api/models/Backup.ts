@@ -1,7 +1,7 @@
 /* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
- 
+/* eslint-disable */
 import type { AvailabilityClass } from './AvailabilityClass';
 import type { BackupStatus } from './BackupStatus';
 import type { BackupStrategy } from './BackupStrategy';
@@ -17,6 +17,7 @@ import type { TargetOptions } from './TargetOptions';
 import type { TrashcanCleanupStatus } from './TrashcanCleanupStatus';
 export type Backup = {
     id?: string;
+    description?: string;
     type?: BackupType;
     strategy?: BackupStrategy;
     project?: string;

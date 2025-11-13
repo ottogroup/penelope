@@ -13,6 +13,36 @@ const searchModel = defineModel<string | undefined>("search", { required: true }
 const viewDialogID = ref<string | undefined>(undefined);
 const editDialogID = ref<string | undefined>(undefined);
 
+const filterDataTableItems = (value: string, query: string, item: any) => {
+  if (query == null) return -1;
+  if (!query.length) return 0;
+
+  if (!value) {
+    // when value is empty it is a surrogate column we assume it is the source column
+    if (item.value.type === BackupType.BIG_QUERY) {
+      value = item.value.bigquery_options?.dataset;
+      if (item.value.bigquery_options?.table && item.value.bigquery_options?.table.length > 0) {
+        value += item.value.bigquery_options?.table.join();
+      }
+    } else if (item.value.type === BackupType.CLOUD_STORAGE) {
+      value = item.value.gcs_options?.bucket;
+    }
+  }
+
+  value = value.toString().toLocaleLowerCase();
+  query = query.toString().toLocaleLowerCase();
+
+  const result = [];
+  let idx = value.indexOf(query);
+  while (~idx) {
+    result.push([idx, idx + query.length] as const);
+
+    idx = value.indexOf(query, idx + query.length);
+  }
+
+  return result.length ? result : -1;
+};
+
 const isLoading = ref(true);
 const items = ref<Backup[]>([]);
 const headers = [
@@ -73,7 +103,7 @@ const projectLink = (project: string) => {
     v-model:search="searchModel"
     :items="items"
     :headers="headers"
-    :filter-keys="['type', 'project', 'strategy', 'status']"
+    :custom-filter="filterDataTableItems"
     show-select
     :loading="isLoading"
     :items-per-page="25"

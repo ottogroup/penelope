@@ -399,6 +399,8 @@ components:
       properties:
         id:
           type: string
+        description:
+          type: string
         type:
           $ref: '#/components/schemas/BackupType'
         strategy:
@@ -552,6 +554,8 @@ components:
           $ref: '#/components/schemas/BackupStrategy'
         project:
           type: string
+        description:
+          type: string
         target:
           $ref: '#/components/schemas/TargetOptions'
         snapshot_options:
@@ -570,6 +574,8 @@ components:
       type: object
       properties:
         backup_id:
+          type: string
+        description:
           type: string
         status:
           $ref: '#/components/schemas/BackupStatus'

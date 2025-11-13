@@ -32,9 +32,11 @@ const loadingDatasetNames = ref(false);
 const datasetNames = ref<string[]>([]);
 
 const request = ref<CreateRequest>({
+  description: "",
   gcs_options: {},
   bigquery_options: {},
   target: {},
+  mirror_options: {},
   snapshot_options: {},
 });
 const isValid = ref(false);
@@ -43,14 +45,16 @@ const evalutingBackup = ref<CreateRequest | undefined>();
 
 const updateData = async () => {
   request.value = {
+    description: "",
     gcs_options: {},
     bigquery_options: {},
     target: {},
+    mirror_options: {},
     snapshot_options: {},
   };
   evalutingBackup.value = undefined;
   isLoading.value = true;
-  sourceProjects.value = principalStore.principal.getProjects();
+  sourceProjects.value = principalStore.principal.getProjects().sort() ?? [];
   Promise.all([DefaultService.getConfigRegions(), DefaultService.getConfigStorageClasses()])
     .then(([regionResponse, storageClassResponse]) => {
       storageClasses.value =
@@ -126,6 +130,7 @@ const updateSourceFields = () => {
 const apiRequestBody = () => {
   const req: CreateRequest = {
     project: request.value.project,
+    description: request.value.description,
     recovery_point_objective: Number(request.value.recovery_point_objective),
     recovery_time_objective: Number(request.value.recovery_time_objective),
     type: request.value.type,
@@ -135,6 +140,9 @@ const apiRequestBody = () => {
       region: request.value.target?.region,
       dual_region: request.value.target?.dual_region,
       archive_ttm: Number(request.value.target?.archive_ttm),
+    },
+    mirror_options: {
+      lifetime_in_days: Number(request.value.mirror_options?.lifetime_in_days),
     },
     snapshot_options: {
       lifetime_in_days: Number(request.value.snapshot_options?.lifetime_in_days),
@@ -203,7 +211,7 @@ watch(
         <v-form :disabled="isLoading" v-model="isValid" fast-fail @submit.prevent>
           <v-row>
             <v-col>
-              <h3>Source</h3>
+              <h3 class="mb-1">Source</h3>
               <v-select
                 class="mb-2"
                 label="Project*"
@@ -304,7 +312,7 @@ watch(
               </template>
             </v-col>
             <v-col>
-              <h3>Target</h3>
+              <h3 class="mb-1">Target</h3>
               <v-select
                 class="mb-2"
                 label="Storage class*"
@@ -336,7 +344,12 @@ watch(
               ></v-text-field>
             </v-col>
             <v-col>
-              <h3>Details</h3>
+              <h3 class="mb-1">Details</h3>
+              <v-text-field
+                class="mb-2"
+                label="Description"
+                v-model="request.description"
+              ></v-text-field>
               <v-select
                 class="mb-2"
                 label="Strategy*"
@@ -384,7 +397,7 @@ watch(
                   label="Mirror TTL"
                   type="number"
                   hint="After X days data will be deleted. Default is 0."
-                  v-model="request.snapshot_options!.lifetime_in_days"
+                  v-model="request.mirror_options!.lifetime_in_days"
                 ></v-text-field>
               </template>
             </v-col>

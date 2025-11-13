@@ -116,6 +116,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 	fields := repository.UpdateFields{
 		BackupID:               request.BackupID,
 		Status:                 repository.BackupStatus(request.Status),
+		Description:            request.Description,
 		IncludePath:            request.IncludePath,
 		ExcludePath:            request.ExcludePath,
 		Table:                  request.Table,

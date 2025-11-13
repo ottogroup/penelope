@@ -1,11 +1,12 @@
 package processor
 
 import (
-	"cloud.google.com/go/iam"
 	"context"
 	"fmt"
 	"strings"
 	"time"
+
+	"cloud.google.com/go/iam"
 
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/config"
@@ -178,6 +179,7 @@ func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, requ
 	sinkName := fmt.Sprintf("bkp_%s_%s", suffix, id)
 	backup := repository.Backup{
 		ID:            id,
+		Description:   request.Description,
 		Status:        repository.NotStarted,
 		Type:          repository.BackupType(request.Type),
 		Strategy:      repository.Strategy(strategy),
@@ -415,10 +417,10 @@ func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClien
 
 	if !exists {
 		var lifetimeInDays uint = 0
-		if backup.Type.EqualTo(repository.Mirror.String()) {
+		if backup.Strategy.EqualTo(repository.Mirror.String()) {
 			lifetimeInDays = backup.MirrorOptions.LifetimeInDays
 		}
-		if backup.Type.EqualTo(repository.Snapshot.String()) {
+		if backup.Strategy.EqualTo(repository.Snapshot.String()) {
 			lifetimeInDays = backup.SnapshotOptions.LifetimeInDays
 		}
 
