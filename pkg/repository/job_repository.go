@@ -270,7 +270,7 @@ func (d *defaultJobRepository) GetBackupRestoreJobs(ctxIn context.Context, backu
 			Join("JOIN source_metadata sm ON sml.id = sm.id").
 			Join("JOIN source_metadata_jobs smj ON smj.source_metadata_id = sml.id").
 			Join("JOIN jobs j ON smj.job_id = j.id").
-			Where("sm.operation != ?", "Delete").        // remove deleted table/partition when the last operation was delete
+			Where("sm.operation != ?", "Delete"). // remove deleted table/partition when the last operation was delete
 			Where("sm.audit_deleted_timestamp IS NULL"). // only keep recoverable entries
 			Select(&jobs)
 
@@ -284,7 +284,7 @@ func (d *defaultJobRepository) GetBackupRestoreJobs(ctxIn context.Context, backu
 
 // GetByJobTypeAndStatusAndLimit filter backup jobs by status and type with limit
 func (d *defaultJobRepository) GetByJobTypeAndStatusAndLimit(ctxIn context.Context, backupType BackupType, status JobStatus, limit uint) ([]*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetByJobTypeAndStatus")
+	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetByJobTypeAndStatusAndLimit")
 	defer span.End()
 
 	var jobs []*Job
