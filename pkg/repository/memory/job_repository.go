@@ -38,6 +38,18 @@ func (r *JobRepository) GetBackupRestoreJobs(ctxIn context.Context, backupID, jo
 	panic("implement me")
 }
 
+// GetByJobTypeAndStatusAndLimit filter backup jobs by status and type with limit
+func (r *JobRepository) GetByJobTypeAndStatusAndLimit(ctxIn context.Context, backupType repository.BackupType, jobStatus repository.JobStatus, limit uint) (jobs []*repository.Job, err error) {
+	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetByJobTypeAndStatusAndLimit")
+	defer span.End()
+	for _, j := range r.jobs {
+		if j.Type == backupType && j.Status == jobStatus {
+			jobs = append(jobs, j)
+		}
+	}
+	return jobs[:limit], err
+}
+
 // GetByJobTypeAndStatus filter backup jobs by status and type
 func (r *JobRepository) GetByJobTypeAndStatus(ctxIn context.Context, backupType repository.BackupType, jobStatus ...repository.JobStatus) (jobs []*repository.Job, err error) {
 	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetByJobTypeAndStatus")
