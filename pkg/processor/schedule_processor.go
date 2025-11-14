@@ -20,9 +20,8 @@ type TrashcanEntry struct {
 
 const (
 	// bigQueryBatchLimit defines how many jobs are processed in one batch
-	// with current infrastructure limits 2000 is a safe number
-	// Penelope can process around 2300 jobs for BigQuery per 10 minutes and ca. 200MB of memory
-	bigQueryBatchLimit = 2000
+	// Penelope can process around 245 jobs per minute for BigQuery and ca. 200MB of memory usage
+	bigQueryBatchLimit = 1800
 	// cloudStorageBatchLimit defines how many jobs are processed in one batch
 	// quota rate limits for Transfer Service is 600 per minute but having in mind request latency we set limit to 100
 	cloudStorageBatchLimit = 100

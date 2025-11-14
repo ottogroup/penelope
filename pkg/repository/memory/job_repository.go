@@ -47,6 +47,11 @@ func (r *JobRepository) GetByJobTypeAndStatusAndLimit(ctxIn context.Context, bac
 			jobs = append(jobs, j)
 		}
 	}
+	if len(jobs) == 0 {
+		return jobs, err
+	} else if uint(len(jobs)) < limit {
+		limit = uint(len(jobs))
+	}
 	return jobs[:limit], err
 }
 
