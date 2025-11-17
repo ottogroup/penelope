@@ -110,29 +110,51 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 		return err
 	}
 
-	jobDescriptors, err := b.collateState(ctx, backup.ID, tables)
-	if err != nil {
-		return err
-	}
+	for i := 0; i < len(tables); i += 100 {
+		end := i + 100
+		if end > len(tables) {
+			end = len(tables)
+		}
+		batch := tables[i:end]
 
-	var jobs []*repository.Job
-	for _, descriptor := range jobDescriptors {
-		jobs = append(jobs, newJob(backup.ID, descriptor.table))
-	}
+		// Process batch
+		var notScheduledTables []*bigquery.Table
+		for _, table := range batch {
+			rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled)
+			if err == nil && len(rs) > 0 {
+				glog.Infof("mirror job for backup with id %s and table %s already exists, skipping", backup.ID, table.Name)
+				continue
+			} else if err != nil {
+				glog.Errorf("error checking existing mirror jobs for backup with id %s and table %s: %s", backup.ID, table.Name, err)
+				continue
+			}
+			notScheduledTables = append(notScheduledTables, table)
+		}
 
-	err = b.JobRepository.AddJobs(ctx, jobs)
-	if err != nil {
-		return err
-	}
+		jobDescriptors, err := b.collateState(ctx, backup.ID, notScheduledTables)
+		if err != nil {
+			return err
+		}
 
-	for _, descriptor := range jobDescriptors {
-		for _, job := range jobs {
-			if descriptor.matchJob(job) {
-				err = b.SourceMetadataJobRepository.Add(ctx, descriptor.sourceMetadaID, job.ID)
-				if err != nil {
-					return err
+		var jobs []*repository.Job
+		for _, descriptor := range jobDescriptors {
+			jobs = append(jobs, newJob(backup.ID, descriptor.table))
+		}
+
+		err = b.JobRepository.AddJobs(ctx, jobs)
+		if err != nil {
+			return err
+		}
+
+		for _, descriptor := range jobDescriptors {
+			for _, job := range jobs {
+				if descriptor.matchJob(job) {
+					err = b.SourceMetadataJobRepository.Add(ctx, descriptor.sourceMetadaID, job.ID)
+					if err != nil {
+						return err
+					}
+					break
 				}
-				break
 			}
 		}
 	}
