@@ -9,6 +9,7 @@ import (
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
+	"github.com/pkg/errors"
 	"go.opencensus.io/trace"
 )
 
@@ -34,6 +35,7 @@ type JobRepository interface {
 	MarkDeleted(context.Context, string) error
 	GetByJobTypeAndStatusAndLimit(context.Context, BackupType, JobStatus, uint) ([]*Job, error)
 	GetByJobTypeAndStatus(context.Context, BackupType, ...JobStatus) ([]*Job, error)
+	GetByBackupIdAndSourceAndStatus(context.Context, string, string, JobStatus) ([]*Job, error)
 	GetByStatusAndBefore(context.Context, []JobStatus, int) ([]*Job, error)
 	PatchJobStatus(ctx context.Context, patch JobPatch) error
 	GetJobsForBackupID(ctx context.Context, backupID string, jobPage Page, status ...JobStatus) ([]*Job, error)
@@ -47,6 +49,25 @@ type JobRepository interface {
 // defaultJobRepository implements JobRepository
 type defaultJobRepository struct {
 	storageService *service.Service
+}
+
+func (d *defaultJobRepository) GetByBackupIdAndSourceAndStatus(ctxIn context.Context, backupId string, source string, status JobStatus) ([]*Job, error) {
+	_, span := trace.StartSpan(ctxIn, "GetByBackupIdAndSourceAndStatus")
+	defer span.End()
+	var jobs []*Job
+	err := d.storageService.DB().Model(&jobs).
+		Where("backup_id = ?", backupId).
+		Where("source = ?", source).
+		Where("status = ?", status).
+		Where("audit_deleted_timestamp is null").
+		Select()
+	if err != nil {
+		if errors.Is(err, pg.ErrNoRows) {
+			return jobs, nil
+		}
+		return nil, fmt.Errorf("error during executing get job by status statement: %s", err)
+	}
+	return jobs, err
 }
 
 // NewJobRepository create new instance of JobRepository
@@ -270,7 +291,7 @@ func (d *defaultJobRepository) GetBackupRestoreJobs(ctxIn context.Context, backu
 			Join("JOIN source_metadata sm ON sml.id = sm.id").
 			Join("JOIN source_metadata_jobs smj ON smj.source_metadata_id = sml.id").
 			Join("JOIN jobs j ON smj.job_id = j.id").
-			Where("sm.operation != ?", "Delete"). // remove deleted table/partition when the last operation was delete
+			Where("sm.operation != ?", "Delete").        // remove deleted table/partition when the last operation was delete
 			Where("sm.audit_deleted_timestamp IS NULL"). // only keep recoverable entries
 			Select(&jobs)
 

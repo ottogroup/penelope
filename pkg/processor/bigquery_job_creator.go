@@ -71,12 +71,29 @@ func (b *BigQueryJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *
 		return err
 	}
 
-	var jobs []*repository.Job
-	for _, table := range tables {
-		jobs = append(jobs, newJob(backup.ID, table.Name))
+	for i := 0; i < len(tables); i += 100 {
+		end := i + 100
+		if end > len(tables) {
+			end = len(tables)
+		}
+		batch := tables[i:end]
+
+		// Process batch
+		var jobs []*repository.Job
+		for _, table := range batch {
+			rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled)
+			if err == nil && len(rs) > 0 {
+				glog.Infof("snapshot job for backup with id %s and table %s already exists, skipping", backup.ID, table.Name)
+				continue
+			} else if err != nil {
+				glog.Errorf("error checking existing snapshot jobs for backup with id %s and table %s: %s", backup.ID, table.Name, err)
+				continue
+			}
+			jobs = append(jobs, newJob(backup.ID, table.Name))
+		}
+		err = b.JobRepository.AddJobs(ctx, jobs)
 	}
 
-	err = b.JobRepository.AddJobs(ctx, jobs)
 	if err == nil {
 		err = b.BackupRepository.UpdateLastScheduledTime(ctx, backup.ID, time.Now(), repository.Prepared)
 	}

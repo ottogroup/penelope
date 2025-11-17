@@ -70,6 +70,15 @@ func (r *JobRepository) GetByJobTypeAndStatus(ctxIn context.Context, backupType 
 	return jobs, err
 }
 
+func (r *JobRepository) GetByBackupIdAndSourceAndStatus(ctx context.Context, backupId string, source string, status repository.JobStatus) (rs []*repository.Job, err error) {
+	for _, job := range r.jobs {
+		if job.BackupID == backupId && job.Source == source && job.Status == status {
+			rs = append(rs, job)
+		}
+	}
+	return
+}
+
 // GetByStatusAndBefore is not implemented
 func (r *JobRepository) GetByStatusAndBefore(ctxIn context.Context, status []repository.JobStatus, deltaHours int) ([]*repository.Job, error) {
 	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetByStatusAndBefore")
