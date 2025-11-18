@@ -1,9 +1,6 @@
 package gcs
 
 import (
-	"cloud.google.com/go/iam"
-	resourcemanager "cloud.google.com/go/resourcemanager/apiv3"
-	"cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 	"context"
 	"fmt"
 	"io"
@@ -11,6 +8,10 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"cloud.google.com/go/iam"
+	resourcemanager "cloud.google.com/go/resourcemanager/apiv3"
+	"cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
 	"cloud.google.com/go/storage"
@@ -28,12 +29,44 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const (
+	providerLabel = "provider"
+	purposeLabel  = "purpose"
+	typeLabel     = "type"
+)
+
+type LabelsProvider interface {
+	Labels() map[string]string
+}
+
+type labels struct {
+	backupType string
+}
+
+func (l labels) Labels() map[string]string {
+	return map[string]string{
+		providerLabel: "penelope",
+		purposeLabel:  "backup",
+		typeLabel:     l.backupType,
+	}
+}
+
+func NewLabels(backupType string) LabelsProvider {
+	return labels{backupType: backupType}
+}
+
+type CloudStorageBucket struct {
+	Project, Bucket, Location, DualLocation, StorageClass string
+	LifetimeInDays, ArchiveTTM                            uint
+	Labels                                                LabelsProvider
+}
+
 // CloudStorageClient define operations with the GCS
 type CloudStorageClient interface {
 	IsInitialized(ctxIn context.Context) bool
 	DoesBucketExist(ctxIn context.Context, project string, bucket string) (bool, error)
 	BucketUsageInBytes(ctxIn context.Context, project string, bucket string) (float64, error)
-	CreateBucket(ctxIn context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error
+	CreateBucket(ctxIn context.Context, bucket CloudStorageBucket) error
 	GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error)
 	SetBucketIAMPolicy(ctxIn context.Context, bucket string, policy *iam.Policy) error
 	CreateObject(ctxIn context.Context, bucketName, objectName, content string) error
@@ -398,46 +431,46 @@ func (c *defaultGcsClient) UpdateBucket(ctxIn context.Context, bucket string, li
 }
 
 // CreateBucket create new bucket in a given project
-func (c *defaultGcsClient) CreateBucket(ctxIn context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
+func (c *defaultGcsClient) CreateBucket(ctxIn context.Context, bucket CloudStorageBucket) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).CreateBucket")
 	defer span.End()
 
 	var bucketAttrs = storage.BucketAttrs{
-		StorageClass:     storageClass,
+		StorageClass:     bucket.StorageClass,
 		BucketPolicyOnly: storage.BucketPolicyOnly{Enabled: true},
-		Labels:           map[string]string{"purpose": "backup"},
+		Labels:           bucket.Labels.Labels(),
 		UniformBucketLevelAccess: storage.UniformBucketLevelAccess{
 			Enabled: config.UniformBucketLevelAccess.GetBoolOrDefault(false),
 		},
 	}
 	bucketAttrs.Lifecycle = storage.Lifecycle{}
 
-	if dualLocation == "" {
-		bucketAttrs.Location = location
+	if bucket.DualLocation == "" {
+		bucketAttrs.Location = bucket.Location
 	} else {
 		bucketAttrs.Location = "eu"
 		bucketAttrs.CustomPlacementConfig = &storage.CustomPlacementConfig{
-			DataLocations: []string{location, dualLocation},
+			DataLocations: []string{bucket.Location, bucket.DualLocation},
 		}
 	}
 
-	if archiveTTM > 0 {
+	if bucket.ArchiveTTM > 0 {
 		ruleTTM := storage.LifecycleRule{
 			Action:    storage.LifecycleAction{Type: "SetStorageClass", StorageClass: "ARCHIVE"},
-			Condition: storage.LifecycleCondition{AgeInDays: int64(archiveTTM)},
+			Condition: storage.LifecycleCondition{AgeInDays: int64(bucket.ArchiveTTM)},
 		}
 		bucketAttrs.Lifecycle.Rules = append(bucketAttrs.Lifecycle.Rules, ruleTTM)
 	}
 
-	if lifetimeInDays > 0 {
+	if bucket.LifetimeInDays > 0 {
 		ruleTTL := storage.LifecycleRule{
 			Action:    storage.LifecycleAction{Type: "Delete"},
-			Condition: storage.LifecycleCondition{AgeInDays: int64(lifetimeInDays)},
+			Condition: storage.LifecycleCondition{AgeInDays: int64(bucket.LifetimeInDays)},
 		}
 		bucketAttrs.Lifecycle.Rules = append(bucketAttrs.Lifecycle.Rules, ruleTTL)
 	}
 
-	err := c.client.Bucket(bucket).Create(ctx, project, &bucketAttrs)
+	err := c.client.Bucket(bucket.Bucket).Create(ctx, bucket.Project, &bucketAttrs)
 	if err != nil {
 		return err
 	}
@@ -487,10 +520,10 @@ func (c *defaultGcsClient) DeleteObjectsWithObjectMatch(ctxIn context.Context, b
 	objectsIterator := bucket.Objects(ctx, &storageQuery)
 	for {
 		objAttr, err := objectsIterator.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
-		if err != iterator.Done && err != nil {
+		if !errors.Is(err, iterator.Done) && err != nil {
 			return deleted, err
 		}
 		if objAttr == nil {
@@ -503,7 +536,7 @@ func (c *defaultGcsClient) DeleteObjectsWithObjectMatch(ctxIn context.Context, b
 		}
 		if objectPattern == nil || objectPattern.MatchString(objAttr.Name) {
 			err = bucket.Object(objAttr.Name).Delete(ctx)
-			if err != nil && err != storage.ErrObjectNotExist {
+			if err != nil && !errors.Is(err, storage.ErrObjectNotExist) {
 				return deleted, err
 			}
 			deleted++
@@ -556,7 +589,7 @@ func (c *defaultGcsClient) GetBuckets(ctxIn context.Context, project string) (bu
 	for {
 		// error or not found
 		b, err := bucketsIterator.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {

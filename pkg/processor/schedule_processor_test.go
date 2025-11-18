@@ -1,11 +1,12 @@
 package processor
 
 import (
-	"cloud.google.com/go/iam"
-	"cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 	"context"
 	"regexp"
 	"testing"
+
+	"cloud.google.com/go/iam"
+	"cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/storage"
@@ -136,13 +137,17 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_removeData(t 
 	testContext := givenATestContext()
 	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = false
-	testContext.BackupRepository.AddBackup(ctx, backup)
-	testContext.SourceMetadataRepository.Add(ctx, []*repository.SourceMetadata{
+	b, err := testContext.BackupRepository.AddBackup(ctx, backup)
+	assert.NoError(t, err)
+	assert.NotNil(t, b)
+	sm, err := testContext.SourceMetadataRepository.Add(ctx, []*repository.SourceMetadata{
 		{BackupID: backup.ID, Source: "table was removed", SourceChecksum: "n/a"}},
 	)
+	assert.NoError(t, err)
+	assert.NotNil(t, sm)
 	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
 	// When
-	err := bigQueryJobCreator.PrepareJobs(ctx, backup)
+	err = bigQueryJobCreator.PrepareJobs(ctx, backup)
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 	// Then
 	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
@@ -509,7 +514,7 @@ func (g *stubGcsClient) DoesBucketExist(c context.Context, project string, bucke
 	return true, nil
 }
 
-func (*stubGcsClient) CreateBucket(c context.Context, project, bucket, location, dualLocation, storageClass string, lifetimeInDays uint, archiveTTM uint) error {
+func (*stubGcsClient) CreateBucket(c context.Context, bucket gcs.CloudStorageBucket) error {
 	panic("implement me")
 }
 

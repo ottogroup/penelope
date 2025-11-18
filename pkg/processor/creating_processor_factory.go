@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -424,7 +425,9 @@ func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClien
 			lifetimeInDays = backup.SnapshotOptions.LifetimeInDays
 		}
 
-		err = cloudStorageClient.CreateBucket(ctx, backup.TargetProject, backup.Sink, backup.Region, backup.DualRegion, backup.StorageClass, lifetimeInDays, backup.ArchiveTTM)
+		err = cloudStorageClient.CreateBucket(ctx, gcs.CloudStorageBucket{
+			backup.TargetProject, backup.Sink, backup.Region, backup.DualRegion, backup.StorageClass, lifetimeInDays, backup.ArchiveTTM, gcs.NewLabels(pascalCaseToSnakeCase(backup.Type.String())),
+		})
 		if err != nil {
 			return err
 		}
@@ -479,4 +482,13 @@ func hasIntersection(a, b []string) bool {
 		}
 	}
 	return len(c) > 0
+}
+
+func pascalCaseToSnakeCase(s string) string {
+	re := regexp.MustCompile("([A-Z][a-z0-9]*)")
+	snake := re.ReplaceAllStringFunc(s, func(sub string) string {
+		return "_" + strings.ToLower(sub)
+	})
+	snake = strings.TrimLeft(snake, "_")
+	return snake
 }
