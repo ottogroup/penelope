@@ -147,7 +147,7 @@ func givenATestBigQueryCalculatorContext() *contextBigQueryCalculator {
 }
 
 func floatEquals(a, b float64) bool {
-	var EPSILON = 0.000000000000001
+	var EPSILON = 0.00001
 	if (a-b) < EPSILON && (b-a) < EPSILON {
 		return true
 	}

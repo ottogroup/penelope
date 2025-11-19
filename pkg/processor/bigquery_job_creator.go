@@ -110,51 +110,48 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 		return err
 	}
 
-	for i := 0; i < len(tables); i += 100 {
-		end := i + 100
-		if end > len(tables) {
-			end = len(tables)
+	// Process batch
+	var notScheduledTables []*bigquery.Table
+	for _, table := range tables {
+		rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled)
+		if err == nil && len(rs) > 0 {
+			glog.Infof("mirror job for backup with id %s and table %s already exists, skipping", backup.ID, table.Name)
+			continue
+		} else if err != nil {
+			glog.Errorf("error checking existing mirror jobs for backup with id %s and table %s: %s", backup.ID, table.Name, err)
+			continue
 		}
-		batch := tables[i:end]
+		notScheduledTables = append(notScheduledTables, table)
+	}
 
-		// Process batch
-		var notScheduledTables []*bigquery.Table
-		for _, table := range batch {
-			rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled)
-			if err == nil && len(rs) > 0 {
-				glog.Infof("mirror job for backup with id %s and table %s already exists, skipping", backup.ID, table.Name)
-				continue
-			} else if err != nil {
-				glog.Errorf("error checking existing mirror jobs for backup with id %s and table %s: %s", backup.ID, table.Name, err)
-				continue
+	jobDescriptors, err := b.collateState(ctx, backup.ID, tables)
+	if err != nil {
+		return err
+	}
+
+	var jobs []*repository.Job
+	for _, descriptor := range jobDescriptors {
+		for _, notScheduledTable := range notScheduledTables {
+			if descriptor.table == notScheduledTable.Name {
+				jobs = append(jobs, newJob(backup.ID, descriptor.table))
+				break
 			}
-			notScheduledTables = append(notScheduledTables, table)
 		}
+	}
 
-		jobDescriptors, err := b.collateState(ctx, backup.ID, notScheduledTables)
-		if err != nil {
-			return err
-		}
+	err = b.JobRepository.AddJobs(ctx, jobs)
+	if err != nil {
+		return err
+	}
 
-		var jobs []*repository.Job
-		for _, descriptor := range jobDescriptors {
-			jobs = append(jobs, newJob(backup.ID, descriptor.table))
-		}
-
-		err = b.JobRepository.AddJobs(ctx, jobs)
-		if err != nil {
-			return err
-		}
-
-		for _, descriptor := range jobDescriptors {
-			for _, job := range jobs {
-				if descriptor.matchJob(job) {
-					err = b.SourceMetadataJobRepository.Add(ctx, descriptor.sourceMetadaID, job.ID)
-					if err != nil {
-						return err
-					}
-					break
+	for _, descriptor := range jobDescriptors {
+		for _, job := range jobs {
+			if descriptor.matchJob(job) {
+				err = b.SourceMetadataJobRepository.Add(ctx, descriptor.sourceMetadataID, job.ID)
+				if err != nil {
+					return err
 				}
+				break
 			}
 		}
 	}
@@ -315,8 +312,7 @@ func (b *BigQueryJobCreator) collateState(ctxIn context.Context, backupID string
 		if meta == nil {
 			return descriptors, fmt.Errorf("got not expected added source metadata for backupID=%s and table=%s", backupID, descriptor.table)
 		}
-
-		descriptor.sourceMetadaID = meta.ID
+		descriptor.sourceMetadataID = meta.ID
 	}
 
 	return descriptors, err
@@ -327,9 +323,9 @@ func isSinglePartitionTable(table string) bool {
 }
 
 type jobDescriptor struct {
-	backupID       string
-	table          string
-	sourceMetadaID int
+	backupID         string
+	table            string
+	sourceMetadataID int
 }
 
 func (j *jobDescriptor) matchJob(job *repository.Job) bool {

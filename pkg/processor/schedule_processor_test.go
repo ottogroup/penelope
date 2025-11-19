@@ -211,7 +211,8 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionTables_expectChanges(t *
 	ctx := context.Background()
 	testContext := givenATestContext()
 	backup := newBigQueryMirrorBackup("partitionTables_expectChanges", "dataset", []string{})
-	testContext.BackupRepository.AddBackup(ctx, backup)
+	_, err := testContext.BackupRepository.AddBackup(ctx, backup)
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 	testContext.BigQuery.fDoesDatasetExists = true
 	testContext.BigQuery.fDoesTableHasPartitions = true
 	testContext.BigQuery.fGetTable = &bq.Table{Name: "partition", Checksum: "111"}
@@ -219,15 +220,16 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionTables_expectChanges(t *
 	testContext.BigQuery.fGetTablePartitions = append(testContext.BigQuery.fGetTablePartitions, &bq.Table{Name: "partition$20190101", Checksum: "111"})
 	testContext.BigQuery.fGetTablePartitions = append(testContext.BigQuery.fGetTablePartitions, &bq.Table{Name: "partition$20190102", Checksum: "222"})
 	testContext.BigQuery.fGetTablePartitions = append(testContext.BigQuery.fGetTablePartitions, &bq.Table{Name: "partition$20190103", Checksum: "222"})
-	testContext.SourceMetadataRepository.Add(ctx, []*repository.SourceMetadata{
+	_, err = testContext.SourceMetadataRepository.Add(ctx, []*repository.SourceMetadata{
 		{BackupID: backup.ID, Source: "partition$20190101", SourceChecksum: "111"}, // do nothing
 		{BackupID: backup.ID, Source: "partition$20190102", SourceChecksum: "111"}, // update
 		{BackupID: backup.ID, Source: "partition$20190103", SourceChecksum: "111"}, // update
 		{BackupID: backup.ID, Source: "partition$20190104", SourceChecksum: "111"}, // delete source
 	})
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
 	// When
-	err := bigQueryJobCreator.PrepareJobs(ctx, backup)
+	err = bigQueryJobCreator.PrepareJobs(ctx, backup)
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
