@@ -117,17 +117,8 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_updateData(t 
 
 	sourceMetadataForBackup, err := testContext.SourceMetadataRepository.GetLastByBackupID(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
-	assert.Equal(t, 2, len(sourceMetadataForBackup))
-
-	totalElementsFound := 0
-	for _, meta := range sourceMetadataForBackup {
-		if meta.Source == "table_to_update" && meta.SourceChecksum == "222" {
-			totalElementsFound++
-		} else if meta.Source == "table_to_update" && meta.SourceChecksum == "old checksum" {
-			totalElementsFound++
-		}
-	}
-	assert.Equal(t, 2, totalElementsFound)
+	assert.Equal(t, 1, len(sourceMetadataForBackup))
+	assert.Equal(t, "222", sourceMetadataForBackup[0].SourceChecksum)
 }
 
 func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_removeData(t *testing.T) {
@@ -156,7 +147,8 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_removeData(t 
 
 	sourceMetadataForBackup, err := testContext.SourceMetadataRepository.GetLastByBackupID(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
-	assert.Equal(t, 2, len(sourceMetadataForBackup))
+	require.Equal(t, 1, len(sourceMetadataForBackup))
+	assert.True(t, repository.Delete.EqualTo(sourceMetadataForBackup[0].Operation))
 }
 
 func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionedTable_updateData(t *testing.T) {
@@ -217,14 +209,16 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionTables_expectChanges(t *
 	testContext.BigQuery.fDoesTableHasPartitions = true
 	testContext.BigQuery.fGetTable = &bq.Table{Name: "partition", Checksum: "111"}
 	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "partition", Checksum: "000"})
-	testContext.BigQuery.fGetTablePartitions = append(testContext.BigQuery.fGetTablePartitions, &bq.Table{Name: "partition$20190101", Checksum: "111"})
-	testContext.BigQuery.fGetTablePartitions = append(testContext.BigQuery.fGetTablePartitions, &bq.Table{Name: "partition$20190102", Checksum: "222"})
-	testContext.BigQuery.fGetTablePartitions = append(testContext.BigQuery.fGetTablePartitions, &bq.Table{Name: "partition$20190103", Checksum: "222"})
+	testContext.BigQuery.fGetTablePartitions = []*bq.Table{
+		{Name: "partition$20190101", Checksum: "111"},
+		{Name: "partition$20190102", Checksum: "222"},
+		{Name: "partition$20190103", Checksum: "222"},
+	}
 	_, err = testContext.SourceMetadataRepository.Add(ctx, []*repository.SourceMetadata{
-		{BackupID: backup.ID, Source: "partition$20190101", SourceChecksum: "111"}, // do nothing
-		{BackupID: backup.ID, Source: "partition$20190102", SourceChecksum: "111"}, // update
-		{BackupID: backup.ID, Source: "partition$20190103", SourceChecksum: "111"}, // update
-		{BackupID: backup.ID, Source: "partition$20190104", SourceChecksum: "111"}, // delete source
+		{BackupID: backup.ID, Source: "partition$20190101", SourceChecksum: "111", Operation: repository.Add.String()}, // do nothing
+		{BackupID: backup.ID, Source: "partition$20190102", SourceChecksum: "111", Operation: repository.Add.String()}, // update
+		{BackupID: backup.ID, Source: "partition$20190103", SourceChecksum: "111", Operation: repository.Add.String()}, // update
+		{BackupID: backup.ID, Source: "partition$20190104", SourceChecksum: "111", Operation: repository.Add.String()}, // delete source
 	})
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
@@ -239,7 +233,136 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionTables_expectChanges(t *
 
 	sourceMetadataForBackup, err := testContext.SourceMetadataRepository.GetLastByBackupID(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
-	assert.Equal(t, 7, len(sourceMetadataForBackup))
+	require.Equal(t, 4, len(sourceMetadataForBackup))
+	assert.True(t, repository.Add.EqualTo(findMetadataBySource(sourceMetadataForBackup, "partition$20190101").Operation))
+	assert.True(t, repository.Update.EqualTo(findMetadataBySource(sourceMetadataForBackup, "partition$20190102").Operation))
+	assert.True(t, repository.Update.EqualTo(findMetadataBySource(sourceMetadataForBackup, "partition$20190103").Operation))
+	assert.True(t, repository.Delete.EqualTo(findMetadataBySource(sourceMetadataForBackup, "partition$20190104").Operation))
+}
+
+func TestBigQueryJobCreator_PrepareJobs_Snapshot_partitionTables_withJobsThatAreAlreadyScheduled_expectChanges(t *testing.T) {
+	// Given
+	ctx := context.Background()
+	testContext := givenATestContext()
+	backup := newBigQuerySnapshotBackup("partitionTables_expectChanges_snapshot", "dataset", []string{})
+	_, err := testContext.BackupRepository.AddBackup(ctx, backup)
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
+	testContext.BigQuery.fDoesDatasetExists = true
+	testContext.BigQuery.fDoesTableHasPartitions = true
+	testContext.BigQuery.fGetTable = &bq.Table{Name: "partition", Checksum: "111"}
+	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "partition", Checksum: "000"})
+	testContext.BigQuery.fGetTablePartitions = []*bq.Table{
+		{Name: "partition$20190101", Checksum: "111"}, // add
+		{Name: "partition$20190102", Checksum: "111"}, // do nothing - job exist with status not scheduled
+		{Name: "partition$20190103", Checksum: "111"}, // do nothing - job exist with status quota error
+		{Name: "partition$20190104", Checksum: "111"}, // add
+	}
+	err = testContext.MemoryJobRepository.AddJobs(ctx, []*repository.Job{
+		{BackupID: backup.ID, Source: "partition$20190102", ID: "existing-job-1", Type: repository.BigQuery, Status: repository.NotScheduled},
+		{BackupID: backup.ID, Source: "partition$20190103", ID: "existing-job-2", Type: repository.BigQuery, Status: repository.FinishedQuotaError},
+	})
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
+	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
+	// When
+	err = bigQueryJobCreator.PrepareJobs(ctx, backup)
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
+
+	// Then
+	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
+	assert.Equal(t, 3, len(jobsForBackup))
+}
+
+func TestBigQueryJobCreator_PrepareJobs_partitionTables_Mirror_withJobsThatAreAlreadyScheduled_expectChanges(t *testing.T) {
+	// Given
+	ctx := context.Background()
+	testContext := givenATestContext()
+	backup := newBigQueryMirrorBackup("partitionTables_expectChanges_mirror", "dataset", []string{})
+	_, err := testContext.BackupRepository.AddBackup(ctx, backup)
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
+	testContext.BigQuery.fDoesDatasetExists = true
+	testContext.BigQuery.fDoesTableHasPartitions = true
+	testContext.BigQuery.fGetTable = &bq.Table{Name: "partition", Checksum: "111"}
+	testContext.BigQuery.fGetTablesInDataset = append(testContext.BigQuery.fGetTablesInDataset, &bq.Table{Name: "partition", Checksum: "000"})
+	currentSourceMetadata, err := testContext.SourceMetadataRepository.Add(ctx, []*repository.SourceMetadata{
+		{BackupID: backup.ID, Source: "partition$20190101", SourceChecksum: "111", Operation: repository.Add.String()},
+		{BackupID: backup.ID, Source: "partition$20190102", SourceChecksum: "111", Operation: repository.Add.String()},
+		{BackupID: backup.ID, Source: "partition$20190103", SourceChecksum: "111", Operation: repository.Add.String()},
+		{BackupID: backup.ID, Source: "partition$20190104", SourceChecksum: "111", Operation: repository.Add.String()},
+	})
+	assert.Equal(t, 4, len(currentSourceMetadata))
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
+	testContext.BigQuery.fGetTablePartitions = []*bq.Table{
+		{Name: "partition$20190101", Checksum: "111"}, // same checksum - do nothing
+		{Name: "partition$20190102", Checksum: "111"}, // same checksum - do nothing - job exist with status not scheduled
+		{Name: "partition$20190103", Checksum: "111"}, // same checksum - do nothing - job exist with status quota error
+		{Name: "partition$20190104", Checksum: "222"}, // new checksum - but job exist with status not scheduled - so new job
+		{Name: "partition$20190105", Checksum: "111"}, // new partition - add
+	}
+	err = testContext.MemoryJobRepository.AddJobs(ctx, []*repository.Job{
+		{BackupID: backup.ID, Source: "partition$20190101", ID: "existing-job-0", Type: repository.BigQuery, Status: repository.FinishedOk},
+		{BackupID: backup.ID, Source: "partition$20190102", ID: "existing-job-1", Type: repository.BigQuery, Status: repository.NotScheduled},
+		{BackupID: backup.ID, Source: "partition$20190103", ID: "existing-job-2", Type: repository.BigQuery, Status: repository.FinishedQuotaError},
+		{BackupID: backup.ID, Source: "partition$20190104", ID: "existing-job-3", Type: repository.BigQuery, Status: repository.NotScheduled},
+	})
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
+
+	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
+	// When
+	err = bigQueryJobCreator.PrepareJobs(ctx, backup)
+	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
+
+	// Then
+	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
+	assert.Equal(t, 4, len(jobsForBackup))
+
+	sourceMetadataForBackup, err := testContext.SourceMetadataRepository.GetLastByBackupID(ctx, backup.ID)
+	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
+	assert.Equal(t, 5, len(sourceMetadataForBackup))
+
+	rs, ok := testContext.SourceMetadataRepository.(*memory.SourceMetadataRepository)
+	require.True(t, ok, "expected SourceMetadataRepository to be of type memory.SourceMetadataRepository")
+	// check that partition$20190104 is marked as deleted
+	var found bool
+	for _, sourceMetadata := range rs.SourceMetadatas {
+		if sourceMetadata.Source == "partition$20190104" && sourceMetadata.SourceChecksum == "111" {
+			assert.False(t, sourceMetadata.DeletedTimestamp.IsZero())
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "expected to find source metadata entry for partition$20190104 that is marked as deleted")
+
+	// we let previously scheduled jobs partition$20190104 to run even if the checksum changed
+	// otherwise we would need to delete rows from repository what is not a good idea for the backup solution
+	assert.Equal(t, 2, countUniqueJobsForSource(jobsForBackup, "partition$20190104"))
+	assert.Equal(t, 1, countUniqueJobsForSource(jobsForBackup, "partition$20190105"))
+}
+
+func countUniqueJobsForSource(jobs []*repository.Job, source string) int {
+	jobsFound := make(map[string]int)
+	for _, job := range jobs {
+		if job.Source == source {
+			jobsFound[job.ID]++
+		}
+	}
+	var rs int
+	for _, count := range jobsFound {
+		if count == 1 {
+			rs++
+		}
+	}
+	return rs
+}
+
+func findMetadataBySource(metadata []*repository.SourceMetadata, source string) *repository.SourceMetadata {
+	for _, sm := range metadata {
+		if sm.Source == source {
+			return sm
+		}
+	}
+	return nil
 }
 
 func TestBigQueryJobCreator_PrepareJobs_Snapshot_nonPartitionTables_expectNewJob(t *testing.T) {

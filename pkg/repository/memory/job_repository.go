@@ -70,10 +70,15 @@ func (r *JobRepository) GetByJobTypeAndStatus(ctxIn context.Context, backupType 
 	return jobs, err
 }
 
-func (r *JobRepository) GetByBackupIdAndSourceAndStatus(ctx context.Context, backupId string, source string, status repository.JobStatus) (rs []*repository.Job, err error) {
+func (r *JobRepository) GetByBackupIdAndSourceAndStatus(ctx context.Context, backupId string, source string, status ...repository.JobStatus) (rs []*repository.Job, err error) {
 	for _, job := range r.jobs {
-		if job.BackupID == backupId && job.Source == source && job.Status == status {
-			rs = append(rs, job)
+		if job.BackupID == backupId && job.Source == source {
+			for _, jobStatus := range status {
+				if job.Status == jobStatus {
+					rs = append(rs, job)
+					break
+				}
+			}
 		}
 	}
 	return

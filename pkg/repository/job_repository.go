@@ -35,7 +35,7 @@ type JobRepository interface {
 	MarkDeleted(context.Context, string) error
 	GetByJobTypeAndStatusAndLimit(context.Context, BackupType, JobStatus, uint) ([]*Job, error)
 	GetByJobTypeAndStatus(context.Context, BackupType, ...JobStatus) ([]*Job, error)
-	GetByBackupIdAndSourceAndStatus(context.Context, string, string, JobStatus) ([]*Job, error)
+	GetByBackupIdAndSourceAndStatus(context.Context, string, string, ...JobStatus) ([]*Job, error)
 	GetByStatusAndBefore(context.Context, []JobStatus, int) ([]*Job, error)
 	PatchJobStatus(ctx context.Context, patch JobPatch) error
 	GetJobsForBackupID(ctx context.Context, backupID string, jobPage Page, status ...JobStatus) ([]*Job, error)
@@ -51,7 +51,7 @@ type defaultJobRepository struct {
 	storageService *service.Service
 }
 
-func (d *defaultJobRepository) GetByBackupIdAndSourceAndStatus(ctxIn context.Context, backupId string, source string, status JobStatus) ([]*Job, error) {
+func (d *defaultJobRepository) GetByBackupIdAndSourceAndStatus(ctxIn context.Context, backupId string, source string, status ...JobStatus) ([]*Job, error) {
 	_, span := trace.StartSpan(ctxIn, "GetByBackupIdAndSourceAndStatus")
 	defer span.End()
 	var jobs []*Job

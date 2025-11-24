@@ -2,13 +2,15 @@ package memory
 
 import (
 	"context"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opencensus.io/trace"
 )
 
 // SourceMetadataRepository storage for a source metadata
 type SourceMetadataRepository struct {
-	sourceMetadatas []*repository.SourceMetadata
+	SourceMetadatas []*repository.SourceMetadata
 }
 
 // Add create a new source metadata
@@ -17,7 +19,7 @@ func (r *SourceMetadataRepository) Add(ctxIn context.Context, sourceMetadata []*
 	defer span.End()
 
 	maxID := 0
-	for _, s := range r.sourceMetadatas {
+	for _, s := range r.SourceMetadatas {
 		if maxID < s.ID {
 			maxID = s.ID
 		}
@@ -25,7 +27,7 @@ func (r *SourceMetadataRepository) Add(ctxIn context.Context, sourceMetadata []*
 	for _, input := range sourceMetadata {
 		maxID++
 		input.ID = maxID
-		r.sourceMetadatas = append(r.sourceMetadatas, input)
+		r.SourceMetadatas = append(r.SourceMetadatas, input)
 	}
 	return sourceMetadata, nil
 }
@@ -35,10 +37,15 @@ func (r *SourceMetadataRepository) GetLastByBackupID(ctxIn context.Context, back
 	_, span := trace.StartSpan(ctxIn, "(*SourceMetadataRepository).GetLastByBackupID")
 	defer span.End()
 
-	for _, s := range r.sourceMetadatas {
-		if s.BackupID == backupID {
-			sourceMetadata = append(sourceMetadata, s)
+	// get the newest version for each source
+	versions := make(map[string]bool)
+	for i := len(r.SourceMetadatas) - 1; i >= 0; i-- {
+		curr := r.SourceMetadatas[i]
+		if _, ok := versions[curr.Source]; ok {
+			continue
 		}
+		sourceMetadata = append(sourceMetadata, curr)
+		versions[curr.Source] = true
 	}
 	return sourceMetadata, err
 }
@@ -48,10 +55,9 @@ func (r *SourceMetadataRepository) MarkDeleted(ctxIn context.Context, id int) er
 	_, span := trace.StartSpan(ctxIn, "(*SourceMetadataRepository).MarkDeleted")
 	defer span.End()
 
-	for i, s := range r.sourceMetadatas {
+	for i, s := range r.SourceMetadatas {
 		if s.ID == id {
-			r.sourceMetadatas[i] = r.sourceMetadatas[len(r.sourceMetadatas)-1] // Replace it with the last one.
-			r.sourceMetadatas = r.sourceMetadatas[:len(r.sourceMetadatas)-1]   // Chop off the last one.
+			r.SourceMetadatas[i].DeletedTimestamp = time.Now()
 			break
 		}
 	}

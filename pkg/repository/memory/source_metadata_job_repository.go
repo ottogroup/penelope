@@ -2,6 +2,8 @@ package memory
 
 import (
 	"context"
+	"fmt"
+
 	"go.opencensus.io/trace"
 )
 
@@ -23,4 +25,14 @@ func (r *DefaultSourceMetadataJobRepository) Add(ctxIn context.Context, sourceMe
 
 	r.sourceMetadataJobs = append(r.sourceMetadataJobs, &SourceMetadataJob{SourceMetadataID: sourceMetadataID, JobID: jobID})
 	return nil
+}
+
+func (r *DefaultSourceMetadataJobRepository) SetSourceMetadataID(ctx context.Context, jobID string, sourceMetadataID int) error {
+	for _, job := range r.sourceMetadataJobs {
+		if job.JobID == jobID {
+			job.SourceMetadataID = sourceMetadataID
+			return nil
+		}
+	}
+	return fmt.Errorf("source metadata job id %s not found", jobID)
 }
