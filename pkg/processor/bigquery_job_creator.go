@@ -14,6 +14,8 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+const batchSize = 100
+
 // BigQueryJobCreator prepares jobs for BigQuery
 type BigQueryJobCreator struct {
 	BackupRepository            repository.BackupRepository
@@ -71,8 +73,8 @@ func (b *BigQueryJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *
 		return err
 	}
 
-	for i := 0; i < len(tables); i += 100 {
-		end := i + 100
+	for i := 0; i < len(tables); i += batchSize {
+		end := i + batchSize
 		if end > len(tables) {
 			end = len(tables)
 		}
@@ -83,7 +85,7 @@ func (b *BigQueryJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *
 		for _, table := range batch {
 			rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled, repository.FinishedQuotaError)
 			if err == nil && len(rs) > 0 {
-				glog.Infof("snapshot job for backup with id %s and table %s already exists, skipping", backup.ID, table.Name)
+				glog.Infof("snapshot job for backup with id %s and table %s already exists", backup.ID, table.Name)
 				continue
 			} else if err != nil {
 				glog.Errorf("error checking existing snapshot jobs for backup with id %s and table %s: %s", backup.ID, table.Name, err)
@@ -91,7 +93,9 @@ func (b *BigQueryJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *
 			}
 			jobs = append(jobs, newJob(backup.ID, table.Name))
 		}
-		err = b.JobRepository.AddJobs(ctx, jobs)
+		if len(jobs) > 0 {
+			err = b.JobRepository.AddJobs(ctx, jobs)
+		}
 	}
 
 	if err == nil {
@@ -116,7 +120,7 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 	for _, table := range tables {
 		rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled, repository.FinishedQuotaError)
 		if err == nil && len(rs) > 0 {
-			glog.Infof("mirror job for backup with id %s and table %s already exists, skipping", backup.ID, table.Name)
+			glog.Infof("mirror job for backup with id %s and table %s already exists", backup.ID, table.Name)
 			pendingJobForTables = append(pendingJobForTables, table)
 			continue
 		} else if err != nil {
@@ -145,32 +149,14 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 		}
 	}
 
-	/*
-		there can be case when the table is in state NotScheduled/QuotaError and the checksum have changed for that case we need to
-		* Job - create
-		* SourceMetadataJob - create
-		* SourceMetadata - mark last one as deleted and add a new one
-	*/
-	for _, currentMetadata := range currentMetadatas {
-	outer:
-		for _, pendingJobForTable := range pendingJobForTables {
-			for _, newJobDescriptor := range newJobDescriptors {
-				if (repository.Add.EqualTo(currentMetadata.Operation) || repository.Update.EqualTo(currentMetadata.Operation)) &&
-					currentMetadata.Source == pendingJobForTable.Name &&
-					pendingJobForTable.Name == newJobDescriptor.table &&
-					pendingJobForTable.Checksum != currentMetadata.SourceChecksum {
-					jobs = append(jobs, newJob(backup.ID, newJobDescriptor.table))
-					err = b.SourceMetadataRepository.MarkDeleted(ctxIn, currentMetadata.ID)
-					if err != nil {
-						return fmt.Errorf("error marking job %d as deleted: %s", currentMetadata.ID, err)
-					}
-					break outer
-				}
-			}
-		}
+	err = b.makeSureThatForThePreviouslyScheduledTablesNewJobsAreCreatedWhenTableChanged(ctxIn, backup, currentMetadatas, pendingJobForTables, newJobDescriptors, &jobs)
+	if err != nil {
+		return err
 	}
 
-	err = b.JobRepository.AddJobs(ctx, jobs)
+	if len(jobs) > 0 {
+		err = b.JobRepository.AddJobs(ctx, jobs)
+	}
 	if err != nil {
 		return err
 	}
@@ -189,6 +175,40 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 
 	err = b.BackupRepository.UpdateLastScheduledTime(ctx, backup.ID, time.Now(), repository.Prepared)
 	return err
+}
+func (b *BigQueryJobCreator) makeSureThatForThePreviouslyScheduledTablesNewJobsAreCreatedWhenTableChanged(
+	ctxIn context.Context,
+	backup *repository.Backup,
+	currentMetadatas []*repository.SourceMetadata,
+	pendingJobForTables []*bigquery.Table,
+	newJobDescriptors []*jobDescriptor,
+	jobs *[]*repository.Job,
+) error {
+	/*
+		there can be case when the table is in state NotScheduled/QuotaError and the checksum have changed for that case we need to
+		* Job - create
+		* SourceMetadataJob - create (done already in pendingJobForTables)
+		* SourceMetadata - create (done already in newJobDescriptors), mark current one as deleted
+	*/
+	for _, currentMetadata := range currentMetadatas {
+	outer:
+		for _, pendingJobForTable := range pendingJobForTables {
+			for _, newJobDescriptor := range newJobDescriptors {
+				if (repository.Add.EqualTo(currentMetadata.Operation) || repository.Update.EqualTo(currentMetadata.Operation)) &&
+					currentMetadata.Source == pendingJobForTable.Name &&
+					pendingJobForTable.Name == newJobDescriptor.table &&
+					pendingJobForTable.Checksum != currentMetadata.SourceChecksum {
+					*jobs = append(*jobs, newJob(backup.ID, newJobDescriptor.table))
+					err := b.SourceMetadataRepository.MarkDeleted(ctxIn, currentMetadata.ID)
+					if err != nil {
+						return fmt.Errorf("error marking job %d as deleted: %s", currentMetadata.ID, err)
+					}
+					break outer
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *repository.Backup) (flattenedTables []*bigquery.Table, err error) {

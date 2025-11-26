@@ -33,7 +33,7 @@ type JobRepository interface {
 	DeleteJob(context.Context, string) error
 	GetJob(context.Context, string) (*Job, error)
 	MarkDeleted(context.Context, string) error
-	GetByJobTypeAndStatusAndLimit(context.Context, BackupType, JobStatus, uint) ([]*Job, error)
+	ListByTypeAndStatusWithLimit(context.Context, BackupType, JobStatus, uint) ([]*Job, error)
 	GetByJobTypeAndStatus(context.Context, BackupType, ...JobStatus) ([]*Job, error)
 	GetByBackupIdAndSourceAndStatus(context.Context, string, string, ...JobStatus) ([]*Job, error)
 	GetByStatusAndBefore(context.Context, []JobStatus, int) ([]*Job, error)
@@ -304,8 +304,8 @@ func (d *defaultJobRepository) GetBackupRestoreJobs(ctxIn context.Context, backu
 }
 
 // GetByJobTypeAndStatusAndLimit filter backup jobs by status and type with limit
-func (d *defaultJobRepository) GetByJobTypeAndStatusAndLimit(ctxIn context.Context, backupType BackupType, status JobStatus, limit uint) ([]*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetByJobTypeAndStatusAndLimit")
+func (d *defaultJobRepository) ListByTypeAndStatusWithLimit(ctxIn context.Context, backupType BackupType, status JobStatus, limit uint) ([]*Job, error) {
+	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).ListByTypeAndStatusWithLimit")
 	defer span.End()
 
 	var jobs []*Job

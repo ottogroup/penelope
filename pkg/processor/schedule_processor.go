@@ -115,9 +115,9 @@ func (d *defaultScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Co
 
 func (d *defaultScheduleProcessor) GetNextBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {
 	if backupType == repository.CloudStorage {
-		return d.jobRepository.GetByJobTypeAndStatusAndLimit(ctxIn, backupType, repository.NotScheduled, cloudStorageBatchLimit)
+		return d.jobRepository.ListByTypeAndStatusWithLimit(ctxIn, backupType, repository.NotScheduled, cloudStorageBatchLimit)
 	} else if backupType == repository.BigQuery {
-		return d.jobRepository.GetByJobTypeAndStatusAndLimit(ctxIn, backupType, repository.NotScheduled, bigQueryBatchLimit)
+		return d.jobRepository.ListByTypeAndStatusWithLimit(ctxIn, backupType, repository.NotScheduled, bigQueryBatchLimit)
 	}
 	return nil, fmt.Errorf("unknown backup type %v", backupType.String())
 }

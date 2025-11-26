@@ -68,7 +68,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_expectNewJob(
 	err := bigQueryJobCreator.PrepareJobs(ctx, backup)
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
 	assert.Equal(t, 1, len(jobsForBackup))
 }
@@ -88,7 +88,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_expectNoNewJo
 	err := bigQueryJobCreator.PrepareJobs(ctx, backup)
 	// Then
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
 	assert.Equal(t, 0, len(jobsForBackup))
 }
@@ -112,7 +112,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_updateData(t 
 	err := bigQueryJobCreator.PrepareJobs(ctx, backup)
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
 	assert.Equal(t, 1, len(jobsForBackup))
 
@@ -142,7 +142,8 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_nonPartitionedTable_removeData(t 
 	err = bigQueryJobCreator.PrepareJobs(ctx, backup)
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	// ctxIn context.Context, backupID string, jobPage repository.Page, status ...repository.JobStatus
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
 	assert.Equalf(t, 0, len(jobsForBackup), "expected no new job")
 
@@ -166,7 +167,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionedTable_updateData(t *te
 	err := bigQueryJobCreator.PrepareJobs(ctx, backup)
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
 	assert.Equal(t, 1, len(jobsForBackup))
 
@@ -190,7 +191,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_tablesWereDeletedOtherArePresentI
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
 	assert.Equal(t, 0, len(jobsForBackup))
 
@@ -228,7 +229,7 @@ func TestBigQueryJobCreator_PrepareJobs_Mirror_partitionTables_expectChanges(t *
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
 	assert.Equal(t, 2, len(jobsForBackup))
 
@@ -269,7 +270,7 @@ func TestBigQueryJobCreator_PrepareJobs_Snapshot_partitionTables_withJobsThatAre
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
 	assert.Equal(t, 3, len(jobsForBackup))
 }
@@ -326,7 +327,7 @@ func TestBigQueryJobCreator_PrepareJobs_partitionTables_Mirror_withJobsThatAreAl
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting last jobs for backup %s", backup.ID)
 	assert.Equal(t, 4, len(jobsForBackup))
 
@@ -422,7 +423,7 @@ func TestBigQueryJobCreator_PrepareJobs_Snapshot_nonPartitionTables_expectNewJob
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
 	assert.Equal(t, 1, len(jobsForBackup))
 }
@@ -447,7 +448,7 @@ func TestBigQueryJobCreator_PrepareJobs_Snapshot_partitionTables_expectNewJobs(t
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
 	assert.Equal(t, 4, len(jobsForBackup))
 }
@@ -467,7 +468,7 @@ func TestBigQueryJobCreator_PrepareJobs_Snapshot_partitionTable_expectNewJobs(t 
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
 	assert.Equal(t, 1, len(jobsForBackup))
 }
@@ -500,7 +501,7 @@ func TestCloudStorageJobCreator_PrepareJobs_SimpleBucket(t *testing.T) {
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
 
 	// Then
-	jobsForBackup, err := testContext.MemoryJobRepository.GetLastJobsForBackup(ctx, backup.ID)
+	jobsForBackup, err := testContext.MemoryJobRepository.ListNotScheduledJobsForBackup(ctx, backup.ID)
 	require.NoErrorf(t, err, "should getting sourceMetadata for backup %s", backup.ID)
 	assert.Equal(t, 1, len(jobsForBackup))
 }
