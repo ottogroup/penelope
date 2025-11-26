@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"regexp"
+	"strings"
 	"testing"
 
 	"cloud.google.com/go/iam"
@@ -306,6 +307,18 @@ func TestBigQueryJobCreator_PrepareJobs_partitionTables_Mirror_withJobsThatAreAl
 		{BackupID: backup.ID, Source: "partition$20190104", ID: "existing-job-3", Type: repository.BigQuery, Status: repository.NotScheduled},
 	})
 	require.NoErrorf(t, err, "should prepare jobs for backup %s", backup.ID)
+	for _, entry := range []struct {
+		jobID      int
+		metadataID string
+	}{
+		{jobID: currentSourceMetadata[0].ID, metadataID: "existing-job-0"},
+		{jobID: currentSourceMetadata[1].ID, metadataID: "existing-job-1"},
+		{jobID: currentSourceMetadata[2].ID, metadataID: "existing-job-2"},
+		{jobID: currentSourceMetadata[3].ID, metadataID: "existing-job-3"},
+	} {
+		err = testContext.SourceMetadataJobRepository.Add(ctx, entry.jobID, entry.metadataID)
+		require.NoErrorf(t, err, "should add connection between jobs and source_metadata backup %s", backup.ID)
+	}
 
 	bigQueryJobCreator := givenABigQueryJobCreatorWithTestContext(testContext)
 	// When
@@ -338,6 +351,34 @@ func TestBigQueryJobCreator_PrepareJobs_partitionTables_Mirror_withJobsThatAreAl
 	// otherwise we would need to delete rows from repository what is not a good idea for the backup solution
 	assert.Equal(t, 2, countUniqueJobsForSource(jobsForBackup, "partition$20190104"))
 	assert.Equal(t, 1, countUniqueJobsForSource(jobsForBackup, "partition$20190105"))
+
+	smjr, ok := testContext.SourceMetadataJobRepository.(*memory.DefaultSourceMetadataJobRepository)
+	require.True(t, ok, "expected SourceMetadataJobRepository to be of type memory.DefaultSourceMetadataJobRepository")
+
+	var newJobs []*repository.Job
+	for _, job := range jobsForBackup {
+		if !strings.HasPrefix(job.ID, "existing-job-") {
+			newJobs = append(newJobs, job)
+		}
+	}
+	for _, job := range newJobs {
+		var foundJob bool
+		var foundSourceMetadataForJob bool
+	outer:
+		for _, sourceMetadataJob := range smjr.SourceMetadataJobs {
+			if sourceMetadataJob.JobID == job.ID {
+				foundJob = true
+				for _, sourceMetadata := range rs.SourceMetadatas {
+					if sourceMetadata.ID == sourceMetadataJob.SourceMetadataID {
+						foundSourceMetadataForJob = true
+						break outer
+					}
+				}
+			}
+		}
+		assert.True(t, foundJob, "expected to find connection between job %s and source metadata", job.ID)
+		assert.True(t, foundSourceMetadataForJob, "expected to find source metadata for job %s", job.ID)
+	}
 }
 
 func countUniqueJobsForSource(jobs []*repository.Job, source string) int {
