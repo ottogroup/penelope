@@ -149,7 +149,7 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 		}
 	}
 
-	err = b.makeSureThatForThePreviouslyScheduledTablesNewJobsAreCreatedWhenTableChanged(ctxIn, backup, currentMetadatas, pendingJobForTables, newJobDescriptors, &jobs)
+	err = b.handleNewRevisionForTableWhenPreviousJobIsNotScheduled(ctxIn, backup, currentMetadatas, pendingJobForTables, newJobDescriptors, &jobs)
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 	err = b.BackupRepository.UpdateLastScheduledTime(ctx, backup.ID, time.Now(), repository.Prepared)
 	return err
 }
-func (b *BigQueryJobCreator) makeSureThatForThePreviouslyScheduledTablesNewJobsAreCreatedWhenTableChanged(
+func (b *BigQueryJobCreator) handleNewRevisionForTableWhenPreviousJobIsNotScheduled(
 	ctxIn context.Context,
 	backup *repository.Backup,
 	currentMetadatas []*repository.SourceMetadata,
