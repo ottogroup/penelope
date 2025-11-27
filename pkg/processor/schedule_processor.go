@@ -18,6 +18,15 @@ type TrashcanEntry struct {
 	Source   string
 }
 
+const (
+	// bigQueryBatchLimit defines how many jobs are processed in one batch
+	// Penelope can process around 245 jobs per minute for BigQuery and ca. 200MB of memory usage
+	bigQueryBatchLimit = 1800
+	// cloudStorageBatchLimit defines how many jobs are processed in one batch
+	// quota rate limits for Transfer Service is 600 per minute but having in mind request latency we set limit to 100
+	cloudStorageBatchLimit = 100
+)
+
 // ScheduleProcessor defines operation for scheduling
 type ScheduleProcessor interface {
 	CreateBigQueryJobCreator(ctxIn context.Context, client bigquery.Client) *BigQueryJobCreator
@@ -105,7 +114,12 @@ func (d *defaultScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Co
 }
 
 func (d *defaultScheduleProcessor) GetNextBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {
-	return d.jobRepository.GetByJobTypeAndStatus(ctxIn, backupType, repository.NotScheduled)
+	if backupType == repository.CloudStorage {
+		return d.jobRepository.ListByTypeAndStatusWithLimit(ctxIn, backupType, repository.NotScheduled, cloudStorageBatchLimit)
+	} else if backupType == repository.BigQuery {
+		return d.jobRepository.ListByTypeAndStatusWithLimit(ctxIn, backupType, repository.NotScheduled, bigQueryBatchLimit)
+	}
+	return nil, fmt.Errorf("unknown backup type %v", backupType.String())
 }
 
 func (d *defaultScheduleProcessor) GetScheduledBackupJobs(ctxIn context.Context, backupType repository.BackupType) ([]*repository.Job, error) {

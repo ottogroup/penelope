@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
 	"go.opencensus.io/trace"

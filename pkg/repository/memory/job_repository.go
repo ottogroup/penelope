@@ -38,6 +38,23 @@ func (r *JobRepository) GetBackupRestoreJobs(ctxIn context.Context, backupID, jo
 	panic("implement me")
 }
 
+// GetByJobTypeAndStatusAndLimit filter backup jobs by status and type with limit
+func (r *JobRepository) ListByTypeAndStatusWithLimit(ctxIn context.Context, backupType repository.BackupType, jobStatus repository.JobStatus, limit uint) (jobs []*repository.Job, err error) {
+	_, span := trace.StartSpan(ctxIn, "(*JobRepository).ListByTypeAndStatusWithLimit")
+	defer span.End()
+	for _, j := range r.jobs {
+		if j.Type == backupType && j.Status == jobStatus {
+			jobs = append(jobs, j)
+		}
+	}
+	if len(jobs) == 0 {
+		return jobs, err
+	} else if uint(len(jobs)) < limit {
+		limit = uint(len(jobs))
+	}
+	return jobs[:limit], err
+}
+
 // GetByJobTypeAndStatus filter backup jobs by status and type
 func (r *JobRepository) GetByJobTypeAndStatus(ctxIn context.Context, backupType repository.BackupType, jobStatus ...repository.JobStatus) (jobs []*repository.Job, err error) {
 	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetByJobTypeAndStatus")
@@ -51,6 +68,20 @@ func (r *JobRepository) GetByJobTypeAndStatus(ctxIn context.Context, backupType 
 		}
 	}
 	return jobs, err
+}
+
+func (r *JobRepository) GetByBackupIdAndSourceAndStatus(ctx context.Context, backupId string, source string, status ...repository.JobStatus) (rs []*repository.Job, err error) {
+	for _, job := range r.jobs {
+		if job.BackupID == backupId && job.Source == source {
+			for _, jobStatus := range status {
+				if job.Status == jobStatus {
+					rs = append(rs, job)
+					break
+				}
+			}
+		}
+	}
+	return
 }
 
 // GetByStatusAndBefore is not implemented
@@ -147,9 +178,9 @@ func (r *JobRepository) MarkDeleted(ctxIn context.Context, jobID string) error {
 	return nil
 }
 
-// GetLastJobsForBackup get backup jos that weren't scheduled
-func (r *JobRepository) GetLastJobsForBackup(ctxIn context.Context, backupID string) (jobs []*repository.Job, err error) {
-	_, span := trace.StartSpan(ctxIn, "(*JobRepository).GetLastJobsForBackup")
+// ListNotScheduledJobsForBackup get backup jos that weren't scheduled
+func (r *JobRepository) ListNotScheduledJobsForBackup(ctxIn context.Context, backupID string) (jobs []*repository.Job, err error) {
+	_, span := trace.StartSpan(ctxIn, "(*JobRepository).ListNotScheduledJobsForBackup")
 	defer span.End()
 
 	for _, j := range r.jobs {

@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+
 	"go.opencensus.io/trace"
 )
 
@@ -13,7 +14,7 @@ type SourceMetadataJob struct {
 
 // DefaultSourceMetadataJobRepository gives possibility to add new SourceMetadataJob
 type DefaultSourceMetadataJobRepository struct {
-	sourceMetadataJobs []*SourceMetadataJob
+	SourceMetadataJobs []*SourceMetadataJob
 }
 
 // Add gives possibility add new SourceMetadataJob
@@ -21,6 +22,6 @@ func (r *DefaultSourceMetadataJobRepository) Add(ctxIn context.Context, sourceMe
 	_, span := trace.StartSpan(ctxIn, "(*DefaultSourceMetadataJobRepository).Add")
 	defer span.End()
 
-	r.sourceMetadataJobs = append(r.sourceMetadataJobs, &SourceMetadataJob{SourceMetadataID: sourceMetadataID, JobID: jobID})
+	r.SourceMetadataJobs = append(r.SourceMetadataJobs, &SourceMetadataJob{SourceMetadataID: sourceMetadataID, JobID: jobID})
 	return nil
 }

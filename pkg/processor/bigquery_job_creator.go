@@ -14,6 +14,8 @@ import (
 	"google.golang.org/api/googleapi"
 )
 
+const batchSize = 100
+
 // BigQueryJobCreator prepares jobs for BigQuery
 type BigQueryJobCreator struct {
 	BackupRepository            repository.BackupRepository
@@ -71,12 +73,31 @@ func (b *BigQueryJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *
 		return err
 	}
 
-	var jobs []*repository.Job
-	for _, table := range tables {
-		jobs = append(jobs, newJob(backup.ID, table.Name))
+	for i := 0; i < len(tables); i += batchSize {
+		end := i + batchSize
+		if end > len(tables) {
+			end = len(tables)
+		}
+		batch := tables[i:end]
+
+		// Process batch
+		var jobs []*repository.Job
+		for _, table := range batch {
+			rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled, repository.FinishedQuotaError)
+			if err == nil && len(rs) > 0 {
+				glog.Infof("snapshot job for backup with id %s and table %s already exists", backup.ID, table.Name)
+				continue
+			} else if err != nil {
+				glog.Errorf("error checking existing snapshot jobs for backup with id %s and table %s: %s", backup.ID, table.Name, err)
+				continue
+			}
+			jobs = append(jobs, newJob(backup.ID, table.Name))
+		}
+		if len(jobs) > 0 {
+			err = b.JobRepository.AddJobs(ctx, jobs)
+		}
 	}
 
-	err = b.JobRepository.AddJobs(ctx, jobs)
 	if err == nil {
 		err = b.BackupRepository.UpdateLastScheduledTime(ctx, backup.ID, time.Now(), repository.Prepared)
 	}
@@ -93,25 +114,57 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 		return err
 	}
 
-	jobDescriptors, err := b.collateState(ctx, backup.ID, tables)
+	// Process batch
+	var newTables []*bigquery.Table
+	var pendingJobForTables []*bigquery.Table
+	for _, table := range tables {
+		rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled, repository.FinishedQuotaError)
+		if err == nil && len(rs) > 0 {
+			glog.Infof("mirror job for backup with id %s and table %s already exists", backup.ID, table.Name)
+			pendingJobForTables = append(pendingJobForTables, table)
+			continue
+		} else if err != nil {
+			glog.Errorf("error checking existing mirror jobs for backup with id %s and table %s: %s", backup.ID, table.Name, err)
+			continue
+		}
+		newTables = append(newTables, table)
+	}
+
+	currentMetadatas, err := b.SourceMetadataRepository.GetLastByBackupID(ctx, backup.ID)
+	if err != nil {
+		return fmt.Errorf("error getting last job for backup with id %s: %s", backup.ID, err)
+	}
+	newJobDescriptors, err := b.collateState(ctx, backup.ID, tables)
 	if err != nil {
 		return err
 	}
 
 	var jobs []*repository.Job
-	for _, descriptor := range jobDescriptors {
-		jobs = append(jobs, newJob(backup.ID, descriptor.table))
+	for _, descriptor := range newJobDescriptors {
+		for _, notScheduledTable := range newTables {
+			if descriptor.table == notScheduledTable.Name {
+				jobs = append(jobs, newJob(backup.ID, descriptor.table))
+				break
+			}
+		}
 	}
 
-	err = b.JobRepository.AddJobs(ctx, jobs)
+	err = b.handleNewRevisionForTableWhenPreviousJobIsNotScheduled(ctxIn, backup, currentMetadatas, pendingJobForTables, newJobDescriptors, &jobs)
 	if err != nil {
 		return err
 	}
 
-	for _, descriptor := range jobDescriptors {
+	if len(jobs) > 0 {
+		err = b.JobRepository.AddJobs(ctx, jobs)
+	}
+	if err != nil {
+		return err
+	}
+
+	for _, descriptor := range newJobDescriptors {
 		for _, job := range jobs {
 			if descriptor.matchJob(job) {
-				err = b.SourceMetadataJobRepository.Add(ctx, descriptor.sourceMetadaID, job.ID)
+				err = b.SourceMetadataJobRepository.Add(ctx, descriptor.sourceMetadataID, job.ID)
 				if err != nil {
 					return err
 				}
@@ -122,6 +175,40 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 
 	err = b.BackupRepository.UpdateLastScheduledTime(ctx, backup.ID, time.Now(), repository.Prepared)
 	return err
+}
+func (b *BigQueryJobCreator) handleNewRevisionForTableWhenPreviousJobIsNotScheduled(
+	ctxIn context.Context,
+	backup *repository.Backup,
+	currentMetadatas []*repository.SourceMetadata,
+	pendingJobForTables []*bigquery.Table,
+	newJobDescriptors []*jobDescriptor,
+	jobs *[]*repository.Job,
+) error {
+	/*
+		there can be case when the table is in state NotScheduled/QuotaError and the checksum have changed for that case we need to
+		* Job - create
+		* SourceMetadataJob - create (done already in pendingJobForTables)
+		* SourceMetadata - create (done already in newJobDescriptors), mark current one as deleted
+	*/
+	for _, currentMetadata := range currentMetadatas {
+	outer:
+		for _, pendingJobForTable := range pendingJobForTables {
+			for _, newJobDescriptor := range newJobDescriptors {
+				if (repository.Add.EqualTo(currentMetadata.Operation) || repository.Update.EqualTo(currentMetadata.Operation)) &&
+					currentMetadata.Source == pendingJobForTable.Name &&
+					pendingJobForTable.Name == newJobDescriptor.table &&
+					pendingJobForTable.Checksum != currentMetadata.SourceChecksum {
+					*jobs = append(*jobs, newJob(backup.ID, newJobDescriptor.table))
+					err := b.SourceMetadataRepository.MarkDeleted(ctxIn, currentMetadata.ID)
+					if err != nil {
+						return fmt.Errorf("error marking job %d as deleted: %s", currentMetadata.ID, err)
+					}
+					break outer
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *repository.Backup) (flattenedTables []*bigquery.Table, err error) {
@@ -276,8 +363,7 @@ func (b *BigQueryJobCreator) collateState(ctxIn context.Context, backupID string
 		if meta == nil {
 			return descriptors, fmt.Errorf("got not expected added source metadata for backupID=%s and table=%s", backupID, descriptor.table)
 		}
-
-		descriptor.sourceMetadaID = meta.ID
+		descriptor.sourceMetadataID = meta.ID
 	}
 
 	return descriptors, err
@@ -288,9 +374,9 @@ func isSinglePartitionTable(table string) bool {
 }
 
 type jobDescriptor struct {
-	backupID       string
-	table          string
-	sourceMetadaID int
+	backupID         string
+	table            string
+	sourceMetadataID int
 }
 
 func (j *jobDescriptor) matchJob(job *repository.Job) bool {

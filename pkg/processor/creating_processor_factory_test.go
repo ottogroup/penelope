@@ -2,10 +2,11 @@ package processor
 
 import (
 	"context"
-	"github.com/ottogroup/penelope/pkg/repository"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/ottogroup/penelope/pkg/repository"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreatingProcessor_validateIntersection_BigQuery(t *testing.T) {
@@ -78,4 +79,9 @@ func TestCreatingProcessor_validateIntersection_CloudStorage(t *testing.T) {
 	backup.ExcludePath = append(backup.IncludePath, "t1")
 	err = validateIntersection(ctx, backup)
 	assert.NotNil(t, err, "expected error")
+}
+
+func TestPascalCaseToSnakeCase(t *testing.T) {
+	assert.Equal(t, "cloud_storage", pascalCaseToSnakeCase("CloudStorage"))
+	assert.Equal(t, "big_query", pascalCaseToSnakeCase("BigQuery"))
 }
