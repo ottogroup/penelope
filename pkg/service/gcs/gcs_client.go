@@ -30,9 +30,11 @@ import (
 )
 
 const (
-	providerLabel = "provider"
-	purposeLabel  = "purpose"
-	typeLabel     = "type"
+	providerLabel      = "provider"
+	purposeLabel       = "purpose"
+	typeLabel          = "type"
+	idLabel            = "backup-id"
+	projectSourceLabel = "backup-source-project"
 )
 
 type LabelsProvider interface {
@@ -40,19 +42,23 @@ type LabelsProvider interface {
 }
 
 type labels struct {
-	backupType string
+	backupType          string
+	backupID            string
+	backupSourceProject string
 }
 
 func (l labels) Labels() map[string]string {
 	return map[string]string{
-		providerLabel: "penelope",
-		purposeLabel:  "backup",
-		typeLabel:     l.backupType,
+		providerLabel:      "penelope",
+		purposeLabel:       "backup",
+		typeLabel:          l.backupType,
+		idLabel:            l.backupID,
+		projectSourceLabel: l.backupSourceProject,
 	}
 }
 
-func NewLabels(backupType string) LabelsProvider {
-	return labels{backupType: backupType}
+func NewLabels(backupType string, id string, project string) LabelsProvider {
+	return labels{backupType: backupType, backupID: id, backupSourceProject: project}
 }
 
 type CloudStorageBucket struct {
@@ -77,7 +83,7 @@ type CloudStorageClient interface {
 	ReadObject(ctxIn context.Context, bucketName, objectName string) ([]byte, error)
 	GetBuckets(ctxIn context.Context, project string) ([]string, error)
 	Close(ctxIn context.Context)
-	UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint) error
+	UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint, labels LabelsProvider) error
 	GetBucketDetails(ctxIn context.Context, bucket string) (*storage.BucketAttrs, error)
 	DeleteObjectWithPrefix(ctxIn context.Context, bucket string, objectPrefixName string) error
 }
@@ -346,7 +352,7 @@ func (c *defaultGcsClient) BucketUsageInBytes(ctxIn context.Context, project str
 	return totalSize, nil
 }
 
-func (c *defaultGcsClient) UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint) error {
+func (c *defaultGcsClient) UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint, labels LabelsProvider) error {
 	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).UpdateBucket")
 	defer span.End()
 
@@ -420,6 +426,24 @@ func (c *defaultGcsClient) UpdateBucket(ctxIn context.Context, bucket string, li
 		}
 		AttrsToUpdate.Lifecycle.Rules = append(AttrsToUpdate.Lifecycle.Rules, ruleTTM)
 	}
+
+	// update labels
+	if labels != nil {
+		want := labels.Labels()
+		have := attributes.Labels
+		if !labelsEqual(want, have) {
+			for k, v := range want {
+				AttrsToUpdate.SetLabel(k, v)
+			}
+			for k := range have {
+				if _, ok := want[k]; !ok {
+					AttrsToUpdate.DeleteLabel(k)
+				}
+			}
+			changed = true
+		}
+	}
+
 	if changed {
 		glog.Infof("updating Bucket %s with Lifecycle attributes %v", bucket, AttrsToUpdate.Lifecycle)
 		_, err := c.client.Bucket(bucket).Update(ctx, AttrsToUpdate)
@@ -428,6 +452,18 @@ func (c *defaultGcsClient) UpdateBucket(ctxIn context.Context, bucket string, li
 		}
 	}
 	return nil
+}
+
+func labelsEqual(want, have map[string]string) bool {
+	if len(want) != len(have) {
+		return false
+	}
+	for k, v := range want {
+		if hv, ok := have[k]; !ok || hv != v {
+			return false
+		}
+	}
+	return true
 }
 
 // CreateBucket create new bucket in a given project

@@ -3,11 +3,11 @@ package processor
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/iam"
+	"github.com/ottogroup/penelope/pkg/service/util"
 
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/config"
@@ -426,7 +426,14 @@ func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClien
 		}
 
 		err = cloudStorageClient.CreateBucket(ctx, gcs.CloudStorageBucket{
-			backup.TargetProject, backup.Sink, backup.Region, backup.DualRegion, backup.StorageClass, lifetimeInDays, backup.ArchiveTTM, gcs.NewLabels(pascalCaseToSnakeCase(backup.Type.String())),
+			backup.TargetProject,
+			backup.Sink,
+			backup.Region,
+			backup.DualRegion,
+			backup.StorageClass,
+			lifetimeInDays,
+			backup.ArchiveTTM,
+			gcs.NewLabels(util.PascalCaseToSnakeCase(backup.Type.String()), backup.ID, backup.SourceProject),
 		})
 		if err != nil {
 			return err
@@ -482,13 +489,4 @@ func hasIntersection(a, b []string) bool {
 		}
 	}
 	return len(c) > 0
-}
-
-func pascalCaseToSnakeCase(s string) string {
-	re := regexp.MustCompile("([A-Z][a-z0-9]*)")
-	snake := re.ReplaceAllStringFunc(s, func(sub string) string {
-		return "_" + strings.ToLower(sub)
-	})
-	snake = strings.TrimLeft(snake, "_")
-	return snake
 }
