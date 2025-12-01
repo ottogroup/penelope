@@ -113,7 +113,7 @@ const projectLink = (project: string) => {
     <template #header.data-table-select></template>
     <template #[`item.data-table-select`]="{ toggleSelect, item, internalItem, isSelected }">
       <v-checkbox
-        v-if="[BackupStatus.PAUSED, BackupStatus.RUNNING, BackupStatus.NOT_STARTED].includes(item?.status ?? '')"
+        v-if="[BackupStatus.PAUSED, BackupStatus.RUNNING, BackupStatus.NOT_STARTED, BackupStatus.FINISHED].includes(item?.status ?? '')"
         :model-value="isSelected(internalItem)"
         @click.stop="toggleSelect(internalItem)"
         color="primary"
