@@ -130,7 +130,7 @@ const onDelete = () => {
         </v-btn>
         <v-btn
           @click="onDelete"
-          :disabled="selectedItems.length == 0 || selectedItems.some((item) => !(item.status === BackupStatus.RUNNING || item.status === BackupStatus.NOT_STARTED))"
+          :disabled="selectedItems.length == 0 || selectedItems.some((item) => !(item.status === BackupStatus.RUNNING || item.status === BackupStatus.NOT_STARTED || item.status === BackupStatus.FINISHED))"
         >
           <v-icon>mdi-delete</v-icon>
           Delete

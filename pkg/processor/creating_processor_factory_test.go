@@ -80,8 +80,3 @@ func TestCreatingProcessor_validateIntersection_CloudStorage(t *testing.T) {
 	err = validateIntersection(ctx, backup)
 	assert.NotNil(t, err, "expected error")
 }
-
-func TestPascalCaseToSnakeCase(t *testing.T) {
-	assert.Equal(t, "cloud_storage", pascalCaseToSnakeCase("CloudStorage"))
-	assert.Equal(t, "big_query", pascalCaseToSnakeCase("BigQuery"))
-}

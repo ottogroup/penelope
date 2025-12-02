@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/secret"
@@ -28,6 +29,8 @@ const (
 	CheckSinkProjectCompliance = "check_sink_project_compliance"
 	// CleanupTrashcans is handled by task that cleans up trashcan
 	CleanupTrashcans = "cleanup_trashcans"
+	// Reconcile is handled by task that make usre that backup settings are in sync
+	Reconcile = "reconcile"
 )
 
 // TaskRunner runs tasks
@@ -97,6 +100,13 @@ func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProj
 		service, err := newCleanupTrashcansService(ctx, tokenSourceProvider, credentialsProvider)
 		if err != nil {
 			glog.Errorf("could not instantiate new CleanupTrashcansService: %s", err)
+			return
+		}
+		service.Run(ctx)
+	case Reconcile:
+		service, err := newReconcileService(ctx, tokenSourceProvider, credentialsProvider)
+		if err != nil {
+			glog.Errorf("could not instantiate new ReconcileService: %s", err)
 			return
 		}
 		service.Run(ctx)

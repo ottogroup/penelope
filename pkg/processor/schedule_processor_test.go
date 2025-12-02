@@ -685,7 +685,7 @@ func (*stubGcsClient) CreateBucket(c context.Context, bucket gcs.CloudStorageBuc
 	panic("implement me")
 }
 
-func (*stubGcsClient) UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint) error {
+func (*stubGcsClient) UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint, labels gcs.LabelsProvider) error {
 	panic("implement me")
 }
 

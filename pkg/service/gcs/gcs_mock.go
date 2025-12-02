@@ -63,7 +63,7 @@ func (c *MockGcsClient) CreateBucket(ctxIn context.Context, bucket CloudStorageB
 	panic("implement me")
 }
 
-func (c *MockGcsClient) UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint) error {
+func (c *MockGcsClient) UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint, labels LabelsProvider) error {
 	panic("implement me")
 }
 
