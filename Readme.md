@@ -612,12 +612,12 @@ Service, is used. The service agent's email uses the format
 #### permission in data source
 
 Google's managed service account need following permission in the source project:
- 
+
 * to be able to export GCS date from source
-  * on project level permissions that are part of following GCP roles
-      * Storage Object Viewer (```roles/storage.objectViewer```)
-      * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
-      * **NOTE**: this role can be set only on the bucket level you need to define custom role
+    * on project level permissions that are part of following GCP roles
+        * Storage Object Viewer (```roles/storage.objectViewer```)
+        * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
+        * **NOTE**: this role can be set only on the bucket level you need to define custom role
 
 #### permission in data sink
 
@@ -631,3 +631,59 @@ Google's managed service account need following permission in the target (backup
         * **NOTE**: it is done automatically set by the ```runner``` service account
     * Storage Legacy Bucket Writer (```roles/storage.legacyBucketWriter```)
         * **NOTE**: it is done automatically set by the ```runner``` service account
+
+## Backups
+
+There are two types of backups supported by Penelope:
+
+* Cloud Storage
+* BigQuery
+  each of them will be described in the following sections.
+
+### Cloud Storage
+
+Source of the backup is a Cloud Storage Bucket. Backups are performed using GCP's Storage Transfer Service. Data are stored in a GCS bucket.
+
+| Feature                 | Oneshot                                 | Snapshot                                 | Mirroring                                |
+|-------------------------|-----------------------------------------|------------------------------------------|------------------------------------------|
+| Backup Frequency        | once                                    | every X hours, min=1                     | every hour                               |
+| Retention Period        | configurable, default=0 (forever)       | configurable, default=0 (forever)        | configurable, default=0 (forever)        |
+| Updated files in source | N/A                                     | Files are replaced                       | Files are replaced                       |
+| Deleted files in source | N/A                                     | Files are kept in backup Bucket          | Files are kept in backup Bucket          |
+| Trashcan support        | no                                      | no                                       | yes                                      |
+| Object versioning       | N/A, default to GCP organization policy | N/A, default to GCP organization policy  | N/A, default to GCP organization policy  |
+
+#### Trashcan for Cloud Storage
+
+This feature is used when the backup strategy is set to "**Mirroring**".
+
+In the target bucket a "trashcan" folder is created. When a data object is deleted in the source bucket, then the object is moved to the "trashcan" folder in the backup bucket. When in the source project same file with the same path is re-created then existing file in the trashcan is replaced. The object remains in the trashcan for a fours weeks - after the retention period the object is permanently deleted from the trashcan.
+
+#### Cloud Storage limitations
+
+We deploy Penelope in Google App Engine Standard Environment and F1 machine type used. After years of testing we found out that the following limitations exists:
+
+* up to 100 backups can be handled concurrently every 5 minutes
+* up to 15,000 objects deleted objets in source can be moved to trashcan per minute
+
+### BigQuery
+
+Source of the backup is a BigQuery **Dataset** or specific **Table** or specific **Table partition
+**. Backups are performed using BigQuery's Extract Jobs. Data are stored in a GCS bucket in AVRO format.
+
+| Feature                           | Oneshot                                 | Snapshot                                                   | Mirroring                                                    |
+|-----------------------------------|-----------------------------------------|------------------------------------------------------------|--------------------------------------------------------------|
+| Backup Frequency                  | once                                    | every X hours, min=1                                       | every hour                                                   |
+| Retention Period                  | configurable, default=0 (forever)       | configurable, default=0 (forever)                          | configurable, default=0 (forever)                            |
+| Updated table/partition in source | N/A                                     | Full copy of table/partition is always made to a new path. | Only changed table/partition will be copied to backup bucket |
+| Deleted table/partition           | N/A                                     | Existing copy are kept.                                    | Existing copy is kept for four weeks.                        |
+| Trashcan support                  | no                                      | no                                                         | no                                                           |
+| Object versioning                 | N/A, default to GCP organization policy | N/A, default to GCP organization policy                    | N/A, default to GCP organization policy                      |                    
+
+#### BigQuery limitations
+
+We deploy Penelope in Google App Engine Standard Environment and F1 machine type used. After years of testing we found out that the following limitations exists:
+
+* up to 1800 new BigQuery export jobs (for each Table/Partition) can be started every 5 minutes
+* up to 100'000 new BigQuery export jobs can be handled per project per day - this is hard quota from Google Cloud Platform
+* up to 15,000 objects deleted objets in source can be deleted from trashcan per minute
