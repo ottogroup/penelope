@@ -661,7 +661,7 @@ In the target bucket a "trashcan" folder is created. When a data object is delet
 
 #### Cloud Storage limitations
 
-We deploy Penelope in Google App Engine Standard Environment and F1 machine type used. After years of testing we found out that the following limitations exists:
+Penelope is deployed in Google App Engine Standard Environment. After years of testing we found out that the following limitations exists:
 
 * up to 100 backups can be handled concurrently every 5 minutes
 * up to 15,000 objects deleted objets in source can be moved to trashcan per minute
@@ -682,7 +682,7 @@ Source of the backup is a BigQuery **Dataset** or specific **Table** or specific
 
 #### BigQuery limitations
 
-We deploy Penelope in Google App Engine Standard Environment and F1 machine type used. After years of testing we found out that the following limitations exists:
+Penelope is deployed in Google App Engine Standard Environment. After years of testing we found out that the following limitations exists:
 
 * up to 1800 new BigQuery export jobs (for each Table/Partition) can be started every 5 minutes
 * up to 100'000 new BigQuery export jobs can be handled per project per day - this is hard quota from Google Cloud Platform
