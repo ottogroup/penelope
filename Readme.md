@@ -640,6 +640,24 @@ There are two types of backups supported by Penelope:
 * BigQuery
   each of them will be described in the following sections.
 
+#### Backup Settings for Time To Life/Move (TTL/TTM)
+
+There are three settings that affect stored backup data:
+
+* Mirror TTL
+    * will delete objects in the backup bucket that are older than the configured TTL
+    * this option is added due to regulatory requirements for data retention limitation in some industries
+    * **IMPORTANT** this setting can eventually delete the entire backup after the configured TTL it is not recommended when the source data is not coming or change frequently
+
+* Snapshot TTL
+    * will delete objects in the backup bucket and tables/partition metadata that are older than the configured TTL
+    * this option is added due to regulatory requirements for data retention limitation in some industries oneshot backups
+    * **IMPORTANT** for Oneshot strategy this setting has will eventually delete the entire backup after the configured TTL it is not recommended to set this value for oneshot backups
+ 
+* Archive Transition (Archive TTM)
+    * will change the storage class of objects in the backup bucket to "Archive" after the configured TTM
+    * this option is added to reduce storage costs for long term backups
+
 ### Cloud Storage
 
 Source of the backup is a Cloud Storage Bucket. Backups are performed using GCP's Storage Transfer Service. Data are stored in a GCS bucket.
@@ -652,19 +670,6 @@ Source of the backup is a Cloud Storage Bucket. Backups are performed using GCP'
 | Deleted files in source | N/A                                     | Files are kept in backup Bucket          | Files are kept in backup Bucket          |
 | Trashcan support        | no                                      | no                                       | yes                                      |
 | Object versioning       | N/A, default to GCP organization policy | N/A, default to GCP organization policy  | N/A, default to GCP organization policy  |
-
-#### Cloud Storage Settings for Time To Life/Move (TTL/TTM)
-
-There are three settings for TTL that can be configured for Cloud Storage backups:
-* Mirrors TTL
-  * will delete objects in the backup bucket that are older than the configured TTL
-  * this option is added due to regulatory requirements for data retention limitation in some industries
-* Snapshot TTL
-  * will delete objects in the backup bucket that are older than the configured TTL
-  * this option is added due to regulatory requirements for data retention limitation in some industries
-* Archive TTM
- * will change the storage class of objects in the backup bucket to "Archive" after the configured TTM
- * this option is added to reduce storage costs for long term backups
 
 #### Trashcan for Cloud Storage
 
@@ -692,21 +697,6 @@ Source of the backup is a BigQuery **Dataset** or specific **Table** or specific
 | Deleted table/partition           | N/A                                     | Existing copy are kept.                                    | Existing copy is kept for four weeks.                        |
 | Trashcan support                  | no                                      | no                                                         | no                                                           |
 | Object versioning                 | N/A, default to GCP organization policy | N/A, default to GCP organization policy                    | N/A, default to GCP organization policy                      |                    
-
-#### BigQuery Settings for Time To Life/Move (TTL/TTM)
-
-There are three settings for TTL that can be configured for Cloud Storage backups:
-* Mirrors TTL
-    * will delete objects in the backup bucket and tables/partition metadata that are older than the configured TTL
-    * this option is added due to regulatory requirements for data retention limitation in some industries
-    * **IMPORTANT** it is not recommended when source table don't have partitioning configured or don't change frequently, it may lead to the whole data loss
-* Snapshot TTL
-    * will delete objects in the backup bucket and tables/partition metadata that are older than the configured TTL
-    * this option is added due to regulatory requirements for data retention limitation in some industries
-    * **IMPORTANT** for **Oneshot** strategy this setting has will eventually delete the entire backup after the configured TTL it is not recommended to set this value for oneshot backups
-* Archive TTM
-  * will change the storage class of objects in the backup bucket to "Archive" after the configured TTM
-  * this option is added to reduce storage costs for long term backups
 
 #### BigQuery limitations
 
