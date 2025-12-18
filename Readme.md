@@ -644,19 +644,28 @@ There are two types of backups supported by Penelope:
 
 There are three settings that affect stored backup data:
 
-* Mirror TTL
-    * will delete objects in the backup bucket that are older than the configured TTL
-    * this option is added due to regulatory requirements for data retention limitation in some industries
-    * **IMPORTANT** this setting can eventually delete the entire backup after the configured TTL it is not recommended when the source data is not coming or change frequently
+##### Mirror TTL
 
-* Snapshot TTL
-    * will delete objects in the backup bucket and tables/partition metadata that are older than the configured TTL
-    * this option is added due to regulatory requirements for data retention limitation in some industries oneshot backups
-    * **IMPORTANT** for Oneshot strategy this setting has will eventually delete the entire backup after the configured TTL it is not recommended to set this value for oneshot backups
- 
-* Archive Transition (Archive TTM)
-    * will change the storage class of objects in the backup bucket to "Archive" after the configured TTM
-    * this option is added to reduce storage costs for long term backups
+* Deletes objects in the backup bucket that are older than the configured TTL.
+* added to meet regulatory requirements for data retention limitations in some industries
+
+**IMPORTANT**:
+This setting can eventually **delete** the entire backup after the configured TTL.
+It is not recommended when the source data does not change frequently or is not continuously updated.
+
+##### Snapshot TTL
+
+* Deletes objects in the backup bucket and tables/partition metadata that are older than the configured TTL.
+* Added to meet regulatory requirements for data retention limitations in some industries and for oneshot backups.
+
+**IMPORTANT**:
+For Oneshot strategy, this setting will eventually **delete** the entire backup after the configured TTL.
+It is not recommended to set this value for oneshot backups.
+
+##### Archive Transition (Archive TTM)
+
+* Changes the storage class of objects in the backup bucket to Archive after the configured TTM.
+* Added to reduce storage costs for long-term backups.
 
 ### Cloud Storage
 
