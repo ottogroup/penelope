@@ -2,31 +2,7 @@
 
 ![image](frontend/public/Penelope_250.jpeg)
 
-- [Penelope - GCP Backup Solution](#penelope---gcp-backup-solution)
-- [Introduction](#introduction)
-- [Requirements](#requirements)
-- [Getting Started](#getting-started)
-    - [Migration](#migration)
-    - [Configuration](#configuration)
-- [Deploy Basic Setup](#deploy-basic-setup)
-    - [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
-    - [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
-    - [3. Step: Penelope Deployment](#3-step-penelope-deployment)
-    - [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
-    - [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
-- [Providers](#providers)
-    - [The Secret Provider](#the-secret-provider)
-        - [Default](#default)
-    - [Backup Provider](#backup-provider)
-        - [Default](#default-1)
-    - [Target Principal Provider](#target-principal-provider)
-        - [Default](#default-2)
-    - [Principal Provider](#principal-provider)
-        - [Default](#default-3)
-    - [Source Project Provider](#source-project-provider)
-        - [Default](#default-4)
-- [Internal Data Model and Backup Mechanics](#internal-data-model-and-backup-mechanics)
-- [Role and rights concept](#role-and-rights-concept)
+[[_TOC_]]
 
 # Introduction
 
