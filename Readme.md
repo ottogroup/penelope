@@ -18,20 +18,14 @@
   - [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
 - [Providers](#providers)
   - [The Secret Provider](#the-secret-provider)
-    - [Default](#default)
   - [Backup Provider](#backup-provider)
-    - [Default](#default-1)
   - [Target Principal Provider](#target-principal-provider)
-    - [Default](#default-2)
   - [Principal Provider](#principal-provider)
     - [User Principal:](#user-principal)
     - [Role Binding:](#role-binding)
     - [PrincipalProvider Interface:](#principalprovider-interface)
     - [Importance of PrincipalProvider:](#importance-of-principalprovider)
-    - [In summary:](#in-summary)
-    - [Default](#default-3)
   - [Source Project Provider](#source-project-provider)
-    - [Default](#default-4)
 - [Internal Data Model and Backup Mechanics](#internal-data-model-and-backup-mechanics)
 - [Role and rights concept](#role-and-rights-concept)
   - [Service accounts](#service-accounts)
@@ -279,7 +273,7 @@ type SecretProvider interface {
 }
 ```
 
-### Default
+#### Default
 
 The default provider is actually pretty straight forward. It basically doesn't care about the user argument. It just
 returns the
@@ -307,7 +301,7 @@ type SinkGCPProjectProvider interface {
 }
 ```
 
-### Default
+#### Default
 
 The default provide is a bit more complex this time. You will not only have to define the environment variables
 `DEFAULT_PROVIDER_BUCKET` and `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`, you also have to store a `.yaml`
@@ -345,7 +339,7 @@ type TargetPrincipalForProjectProvider interface {
 }
 ```
 
-### Default
+#### Default
 
 The default is again pretty straight forward. You only have to define one single google service account, which should
 be impersonated. This is done by setting the `DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT` environment variable.
@@ -383,7 +377,7 @@ This section explains the concept of a user principal and the role of the `Princ
     * Only `Owner` users can perform backups.
     * Users without the appropriate role (e.g., `None` or `Viewer`) cannot edit project data.
 
-### In summary:
+#### In summary:
 
 * The Principal data type stores user identity and project access levels.
 * The PrincipalProvider interface provides access to this information for authorization purposes.
@@ -431,7 +425,7 @@ type ProjectRoleBinding struct {
 }
 ```
 
-### Default
+#### Default
 
 Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It
 also needs the path to a `.yaml` file. Therefore `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH` needs to be set.
@@ -474,7 +468,7 @@ type SourceGCPProjectProvider interface {
 }
 ```
 
-### Default
+#### Default
 
 Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It
 also needs the path to a `.yaml` file. Therefore `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH` needs to be set.
