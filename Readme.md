@@ -2,6 +2,55 @@
 
 ![image](frontend/public/Penelope_250.jpeg)
 
+<!--TOC-->
+
+- [Penelope - GCP Backup Solution](#penelope---gcp-backup-solution)
+- [Introduction](#introduction)
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+  - [Migration](#migration)
+  - [Configuration](#configuration)
+- [Deploy Basic Setup](#deploy-basic-setup)
+  - [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
+  - [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
+  - [3. Step: Penelope Deployment](#3-step-penelope-deployment)
+  - [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
+  - [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
+- [Providers](#providers)
+  - [The Secret Provider](#the-secret-provider)
+    - [Default](#default)
+  - [Backup Provider](#backup-provider)
+    - [Default](#default-1)
+  - [Target Principal Provider](#target-principal-provider)
+    - [Default](#default-2)
+  - [Principal Provider](#principal-provider)
+    - [User Principal:](#user-principal)
+    - [Role Binding:](#role-binding)
+    - [PrincipalProvider Interface:](#principalprovider-interface)
+    - [Importance of PrincipalProvider:](#importance-of-principalprovider)
+    - [In summary:](#in-summary)
+    - [Default](#default-3)
+  - [Source Project Provider](#source-project-provider)
+    - [Default](#default-4)
+- [Internal Data Model and Backup Mechanics](#internal-data-model-and-backup-mechanics)
+- [Role and rights concept](#role-and-rights-concept)
+  - [Service accounts](#service-accounts)
+    - [Runner](#runner)
+    - [Backup](#backup)
+    - [Storage Transfer Service Account](#storage-transfer-service-account)
+- [Backup settings](#backup-settings)
+  - [Backup Settings for Time To Life/Move (TTL/TTM)](#backup-settings-for-time-to-lifemove-ttlttm)
+    - [Mirror TTL](#mirror-ttl)
+    - [Snapshot TTL](#snapshot-ttl)
+    - [Archive Transition (Archive TTM)](#archive-transition-archive-ttm)
+  - [Cloud Storage](#cloud-storage)
+    - [Trashcan for Cloud Storage](#trashcan-for-cloud-storage)
+    - [Cloud Storage limitations](#cloud-storage-limitations)
+  - [BigQuery](#bigquery)
+    - [BigQuery limitations](#bigquery-limitations)
+
+<!--TOC-->
+
 # Introduction
 
 Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery
