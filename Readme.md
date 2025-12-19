@@ -2,31 +2,48 @@
 
 ![image](frontend/public/Penelope_250.jpeg)
 
+<!--TOC-->
+
 - [Penelope - GCP Backup Solution](#penelope---gcp-backup-solution)
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Getting Started](#getting-started)
-    - [Migration](#migration)
-    - [Configuration](#configuration)
+  - [Migration](#migration)
+  - [Configuration](#configuration)
 - [Deploy Basic Setup](#deploy-basic-setup)
-    - [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
-    - [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
-    - [3. Step: Penelope Deployment](#3-step-penelope-deployment)
-    - [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
-    - [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
+  - [1. Step: Migration with Flyway](#1-step-migration-with-flyway)
+  - [2. Step: Configuration of App Engine](#2-step-configuration-of-app-engine)
+  - [3. Step: Penelope Deployment](#3-step-penelope-deployment)
+  - [4. Step: Configuration of Cron-Jobs](#4-step-configuration-of-cron-jobs)
+  - [5. Step: Cron-Jobs Scheduling](#5-step-cron-jobs-scheduling)
 - [Providers](#providers)
-    - [The Secret Provider](#the-secret-provider)
-        - [Default](#default)
-    - [Backup Provider](#backup-provider)
-        - [Default](#default-1)
-    - [Target Principal Provider](#target-principal-provider)
-        - [Default](#default-2)
-    - [Principal Provider](#principal-provider)
-        - [Default](#default-3)
-    - [Source Project Provider](#source-project-provider)
-        - [Default](#default-4)
+  - [The Secret Provider](#the-secret-provider)
+  - [Backup Provider](#backup-provider)
+  - [Target Principal Provider](#target-principal-provider)
+  - [Principal Provider](#principal-provider)
+    - [User Principal:](#user-principal)
+    - [Role Binding:](#role-binding)
+    - [PrincipalProvider Interface:](#principalprovider-interface)
+    - [Importance of PrincipalProvider:](#importance-of-principalprovider)
+  - [Source Project Provider](#source-project-provider)
 - [Internal Data Model and Backup Mechanics](#internal-data-model-and-backup-mechanics)
 - [Role and rights concept](#role-and-rights-concept)
+  - [Service accounts](#service-accounts)
+    - [Runner](#runner)
+    - [Backup](#backup)
+    - [Storage Transfer Service Account](#storage-transfer-service-account)
+- [Backup settings](#backup-settings)
+  - [Backup Settings for Time To Life/Move (TTL/TTM)](#backup-settings-for-time-to-lifemove-ttlttm)
+    - [Mirror TTL](#mirror-ttl)
+    - [Snapshot TTL](#snapshot-ttl)
+    - [Archive Transition (Archive TTM)](#archive-transition-archive-ttm)
+  - [Cloud Storage](#cloud-storage)
+    - [Trashcan for Cloud Storage](#trashcan-for-cloud-storage)
+    - [Cloud Storage limitations](#cloud-storage-limitations)
+  - [BigQuery](#bigquery)
+    - [BigQuery limitations](#bigquery-limitations)
+
+<!--TOC-->
 
 # Introduction
 
@@ -256,7 +273,7 @@ type SecretProvider interface {
 }
 ```
 
-### Default
+#### Default
 
 The default provider is actually pretty straight forward. It basically doesn't care about the user argument. It just
 returns the
@@ -284,7 +301,7 @@ type SinkGCPProjectProvider interface {
 }
 ```
 
-### Default
+#### Default
 
 The default provide is a bit more complex this time. You will not only have to define the environment variables
 `DEFAULT_PROVIDER_BUCKET` and `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH`, you also have to store a `.yaml`
@@ -322,7 +339,7 @@ type TargetPrincipalForProjectProvider interface {
 }
 ```
 
-### Default
+#### Default
 
 The default is again pretty straight forward. You only have to define one single google service account, which should
 be impersonated. This is done by setting the `DEFAULT_PROVIDER_IMPERSONATE_GOOGLE_SERVICE_ACCOUNT` environment variable.
@@ -360,7 +377,7 @@ This section explains the concept of a user principal and the role of the `Princ
     * Only `Owner` users can perform backups.
     * Users without the appropriate role (e.g., `None` or `Viewer`) cannot edit project data.
 
-### In summary:
+#### In summary:
 
 * The Principal data type stores user identity and project access levels.
 * The PrincipalProvider interface provides access to this information for authorization purposes.
@@ -408,7 +425,7 @@ type ProjectRoleBinding struct {
 }
 ```
 
-### Default
+#### Default
 
 Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It
 also needs the path to a `.yaml` file. Therefore `DEFAULT_USER_PRINCIPAL_PROVIDER_FILE_PATH` needs to be set.
@@ -451,7 +468,7 @@ type SourceGCPProjectProvider interface {
 }
 ```
 
-### Default
+#### Default
 
 Now let's have a look at the default implementation. The default is very similar to the `SinkGCPProjectProvider`. It
 also needs the path to a `.yaml` file. Therefore `DEFAULT_BACKUP_SINK_PROVIDER_FOR_PROJECT_FILE_PATH` needs to be set.
@@ -612,12 +629,12 @@ Service, is used. The service agent's email uses the format
 #### permission in data source
 
 Google's managed service account need following permission in the source project:
- 
+
 * to be able to export GCS date from source
-  * on project level permissions that are part of following GCP roles
-      * Storage Object Viewer (```roles/storage.objectViewer```)
-      * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
-      * **NOTE**: this role can be set only on the bucket level you need to define custom role
+    * on project level permissions that are part of following GCP roles
+        * Storage Object Viewer (```roles/storage.objectViewer```)
+        * Storage Legacy Bucket Reader (```roles/storage.legacyBucketReader```)
+        * **NOTE**: this role can be set only on the bucket level you need to define custom role
 
 #### permission in data sink
 
@@ -631,3 +648,86 @@ Google's managed service account need following permission in the target (backup
         * **NOTE**: it is done automatically set by the ```runner``` service account
     * Storage Legacy Bucket Writer (```roles/storage.legacyBucketWriter```)
         * **NOTE**: it is done automatically set by the ```runner``` service account
+
+# Backup settings
+
+There are two types of backups supported by Penelope:
+
+* Cloud Storage
+* BigQuery
+  each of them will be described in the following sections.
+
+## Backup Settings for Time To Life/Move (TTL/TTM)
+
+There are three settings that affect stored backup data:
+
+### Mirror TTL
+
+* Deletes objects in the backup bucket that are older than the configured TTL.
+* added to meet regulatory requirements for data retention limitations in some industries
+
+**IMPORTANT**:
+This setting can eventually **delete** the entire backup after the configured TTL.
+It is not recommended when the source data does not change frequently or is not continuously updated.
+
+### Snapshot TTL
+
+* Deletes objects in the backup bucket and tables/partition metadata that are older than the configured TTL.
+* Added to meet regulatory requirements for data retention limitations in some industries and for oneshot backups.
+
+**IMPORTANT**:
+For Oneshot strategy, this setting will eventually **delete** the entire backup after the configured TTL.
+It is not recommended to set this value for oneshot backups.
+
+### Archive Transition (Archive TTM)
+
+* Changes the storage class of objects in the backup bucket to Archive after the configured TTM.
+* Added to reduce storage costs for long-term backups.
+
+## Cloud Storage
+
+Source of the backup is a Cloud Storage Bucket. Backups are performed using GCP's Storage Transfer Service. Data are stored in a GCS bucket.
+
+| Feature                 | Oneshot                                 | Snapshot                                 | Mirroring                                |
+|-------------------------|-----------------------------------------|------------------------------------------|------------------------------------------|
+| Backup Frequency        | once                                    | every X hours, min=1                     | every hour                               |
+| Retention Period        | configurable, default=0 (forever)       | configurable, default=0 (forever)        | configurable, default=0 (forever)        |
+| Updated files in source | N/A                                     | Files are replaced                       | Files are replaced                       |
+| Deleted files in source | N/A                                     | Files are kept in backup Bucket          | Files are kept in backup Bucket          |
+| Trashcan support        | no                                      | no                                       | yes                                      |
+| Object versioning       | N/A, default to GCP organization policy | N/A, default to GCP organization policy  | N/A, default to GCP organization policy  |
+
+### Trashcan for Cloud Storage
+
+This feature is used when the backup strategy is set to "**Mirroring**".
+
+In the target bucket a "trashcan" folder is created. When a data object is deleted in the source bucket, then the object is moved to the "trashcan" folder in the backup bucket. When in the source project same file with the same path is re-created then existing file in the trashcan is replaced. The object remains in the trashcan for a fours weeks - after the retention period the object is permanently deleted from the trashcan.
+
+### Cloud Storage limitations
+
+Penelope is deployed in Google App Engine Standard Environment. After years of testing we found out that the following limitations exists:
+
+* up to 100 backups can be handled concurrently every 5 minutes
+* up to 15,000 objects deleted objets in source can be moved to trashcan per minute
+
+## BigQuery
+
+Source of the backup is a BigQuery **Dataset** or specific **Table** or specific **Table partition
+**. Backups are performed using BigQuery's Extract Jobs. Data are stored in a GCS bucket in AVRO format.
+
+| Feature                           | Oneshot                                 | Snapshot                                                   | Mirroring                                                    |
+|-----------------------------------|-----------------------------------------|------------------------------------------------------------|--------------------------------------------------------------|
+| Backup Frequency                  | once                                    | every X hours, min=1                                       | every hour                                                   |
+| Retention Period                  | configurable, default=0 (forever)       | configurable, default=0 (forever)                          | configurable, default=0 (forever)                            |
+| Updated table/partition in source | N/A                                     | Full copy of table/partition is always made to a new path. | Only changed table/partition will be copied to backup bucket |
+| Deleted table/partition           | N/A                                     | Existing copy are kept.                                    | Existing copy is kept for four weeks.                        |
+| Trashcan support                  | no                                      | no                                                         | no                                                           |
+| Object versioning                 | N/A, default to GCP organization policy | N/A, default to GCP organization policy                    | N/A, default to GCP organization policy                      |                    
+
+### BigQuery limitations
+
+Penelope is deployed in Google App Engine Standard Environment. After years of testing we found out that the following limitations exists:
+
+* up to 1800 new BigQuery export jobs (for each Table/Partition) can be started every 5 minutes
+* up to 100,000 new BigQuery export jobs can be handled per project per day - this is hard quota from Google Cloud Platform
+* up to 15,000 objects deleted objets in source can be deleted from trashcan per minute
