@@ -2,8 +2,6 @@
 
 ![image](frontend/public/Penelope_250.jpeg)
 
-[[_TOC_]]
-
 # Introduction
 
 Penelope is a tool, which allows you to back up data stored in GCP automatically. You can create backups from BigQuery
@@ -608,7 +606,7 @@ Google's managed service account need following permission in the target (backup
     * Storage Legacy Bucket Writer (```roles/storage.legacyBucketWriter```)
         * **NOTE**: it is done automatically set by the ```runner``` service account
 
-## Backups
+# Backup settings
 
 There are two types of backups supported by Penelope:
 
@@ -616,11 +614,11 @@ There are two types of backups supported by Penelope:
 * BigQuery
   each of them will be described in the following sections.
 
-#### Backup Settings for Time To Life/Move (TTL/TTM)
+## Backup Settings for Time To Life/Move (TTL/TTM)
 
 There are three settings that affect stored backup data:
 
-##### Mirror TTL
+### Mirror TTL
 
 * Deletes objects in the backup bucket that are older than the configured TTL.
 * added to meet regulatory requirements for data retention limitations in some industries
@@ -629,7 +627,7 @@ There are three settings that affect stored backup data:
 This setting can eventually **delete** the entire backup after the configured TTL.
 It is not recommended when the source data does not change frequently or is not continuously updated.
 
-##### Snapshot TTL
+### Snapshot TTL
 
 * Deletes objects in the backup bucket and tables/partition metadata that are older than the configured TTL.
 * Added to meet regulatory requirements for data retention limitations in some industries and for oneshot backups.
@@ -638,12 +636,12 @@ It is not recommended when the source data does not change frequently or is not 
 For Oneshot strategy, this setting will eventually **delete** the entire backup after the configured TTL.
 It is not recommended to set this value for oneshot backups.
 
-##### Archive Transition (Archive TTM)
+### Archive Transition (Archive TTM)
 
 * Changes the storage class of objects in the backup bucket to Archive after the configured TTM.
 * Added to reduce storage costs for long-term backups.
 
-### Cloud Storage
+## Cloud Storage
 
 Source of the backup is a Cloud Storage Bucket. Backups are performed using GCP's Storage Transfer Service. Data are stored in a GCS bucket.
 
@@ -656,20 +654,20 @@ Source of the backup is a Cloud Storage Bucket. Backups are performed using GCP'
 | Trashcan support        | no                                      | no                                       | yes                                      |
 | Object versioning       | N/A, default to GCP organization policy | N/A, default to GCP organization policy  | N/A, default to GCP organization policy  |
 
-#### Trashcan for Cloud Storage
+### Trashcan for Cloud Storage
 
 This feature is used when the backup strategy is set to "**Mirroring**".
 
 In the target bucket a "trashcan" folder is created. When a data object is deleted in the source bucket, then the object is moved to the "trashcan" folder in the backup bucket. When in the source project same file with the same path is re-created then existing file in the trashcan is replaced. The object remains in the trashcan for a fours weeks - after the retention period the object is permanently deleted from the trashcan.
 
-#### Cloud Storage limitations
+### Cloud Storage limitations
 
 Penelope is deployed in Google App Engine Standard Environment. After years of testing we found out that the following limitations exists:
 
 * up to 100 backups can be handled concurrently every 5 minutes
 * up to 15,000 objects deleted objets in source can be moved to trashcan per minute
 
-### BigQuery
+## BigQuery
 
 Source of the backup is a BigQuery **Dataset** or specific **Table** or specific **Table partition
 **. Backups are performed using BigQuery's Extract Jobs. Data are stored in a GCS bucket in AVRO format.
@@ -683,7 +681,7 @@ Source of the backup is a BigQuery **Dataset** or specific **Table** or specific
 | Trashcan support                  | no                                      | no                                                         | no                                                           |
 | Object versioning                 | N/A, default to GCP organization policy | N/A, default to GCP organization policy                    | N/A, default to GCP organization policy                      |                    
 
-#### BigQuery limitations
+### BigQuery limitations
 
 Penelope is deployed in Google App Engine Standard Environment. After years of testing we found out that the following limitations exists:
 
