@@ -1,5 +1,5 @@
 // Plugins
-import vue from "@vitejs/plugin-vue";
+import vuePlugin from "@vitejs/plugin-vue";
 import { URL, fileURLToPath } from "node:url";
 // Utilities
 import { defineConfig } from "vite";
@@ -18,7 +18,7 @@ try {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-    vue({
+    vuePlugin({
       template: { transformAssetUrls },
     }),
     // https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin#readme
