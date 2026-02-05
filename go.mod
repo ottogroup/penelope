@@ -1,7 +1,7 @@
 module github.com/ottogroup/penelope
 
 require (
-	cloud.google.com/go/bigquery v1.72.0
+	cloud.google.com/go/bigquery v1.73.0
 	cloud.google.com/go/iam v1.5.3
 	cloud.google.com/go/logging v1.13.1
 	cloud.google.com/go/monitoring v1.24.3
@@ -19,7 +19,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
 	go.opencensus.io v0.24.0
-	google.golang.org/api v0.263.0
+	google.golang.org/api v0.265.0
 	google.golang.org/genproto v0.0.0-20260128011058-8636f8732409
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
