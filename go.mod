@@ -99,4 +99,4 @@ require (
 	mellium.im/sasl v0.3.2 // indirect
 )
 
-go 1.26
+go 1.26.2
