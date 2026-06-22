@@ -272,6 +272,10 @@ func (j *cleanupBackupService) syncCloudStorageEvents(ctxIn context.Context, bac
 			// cleanup of deleted objects is done only for Mirror strategy
 			continue
 		}
+		if backup.Status == repository.NotStarted {
+			glog.Infof("Skipping backup %s because it's not yet started", backup.ID)
+			continue
+		}
 		// 3 hours for all backups, we are running every 4 hours so margin of 1 hour should be enough
 		iterationDeadline := time.Now().Add(time.Hour * time.Duration(3))
 		err := j.syncCloudStorageEventsForBackup(ctx, backup, iterationDeadline)
