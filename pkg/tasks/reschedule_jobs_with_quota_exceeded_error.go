@@ -3,14 +3,15 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"go.opencensus.io/trace"
-	"time"
 )
 
-const pacificTimeLocation = "US/Pacific"
+const pacificTimeLocation = "America/Los_Angeles"
 
 type rescheduleJobsWithQuotaErrorService struct {
 	jobRepository       repository.JobRepository
@@ -75,7 +76,7 @@ func (r *rescheduleJobsWithQuotaErrorService) Run(ctxIn context.Context) {
 }
 
 func hasQuotaRenewedForJob(job *repository.Job) (bool, error) {
-	pacificTimeLocation, err := time.LoadLocation("US/Pacific")
+	pacificTimeLocation, err := time.LoadLocation(pacificTimeLocation)
 	if err != nil {
 		return false, err
 	}
