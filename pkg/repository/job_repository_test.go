@@ -365,6 +365,38 @@ func TestDefaultJobRepository_GetByStatusAndBefore_WithUpdatedTimestamp(t *testi
 	assert.Len(t, before, 3)
 }
 
+func TestDefaultJobRepository_PatchJobStatus_FinishedQuotaError(t *testing.T) {
+	const (
+		jobID    = "job-id-1001"
+		backupID = "backup-id-1001"
+	)
+	backupIDs := []string{backupID}
+	jobs := []*Job{
+		{ID: jobID, BackupID: backupID, Status: FinishedQuotaError},
+	}
+
+	ctx, storageService := prepareTest(t)
+
+	setBackupWithIDs(t, storageService, backupIDs...)
+	repository := &defaultJobRepository{storageService: storageService}
+
+	err := repository.AddJobs(ctx, jobs)
+	assert.NoError(t, err)
+
+	err = repository.PatchJobStatus(ctx, JobPatch{
+		ID:     jobID,
+		Status: NotScheduled,
+	})
+	assert.NoError(t, err)
+
+	job, err := repository.GetJob(ctx, jobID)
+	assert.NoError(t, err)
+	assert.Equal(t, NotScheduled, job.Status)
+	assert.Equal(t, backupID, job.BackupID)
+	assert.Equal(t, "", job.BigQueryID.String())
+	assert.Equal(t, "", job.CloudStorageID.String())
+}
+
 func TestDefaultJobRepository_PatchJobStatus(t *testing.T) {
 	backupIDs := []string{"backup-id-1", "backup-id-2", "backup-id-3"}
 	jobs := []*Job{
