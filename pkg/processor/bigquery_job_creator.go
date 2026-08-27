@@ -120,8 +120,20 @@ func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *re
 	for _, table := range tables {
 		rs, err := b.JobRepository.GetByBackupIdAndSourceAndStatus(ctx, backup.ID, table.Name, repository.NotScheduled, repository.FinishedQuotaError)
 		if err == nil && len(rs) > 0 {
-			glog.Infof("mirror job for backup with id %s and table %s already exists", backup.ID, table.Name)
-			pendingJobForTables = append(pendingJobForTables, table)
+			var isNotScheduled, isQuotaErrors bool
+			for _, job := range rs {
+				if job.Status == repository.NotScheduled {
+					isNotScheduled = true
+				}
+				if job.Status == repository.FinishedQuotaError {
+					isQuotaErrors = true
+				}
+			}
+			glog.Infof("mirror job for backup with id %s and table %s already exists. NotScheduled: %t, FinishedQuotaError: %t", backup.ID, table.Name, isNotScheduled, isQuotaErrors)
+			if !isQuotaErrors {
+				// jobs with FinishedQuotaError will be handled by rescheduleJobsWithQuotaExceededError service, so we don't need to add them to pendingJobForTables
+				pendingJobForTables = append(pendingJobForTables, table)
+			}
 			continue
 		} else if err != nil {
 			glog.Errorf("error checking existing mirror jobs for backup with id %s and table %s: %s", backup.ID, table.Name, err)
@@ -185,7 +197,7 @@ func (b *BigQueryJobCreator) handleNewRevisionForTableWhenPreviousJobIsNotSchedu
 	jobs *[]*repository.Job,
 ) error {
 	/*
-		there can be case when the table is in state NotScheduled/QuotaError and the checksum have changed for that case we need to
+		there can be case when the table is in state NotScheduled and the checksum have changed for that case we need to
 		* Job - create
 		* SourceMetadataJob - create (done already in pendingJobForTables)
 		* SourceMetadata - create (done already in newJobDescriptors), mark current one as deleted

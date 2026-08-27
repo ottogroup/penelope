@@ -11,7 +11,11 @@ import (
 	"go.opencensus.io/trace"
 )
 
-const pacificTimeLocation = "America/Los_Angeles"
+const (
+	pacificTimeLocation = "America/Los_Angeles"
+	// bigQueryBatchLimit is the maximum number of jobs to fetch from the database in one batch. BigQuery allows up to 100k jobs to be scheduled on a daily basis
+	bigQueryBatchLimit = 10_000
+)
 
 type rescheduleJobsWithQuotaErrorService struct {
 	jobRepository       repository.JobRepository
@@ -39,7 +43,7 @@ func (r *rescheduleJobsWithQuotaErrorService) Run(ctxIn context.Context) {
 	defer span.End()
 
 	glog.Infof("[START] Reschedule Jobs With Quota Error")
-	jobs, err := r.jobRepository.GetByJobTypeAndStatus(ctx, repository.BigQuery, repository.FinishedQuotaError)
+	jobs, err := r.jobRepository.ListByTypeAndStatusWithLimit(ctx, repository.BigQuery, repository.FinishedQuotaError, bigQueryBatchLimit)
 	if err != nil {
 		glog.Infof("[FAIL] GetByJobTypeAndStatus failed: %s", err)
 		return
