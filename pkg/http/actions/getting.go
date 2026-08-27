@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type GettingBackupHandler struct {
@@ -24,7 +24,7 @@ func NewGettingBackupHandler(processorBuilder *builder.ProcessorBuilder) *Gettin
 
 // ServeHTTP will handle Getting operation
 func (dl *GettingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "GettingBackupHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "GettingBackupHandler.ServeHTTP")
 	defer span.End()
 
 	backupID, ok := mux.Vars(r)["backup_id"]

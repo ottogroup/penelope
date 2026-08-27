@@ -13,7 +13,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type jobStatusService struct {
@@ -22,7 +22,7 @@ type jobStatusService struct {
 }
 
 func newJobStatusService(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) (*jobStatusService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newJobStatusService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newJobStatusService")
 	defer span.End()
 
 	scheduleProcessor, err := processor.NewScheduleProcessor(ctx, credentialsProvider)
@@ -37,7 +37,7 @@ func newJobStatusService(ctxIn context.Context, tokenSourceProvider impersonate.
 }
 
 func (j *jobStatusService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobStatusService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobStatusService).Run")
 	defer span.End()
 
 	for _, t := range repository.BackupTypes {
@@ -58,7 +58,7 @@ func (j *jobStatusService) Run(ctxIn context.Context) {
 }
 
 func (j *jobStatusService) checkJobStatus(ctxIn context.Context, backupType repository.BackupType, job *repository.Job) {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobStatusService).checkJobStatus")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobStatusService).checkJobStatus")
 	defer span.End()
 
 	switch backupType {
@@ -82,7 +82,7 @@ func (j *jobStatusService) checkJobStatus(ctxIn context.Context, backupType repo
 }
 
 func (j *jobStatusService) checkBigQueryBackupJob(ctxIn context.Context, job *repository.Job, backupType repository.BackupType) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobStatusService).checkBigQueryBackupJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobStatusService).checkBigQueryBackupJob")
 	defer span.End()
 
 	extractJobID := job.ForeignJobID.BigQueryID
@@ -137,7 +137,7 @@ func (j *jobStatusService) checkBigQueryBackupJob(ctxIn context.Context, job *re
 }
 
 func (j *jobStatusService) checkCloudStorageBackupJob(ctxIn context.Context, job *repository.Job, backupType repository.BackupType) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobStatusService).checkCloudStorageBackupJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobStatusService).checkCloudStorageBackupJob")
 	defer span.End()
 
 	transferJobID := string(job.ForeignJobID.CloudStorageID)
@@ -197,7 +197,7 @@ func (j *jobStatusService) checkCloudStorageBackupJob(ctxIn context.Context, job
 }
 
 func (j *jobStatusService) getBackup(ctxIn context.Context, backupID string) (*repository.Backup, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobStatusService).getBackup")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobStatusService).getBackup")
 	defer span.End()
 
 	backup, err := j.scheduleProcessor.GetBackupForID(ctx, backupID)

@@ -7,7 +7,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"strings"
 )
 
@@ -17,7 +17,7 @@ type jobStuckService struct {
 }
 
 func newJobsStuckService(ctxIn context.Context, credentialsProvider secret.SecretProvider) (*jobStuckService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newJobsStuckService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newJobsStuckService")
 	defer span.End()
 
 	scheduleProcessor, err := processor.NewScheduleProcessor(ctx, credentialsProvider)
@@ -29,7 +29,7 @@ func newJobsStuckService(ctxIn context.Context, credentialsProvider secret.Secre
 }
 
 func (j *jobStuckService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobStuckService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobStuckService).Run")
 	defer span.End()
 
 	deltaHours := 1

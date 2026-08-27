@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type RestoringBackupHandler struct {
@@ -19,7 +19,7 @@ func NewRestoringBackupHandler(processorBuilder *builder.ProcessorBuilder) *Rest
 
 // ServeHTTP will handle Updating Restoring
 func (rb *RestoringBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "RestoringBackupHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "RestoringBackupHandler.ServeHTTP")
 	defer span.End()
 
 	backupID, exist := mux.Vars(r)["backup_id"]

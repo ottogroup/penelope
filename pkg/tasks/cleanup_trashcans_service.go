@@ -8,13 +8,13 @@ import (
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"strings"
 	"time"
 )
 
 func newCleanupTrashcansService(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) (*cleanupTrashcansService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newPrepareBackupJobsService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newPrepareBackupJobsService")
 	defer span.End()
 
 	backupRepository, err := repository.NewBackupRepository(ctx, credentialsProvider)
@@ -31,7 +31,7 @@ type cleanupTrashcansService struct {
 }
 
 func (s *cleanupTrashcansService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupTrashcansService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupTrashcansService).Run")
 	defer span.End()
 
 	backups, err := s.backupRepository.GetBackupsByCleanupTrashcanStatus(ctx, repository.ScheduledTrashcanCleanupStatus)

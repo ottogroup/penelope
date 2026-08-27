@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type BucketListingHandler struct {
@@ -19,7 +19,7 @@ func NewBucketListingHandler(processorBuilder *builder.ProcessorBuilder) *Bucket
 
 // ServeHTTP will handle BucketListing operation
 func (bl *BucketListingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "BucketListingHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "BucketListingHandler.ServeHTTP")
 	defer span.End()
 
 	projectID, exist := mux.Vars(r)["project_id"]

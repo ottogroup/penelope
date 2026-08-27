@@ -10,7 +10,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/api/googleapi"
 )
 
@@ -30,7 +30,7 @@ var BackupSourceNotFoundErr = errors.New("error: backup source not found")
 // NewBigQueryJobCreator return instance of BigQueryJobCreator
 func NewBigQueryJobCreator(ctxIn context.Context, backupRepository repository.BackupRepository, jobRepository repository.JobRepository, bigQueryClient bigquery.Client,
 	sourceMetadataRepository repository.SourceMetadataRepository, sourceMetadataJobRepository repository.SourceMetadataJobRepository) *BigQueryJobCreator {
-	_, span := trace.StartSpan(ctxIn, "NewBigQueryJobCreator")
+	_, span := otel.Tracer("").Start(ctxIn, "NewBigQueryJobCreator")
 	defer span.End()
 
 	return &BigQueryJobCreator{
@@ -44,7 +44,7 @@ func NewBigQueryJobCreator(ctxIn context.Context, backupRepository repository.Ba
 
 // PrepareJobs new BigQuery extract job
 func (b *BigQueryJobCreator) PrepareJobs(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).PrepareJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BigQueryJobCreator).PrepareJobs")
 	defer span.End()
 
 	datasetExists, err := b.BigQuery.DoesDatasetExists(ctx, backup.SourceProject, backup.Dataset)
@@ -65,7 +65,7 @@ func (b *BigQueryJobCreator) PrepareJobs(ctxIn context.Context, backup *reposito
 }
 
 func (b *BigQueryJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).prepareSnapshotJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BigQueryJobCreator).prepareSnapshotJobs")
 	defer span.End()
 
 	tables, err := b.flattenTables(ctx, backup)
@@ -106,7 +106,7 @@ func (b *BigQueryJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *
 }
 
 func (b *BigQueryJobCreator) prepareMirrorJobs(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).prepareMirrorJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BigQueryJobCreator).prepareMirrorJobs")
 	defer span.End()
 
 	tables, err := b.flattenTables(ctx, backup)
@@ -212,7 +212,7 @@ func (b *BigQueryJobCreator) handleNewRevisionForTableWhenPreviousJobIsNotSchedu
 }
 
 func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *repository.Backup) (flattenedTables []*bigquery.Table, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).prepareMirrorJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BigQueryJobCreator).prepareMirrorJobs")
 	defer span.End()
 
 	var tablesToInspect []string
@@ -255,7 +255,7 @@ func (b *BigQueryJobCreator) flattenTables(ctxIn context.Context, backup *reposi
 }
 
 func (b *BigQueryJobCreator) listBigQueryTable(ctxIn context.Context, backup *repository.Backup, table string) (tables []*bigquery.Table, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).listBigQueryTable")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BigQueryJobCreator).listBigQueryTable")
 	defer span.End()
 
 	dataset := backup.BigQueryOptions.Dataset
@@ -297,7 +297,7 @@ func (b *BigQueryJobCreator) listBigQueryTable(ctxIn context.Context, backup *re
 }
 
 func (b *BigQueryJobCreator) collateState(ctxIn context.Context, backupID string, tables []*bigquery.Table) (descriptors []*jobDescriptor, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*BigQueryJobCreator).collateState")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BigQueryJobCreator).collateState")
 	defer span.End()
 
 	var toAdd, toUpdate, toDelete []*repository.SourceMetadata

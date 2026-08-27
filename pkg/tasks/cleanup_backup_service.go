@@ -9,7 +9,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/secret"
 	bq "github.com/ottogroup/penelope/pkg/service/bigquery"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/processor"
@@ -28,7 +28,7 @@ type cleanupBackupService struct {
 }
 
 func newCleanupExpiredSinkService(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) (*cleanupBackupService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newCleanupExpiredSinkService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newCleanupExpiredSinkService")
 	defer span.End()
 
 	scheduleProcessor, err := processor.NewScheduleProcessor(ctx, credentialsProvider)
@@ -43,7 +43,7 @@ func newCleanupExpiredSinkService(ctxIn context.Context, tokenSourceProvider imp
 }
 
 func (j *cleanupBackupService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).Run")
 	defer span.End()
 
 	for _, t := range repository.BackupTypes {
@@ -58,7 +58,7 @@ func (j *cleanupBackupService) Run(ctxIn context.Context) {
 }
 
 func (j *cleanupBackupService) handleExpiredBackups(ctxIn context.Context, t repository.BackupType) {
-	ctx, span := trace.StartSpan(ctxIn, "(*handleExpiredBackups).handleExpiredBackups")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*handleExpiredBackups).handleExpiredBackups")
 	defer span.End()
 
 	backups, err := j.scheduleProcessor.GetExpired(ctx, t)
@@ -83,7 +83,7 @@ func (j *cleanupBackupService) handleExpiredBackups(ctxIn context.Context, t rep
 }
 
 func (j *cleanupBackupService) handleBigQueryMirror(ctxIn context.Context, t repository.BackupType) {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).handleBigQueryMirror")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).handleBigQueryMirror")
 	defer span.End()
 
 	revisions, err := j.scheduleProcessor.GetExpiredBigQueryMirrorRevisions(ctx, maxMirrorRevisionLifetimeInWeeks)
@@ -105,7 +105,7 @@ func (j *cleanupBackupService) handleBigQueryMirror(ctxIn context.Context, t rep
 }
 
 func (j *cleanupBackupService) handleCloudStorageMirror(ctxIn context.Context, t repository.BackupType) {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).handleCloudStorageMirror")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).handleCloudStorageMirror")
 	defer span.End()
 
 	backups, err := j.scheduleProcessor.GetScheduledBackups(ctx, t)
@@ -126,7 +126,7 @@ func (j *cleanupBackupService) handleCloudStorageMirror(ctxIn context.Context, t
 }
 
 func (j *cleanupBackupService) cleanupBackup(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).cleanupBackup")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).cleanupBackup")
 	defer span.End()
 
 	err := j.deleteSink(ctx, backup)
@@ -144,7 +144,7 @@ func (j *cleanupBackupService) cleanupBackup(ctxIn context.Context, backup *repo
 }
 
 func (j *cleanupBackupService) deleteSink(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).deleteSink")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).deleteSink")
 	defer span.End()
 
 	gcsClient, err := gcs.NewCloudStorageClient(ctx, j.tokenSourceProvider, backup.SinkOptions.TargetProject)
@@ -180,7 +180,7 @@ func (j *cleanupBackupService) deleteSink(ctxIn context.Context, backup *reposit
 }
 
 func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).deleteTransferJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).deleteTransferJobs")
 	defer span.End()
 
 	jobHandler, err := gcs.NewTransferJobHandler(ctx, j.tokenSourceProvider, backup.TargetProject)
@@ -216,7 +216,7 @@ func (j *cleanupBackupService) deleteTransferJobs(ctxIn context.Context, backup 
 }
 
 func (j *cleanupBackupService) deleteBigQueryRevision(ctxIn context.Context, revision *repository.MirrorRevision) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).deleteBigQueryRevision")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).deleteBigQueryRevision")
 	defer span.End()
 
 	if revision.JobID != "" {
@@ -239,7 +239,7 @@ func (j *cleanupBackupService) deleteBigQueryRevision(ctxIn context.Context, rev
 }
 
 func (j *cleanupBackupService) cleanupCloudStorageObjects(ctxIn context.Context, backups []*repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).cleanupCloudStorageObjects")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).cleanupCloudStorageObjects")
 	defer span.End()
 
 	// Part 1
@@ -264,7 +264,7 @@ func (j *cleanupBackupService) cleanupCloudStorageObjects(ctxIn context.Context,
 }
 
 func (j *cleanupBackupService) syncCloudStorageEvents(ctxIn context.Context, backups []*repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).syncCloudStorageEvents")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).syncCloudStorageEvents")
 	defer span.End()
 
 	for _, backup := range backups {
@@ -288,7 +288,7 @@ func (j *cleanupBackupService) syncCloudStorageEvents(ctxIn context.Context, bac
 }
 
 func (j *cleanupBackupService) syncCloudStorageEventsForBackup(ctxIn context.Context, backup *repository.Backup, iterationDeadline time.Time) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).syncCloudStorageEventsForBackup")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).syncCloudStorageEventsForBackup")
 	defer span.End()
 
 	glog.Infof("Syncing cloud events storage objects for backup: %s", backup.ID)
@@ -362,7 +362,7 @@ func (j *cleanupBackupService) syncCloudStorageEventsForBackup(ctxIn context.Con
 }
 
 func (j *cleanupBackupService) deleteExpiredObjectsFromTrashcan(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).deleteExpiredObjectsFromTrashcan")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).deleteExpiredObjectsFromTrashcan")
 	defer span.End()
 
 	gcsClient, err := gcs.NewCloudStorageClient(ctx, j.tokenSourceProvider, backup.TargetProject)
@@ -392,7 +392,7 @@ func (j *cleanupBackupService) deleteExpiredObjectsFromTrashcan(ctxIn context.Co
 }
 
 func (j *cleanupBackupService) deleteObjects(ctxIn context.Context, revision *repository.MirrorRevision) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cleanupBackupService).deleteObjects")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).deleteObjects")
 	defer span.End()
 
 	gcsClient, err := gcs.NewCloudStorageClient(ctx, j.tokenSourceProvider, revision.TargetProject)
@@ -413,7 +413,7 @@ func (j *cleanupBackupService) deleteObjects(ctxIn context.Context, revision *re
 }
 
 func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctx, "(*cleanupBackupService).deleteExtractJobs")
+	ctx, span := otel.Tracer("").Start(ctx, "(*cleanupBackupService).deleteExtractJobs")
 	defer span.End()
 
 	jobHandler, err := bq.NewExtractJobHandler(ctx, j.tokenSourceProvider, backup.SourceProject, backup.TargetProject)

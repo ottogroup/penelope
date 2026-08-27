@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"gopkg.in/yaml.v2"
 )
 
@@ -18,7 +18,7 @@ type defaultGCPProjectProvider struct {
 }
 
 func NewDefaultGCPBackupProvider(ctxIn context.Context, gcsClient gcs.CloudStorageClient) (SinkGCPProjectProvider, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewDefaultGCPBackupProvider")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewDefaultGCPBackupProvider")
 	defer span.End()
 
 	if gcsClient == nil || !gcsClient.IsInitialized(ctx) {
@@ -29,7 +29,7 @@ func NewDefaultGCPBackupProvider(ctxIn context.Context, gcsClient gcs.CloudStora
 }
 
 func (p *defaultGCPProjectProvider) GetSinkGCPProjectID(ctxIn context.Context, sourceID string) (string, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGCPProjectProvider).GetSinkGCPProjectID")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGCPProjectProvider).GetSinkGCPProjectID")
 	defer span.End()
 
 	bucketName := config.DefaultProviderBucketEnv.MustGet()

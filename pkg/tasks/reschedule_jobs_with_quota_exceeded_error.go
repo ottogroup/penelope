@@ -8,7 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 const pacificTimeLocation = "America/Los_Angeles"
@@ -19,7 +19,7 @@ type rescheduleJobsWithQuotaErrorService struct {
 }
 
 func newRescheduleJobsWithQuotaError(ctxIn context.Context, credentialsProvider secret.SecretProvider) (*rescheduleJobsWithQuotaErrorService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newRescheduleJobsWithQuotaError")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newRescheduleJobsWithQuotaError")
 	defer span.End()
 
 	jobRepository, err := repository.NewJobRepository(ctx, credentialsProvider)
@@ -35,7 +35,7 @@ func newRescheduleJobsWithQuotaError(ctxIn context.Context, credentialsProvider 
 }
 
 func (r *rescheduleJobsWithQuotaErrorService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*rescheduleJobsWithQuotaErrorService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*rescheduleJobsWithQuotaErrorService).Run")
 	defer span.End()
 
 	glog.Infof("[START] Reschedule Jobs With Quota Error")

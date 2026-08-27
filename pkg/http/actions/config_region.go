@@ -5,7 +5,7 @@ import (
 
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type ConfigRegionsHandler struct {
@@ -18,7 +18,7 @@ func NewConfigRegionsHandler(processorBuilder *builder.ProcessorBuilder) *Config
 
 // ServeHTTP will handle BucketListing operation
 func (bl *ConfigRegionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "ConfigRegionsHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "ConfigRegionsHandler.ServeHTTP")
 	defer span.End()
 
 	var request requestobjects.EmptyRequest

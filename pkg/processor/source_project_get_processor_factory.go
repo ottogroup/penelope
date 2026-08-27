@@ -8,7 +8,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type SourceProjectGetProcessorFactory interface {
@@ -43,7 +43,7 @@ type sourceProjectGetProcessor struct {
 
 // Process request
 func (l sourceProjectGetProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.SourceProjectGetRequest]) (requestobjects.SourceProjectGetResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(sourceProjectGetProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(sourceProjectGetProcessor).Process")
 	defer span.End()
 
 	var request = &args.Request

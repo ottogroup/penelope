@@ -3,7 +3,7 @@ package memory
 import (
 	"context"
 
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 // SourceMetadataJob defines table version backup job
@@ -19,7 +19,7 @@ type DefaultSourceMetadataJobRepository struct {
 
 // Add gives possibility add new SourceMetadataJob
 func (r *DefaultSourceMetadataJobRepository) Add(ctxIn context.Context, sourceMetadataID int, jobID string) error {
-	_, span := trace.StartSpan(ctxIn, "(*DefaultSourceMetadataJobRepository).Add")
+	_, span := otel.Tracer("").Start(ctxIn, "(*DefaultSourceMetadataJobRepository).Add")
 	defer span.End()
 
 	r.SourceMetadataJobs = append(r.SourceMetadataJobs, &SourceMetadataJob{SourceMetadataID: sourceMetadataID, JobID: jobID})

@@ -6,7 +6,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"time"
 )
 
@@ -25,7 +25,7 @@ type defaultSourceTrashcan struct {
 
 // NewSourceTrashcanRepository return instance of SourceTrashcanRepository
 func NewSourceTrashcanRepository(ctxIn context.Context, credentialsProvider secret.SecretProvider) (SourceTrashcanRepository, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewSourceTrashcanRepository")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewSourceTrashcanRepository")
 	defer span.End()
 
 	storageService, err := service.NewStorageService(ctx, credentialsProvider)
@@ -38,7 +38,7 @@ func NewSourceTrashcanRepository(ctxIn context.Context, credentialsProvider secr
 
 // Add new Add source trashcan entry
 func (d *defaultSourceTrashcan) Add(ctxIn context.Context, backupID string, source string, timestamp time.Time) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultSourceTrashcan).Add")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultSourceTrashcan).Add")
 	defer span.End()
 
 	_, err := d.storageService.DB().Model(&SourceTrashcan{
@@ -56,7 +56,7 @@ func (d *defaultSourceTrashcan) Add(ctxIn context.Context, backupID string, sour
 
 // Delete delete source trashcan entry
 func (d *defaultSourceTrashcan) Delete(ctxIn context.Context, backupID string, source string) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultSourceTrashcan).Delete")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultSourceTrashcan).Delete")
 	defer span.End()
 
 	_, err := d.storageService.
@@ -75,7 +75,7 @@ func (d *defaultSourceTrashcan) Delete(ctxIn context.Context, backupID string, s
 
 // FilterExistingEntries get source trashcan for a given sources
 func (d *defaultSourceTrashcan) FilterExistingEntries(ctxIn context.Context, sources []SourceTrashcan) ([]SourceTrashcan, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultSourceTrashcan).FilterExistingEntries")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultSourceTrashcan).FilterExistingEntries")
 	defer span.End()
 
 	var sourceTrashcans []SourceTrashcan
@@ -102,7 +102,7 @@ func (d *defaultSourceTrashcan) FilterExistingEntries(ctxIn context.Context, sou
 
 // GetBefore get entries after given time
 func (d *defaultSourceTrashcan) GetBefore(ctxIn context.Context, deltaWeeks int) ([]*SourceTrashcan, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultSourceTrashcan).GetBefore")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultSourceTrashcan).GetBefore")
 	defer span.End()
 
 	var sourceTrashcans []*SourceTrashcan

@@ -10,7 +10,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 // JobStatistics for a job
@@ -52,7 +52,7 @@ type defaultJobRepository struct {
 }
 
 func (d *defaultJobRepository) GetByBackupIdAndSourceAndStatus(ctxIn context.Context, backupId string, source string, status ...JobStatus) ([]*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "GetByBackupIdAndSourceAndStatus")
+	_, span := otel.Tracer("").Start(ctxIn, "GetByBackupIdAndSourceAndStatus")
 	defer span.End()
 	var jobs []*Job
 	err := d.storageService.DB().Model(&jobs).
@@ -72,7 +72,7 @@ func (d *defaultJobRepository) GetByBackupIdAndSourceAndStatus(ctxIn context.Con
 
 // NewJobRepository create new instance of JobRepository
 func NewJobRepository(ctxIn context.Context, credentialsProvider secret.SecretProvider) (JobRepository, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewJobRepository")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewJobRepository")
 	defer span.End()
 
 	storageService, err := service.NewStorageService(ctx, credentialsProvider)
@@ -84,7 +84,7 @@ func NewJobRepository(ctxIn context.Context, credentialsProvider secret.SecretPr
 
 // AddJob add new backup job
 func (d *defaultJobRepository) AddJob(ctxIn context.Context, job *Job) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).AddJob")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).AddJob")
 	defer span.End()
 
 	_, err := d.storageService.DB().Model(job).Insert()
@@ -96,7 +96,7 @@ func (d *defaultJobRepository) AddJob(ctxIn context.Context, job *Job) error {
 
 // AddJobs add new backup jobs
 func (d *defaultJobRepository) AddJobs(ctxIn context.Context, jobs []*Job) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).AddJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).AddJobs")
 	defer span.End()
 
 	return d.storageService.DB().RunInTransaction(ctx, func(tx *pg.Tx) error {
@@ -112,7 +112,7 @@ func (d *defaultJobRepository) AddJobs(ctxIn context.Context, jobs []*Job) error
 
 // DeleteJob remove job
 func (d *defaultJobRepository) DeleteJob(ctxIn context.Context, jobID string) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).DeleteJob")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).DeleteJob")
 	defer span.End()
 
 	_, err := d.storageService.DB().Model(&Job{ID: jobID}).WherePK().Delete()
@@ -124,7 +124,7 @@ func (d *defaultJobRepository) DeleteJob(ctxIn context.Context, jobID string) er
 
 // GetJob get backup job details
 func (d *defaultJobRepository) GetJob(ctxIn context.Context, jobID string) (*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetJob")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetJob")
 	defer span.End()
 
 	job := &Job{ID: jobID}
@@ -145,7 +145,7 @@ func (d *defaultJobRepository) GetJob(ctxIn context.Context, jobID string) (*Job
 
 // GetJobsForBackupID get all backup jobs
 func (d *defaultJobRepository) GetJobsForBackupID(ctxIn context.Context, backupID string, jobPage Page, status ...JobStatus) ([]*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetJobsForBackupID")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetJobsForBackupID")
 	defer span.End()
 
 	var jobs []*Job
@@ -167,7 +167,7 @@ func (d *defaultJobRepository) GetJobsForBackupID(ctxIn context.Context, backupI
 }
 
 func (d *defaultJobRepository) GetMostRecentJobForBackupID(ctxIn context.Context, backupID string, status ...JobStatus) (*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetMostRecentJobForBackupID")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetMostRecentJobForBackupID")
 	defer span.End()
 
 	var jobs []*Job
@@ -193,7 +193,7 @@ func (d *defaultJobRepository) GetMostRecentJobForBackupID(ctxIn context.Context
 
 // GetBackupRestoreJobs get restore jobs for a backup
 func (d *defaultJobRepository) GetBackupRestoreJobs(ctxIn context.Context, backupID, jobID string) ([]*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetBackupRestoreJobs")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetBackupRestoreJobs")
 	defer span.End()
 
 	var jobs []*Job
@@ -305,7 +305,7 @@ func (d *defaultJobRepository) GetBackupRestoreJobs(ctxIn context.Context, backu
 
 // GetByJobTypeAndStatusAndLimit filter backup jobs by status and type with limit
 func (d *defaultJobRepository) ListByTypeAndStatusWithLimit(ctxIn context.Context, backupType BackupType, status JobStatus, limit uint) ([]*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).ListByTypeAndStatusWithLimit")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).ListByTypeAndStatusWithLimit")
 	defer span.End()
 
 	var jobs []*Job
@@ -327,7 +327,7 @@ func (d *defaultJobRepository) ListByTypeAndStatusWithLimit(ctxIn context.Contex
 
 // GetByJobTypeAndStatus filter backup jobs by status and type
 func (d *defaultJobRepository) GetByJobTypeAndStatus(ctxIn context.Context, backupType BackupType, status ...JobStatus) ([]*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetByJobTypeAndStatus")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetByJobTypeAndStatus")
 	defer span.End()
 
 	var jobs []*Job
@@ -348,7 +348,7 @@ func (d *defaultJobRepository) GetByJobTypeAndStatus(ctxIn context.Context, back
 
 // GetByStatusAndBefore get job by status and before given time
 func (d *defaultJobRepository) GetByStatusAndBefore(ctxIn context.Context, status []JobStatus, deltaHours int) ([]*Job, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetByStatusAndBefore")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetByStatusAndBefore")
 	defer span.End()
 
 	var jobs []*Job
@@ -381,7 +381,7 @@ func (d *defaultJobRepository) GetByStatusAndBefore(ctxIn context.Context, statu
 
 // PatchJobStatus change job status
 func (d *defaultJobRepository) PatchJobStatus(ctxIn context.Context, jobPatcher JobPatch) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).PatchJobStatus")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).PatchJobStatus")
 	defer span.End()
 
 	job := &Job{
@@ -410,7 +410,7 @@ func (d *defaultJobRepository) PatchJobStatus(ctxIn context.Context, jobPatcher 
 
 // MarkDeleted mark BigQuery job as deleted
 func (d *defaultJobRepository) MarkDeleted(ctxIn context.Context, id string) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).MarkDeleted")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).MarkDeleted")
 	defer span.End()
 
 	job := &Job{
@@ -438,7 +438,7 @@ func (d *defaultJobRepository) MarkDeleted(ctxIn context.Context, id string) err
 
 // GetStatisticsForBackupID prepare stats for a backup
 func (d *defaultJobRepository) GetStatisticsForBackupID(ctxIn context.Context, backupID string) (JobStatistics, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetStatisticsForBackupID")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetStatisticsForBackupID")
 	defer span.End()
 
 	var results []struct {
@@ -467,7 +467,7 @@ func (d *defaultJobRepository) GetStatisticsForBackupID(ctxIn context.Context, b
 
 // GetJobCountForBackupID counts total job count for a backup
 func (d *defaultJobRepository) GetJobCountForBackupID(ctxIn context.Context, backupID string) (int, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetJobCountForBackupID")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetJobCountForBackupID")
 	defer span.End()
 
 	var result int
@@ -487,7 +487,7 @@ func (d *defaultJobRepository) GetJobCountForBackupID(ctxIn context.Context, bac
 
 // GetRecoverableJobCountForBackupID counts total recoverable job count for a backup
 func (d *defaultJobRepository) GetRecoverableJobCountForBackupID(ctxIn context.Context, backupID string) (int, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultJobRepository).GetRecoverableJobCountForBackupID")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultJobRepository).GetRecoverableJobCountForBackupID")
 	defer span.End()
 
 	var result int

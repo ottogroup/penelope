@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/repository"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"time"
 )
 
@@ -34,7 +34,7 @@ func (r *BackupRepository) GetBackupsByCleanupTrashcanStatus(_ context.Context, 
 }
 
 func (r *BackupRepository) UpdateBackup(ctxIn context.Context, updateFields repository.UpdateFields) error {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).UpdateBackupStatus")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).UpdateBackupStatus")
 	defer span.End()
 
 	for _, backup := range r.backups {
@@ -58,7 +58,7 @@ func (r *BackupRepository) UpdateBackup(ctxIn context.Context, updateFields repo
 
 // GetBigQueryOneShotSnapshots return backups that are BigQuery with strategy Snapshot
 func (r *BackupRepository) GetBigQueryOneShotSnapshots(ctxIn context.Context, status repository.BackupStatus) (backups []*repository.Backup, err error) {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).GetBigQueryOneShotSnapshots")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).GetBigQueryOneShotSnapshots")
 	defer span.End()
 
 	for _, backup := range r.backups {
@@ -71,7 +71,7 @@ func (r *BackupRepository) GetBigQueryOneShotSnapshots(ctxIn context.Context, st
 
 // UpdateLastCleanupTime is not implemented
 func (r *BackupRepository) UpdateLastCleanupTime(ctxIn context.Context, backupID string, lastCleanupTime time.Time) error {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).UpdateLastCleanupTime")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).UpdateLastCleanupTime")
 	defer span.End()
 
 	panic("implement me")
@@ -79,7 +79,7 @@ func (r *BackupRepository) UpdateLastCleanupTime(ctxIn context.Context, backupID
 
 // GetExpiredBigQueryMirrorRevisions is not implemented
 func (r *BackupRepository) GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*repository.MirrorRevision, error) {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).GetExpiredBigQueryMirrorRevisions")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).GetExpiredBigQueryMirrorRevisions")
 	defer span.End()
 
 	panic("implement me")
@@ -87,7 +87,7 @@ func (r *BackupRepository) GetExpiredBigQueryMirrorRevisions(ctxIn context.Conte
 
 // AddBackup create new backup
 func (r *BackupRepository) AddBackup(ctxIn context.Context, backup *repository.Backup) (*repository.Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).AddBackup")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).AddBackup")
 	defer span.End()
 
 	r.backups = append(r.backups, backup)
@@ -97,7 +97,7 @@ func (r *BackupRepository) AddBackup(ctxIn context.Context, backup *repository.B
 
 // GetBackup get backup details
 func (r *BackupRepository) GetBackup(ctxIn context.Context, backupID string) (*repository.Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).GetBackup")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).GetBackup")
 	defer span.End()
 
 	for _, b := range r.backups {
@@ -110,7 +110,7 @@ func (r *BackupRepository) GetBackup(ctxIn context.Context, backupID string) (*r
 
 // GetBackups list backups with filtering
 func (r *BackupRepository) GetBackups(ctxIn context.Context, backupFilter repository.BackupFilter) (backups []*repository.Backup, err error) {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).GetBackups")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).GetBackups")
 	defer span.End()
 
 	backups = append(backups, r.backups...)
@@ -119,7 +119,7 @@ func (r *BackupRepository) GetBackups(ctxIn context.Context, backupFilter reposi
 
 // MarkDeleted mark backup as deleted
 func (r *BackupRepository) MarkDeleted(ctxIn context.Context, backupID string) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*BackupRepository).MarkDeleted")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).MarkDeleted")
 	defer span.End()
 
 	b, err := r.GetBackup(ctx, backupID)
@@ -132,7 +132,7 @@ func (r *BackupRepository) MarkDeleted(ctxIn context.Context, backupID string) e
 
 // MarkStatus mark backup as status
 func (r *BackupRepository) MarkStatus(ctxIn context.Context, backupID string, status repository.BackupStatus) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*BackupRepository).MarkDeleted")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).MarkDeleted")
 	defer span.End()
 
 	b, err := r.GetBackup(ctx, backupID)
@@ -148,7 +148,7 @@ func (r *BackupRepository) MarkStatus(ctxIn context.Context, backupID string, st
 
 // UpdateBackupStatus change backup status
 func (r *BackupRepository) UpdateBackupStatus(ctxIn context.Context, backupID string, status repository.BackupStatus) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*BackupRepository).UpdateBackupStatus")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).UpdateBackupStatus")
 	defer span.End()
 
 	b, err := r.GetBackup(ctx, backupID)
@@ -161,7 +161,7 @@ func (r *BackupRepository) UpdateBackupStatus(ctxIn context.Context, backupID st
 
 // UpdateLastScheduledTime set last time when backup was scheduled
 func (r *BackupRepository) UpdateLastScheduledTime(ctxIn context.Context, backupID string, lastScheduledTime time.Time, status repository.BackupStatus) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*BackupRepository).UpdateLastScheduledTime")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).UpdateLastScheduledTime")
 	defer span.End()
 
 	b, err := r.GetBackup(ctx, backupID)
@@ -175,7 +175,7 @@ func (r *BackupRepository) UpdateLastScheduledTime(ctxIn context.Context, backup
 
 // GetByBackupStatus return backups by status
 func (r *BackupRepository) GetByBackupStatus(ctxIn context.Context, status repository.BackupStatus) (backups []*repository.Backup, err error) {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).GetByBackupStatus")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).GetByBackupStatus")
 	defer span.End()
 
 	for _, b := range r.backups {
@@ -188,7 +188,7 @@ func (r *BackupRepository) GetByBackupStatus(ctxIn context.Context, status repos
 
 // GetByBackupStrategy return backups by strategy
 func (r *BackupRepository) GetByBackupStrategy(ctxIn context.Context, strategy repository.Strategy) (backups []*repository.Backup, err error) {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).GetByBackupStrategy")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).GetByBackupStrategy")
 	defer span.End()
 
 	for _, b := range r.backups {
@@ -216,7 +216,7 @@ func (r *BackupRepository) GetExpired(context.Context, repository.BackupType) (b
 
 // GetScheduledBackups list backups that can have a new job prepared
 func (r *BackupRepository) GetScheduledBackups(ctxIn context.Context, backupType repository.BackupType) (backups []*repository.Backup, err error) {
-	_, span := trace.StartSpan(ctxIn, "(*BackupRepository).GetScheduledBackups")
+	_, span := otel.Tracer("").Start(ctxIn, "(*BackupRepository).GetScheduledBackups")
 	defer span.End()
 
 	for _, b := range r.backups {

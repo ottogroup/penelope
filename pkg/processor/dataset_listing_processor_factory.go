@@ -10,7 +10,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type DatasetListingProcessorFactory interface {
@@ -29,7 +29,7 @@ func NewDatasetListingProcessorFactory(backupProvider provider.SinkGCPProjectPro
 
 // CreateProcessor return instance of Operations for DatasetListing
 func (c *datasetListingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.DatasetListRequest, requestobjects.DatasetListResponse], error) {
-	_, span := trace.StartSpan(ctxIn, "(*DatasetListingProcessorFactory).CreateProcessor")
+	_, span := otel.Tracer("").Start(ctxIn, "(*DatasetListingProcessorFactory).CreateProcessor")
 	defer span.End()
 
 	return &datasetListingProcessor{
@@ -45,7 +45,7 @@ type datasetListingProcessor struct {
 
 // Process request
 func (l datasetListingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.DatasetListRequest]) (requestobjects.DatasetListResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*datasetListingProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*datasetListingProcessor).Process")
 	defer span.End()
 
 	var request requestobjects.DatasetListRequest = args.Request
