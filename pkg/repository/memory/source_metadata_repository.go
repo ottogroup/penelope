@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ottogroup/penelope/pkg/repository"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 // SourceMetadataRepository storage for a source metadata
@@ -15,7 +15,7 @@ type SourceMetadataRepository struct {
 
 // Add create a new source metadata
 func (r *SourceMetadataRepository) Add(ctxIn context.Context, sourceMetadata []*repository.SourceMetadata) ([]*repository.SourceMetadata, error) {
-	_, span := trace.StartSpan(ctxIn, "(*SourceMetadataRepository).Add")
+	_, span := otel.Tracer("").Start(ctxIn, "(*SourceMetadataRepository).Add")
 	defer span.End()
 
 	maxID := 0
@@ -34,7 +34,7 @@ func (r *SourceMetadataRepository) Add(ctxIn context.Context, sourceMetadata []*
 
 // GetLastByBackupID list all source metadata for a backup
 func (r *SourceMetadataRepository) GetLastByBackupID(ctxIn context.Context, backupID string) (sourceMetadata []*repository.SourceMetadata, err error) {
-	_, span := trace.StartSpan(ctxIn, "(*SourceMetadataRepository).GetLastByBackupID")
+	_, span := otel.Tracer("").Start(ctxIn, "(*SourceMetadataRepository).GetLastByBackupID")
 	defer span.End()
 
 	// get the newest version for each source
@@ -52,7 +52,7 @@ func (r *SourceMetadataRepository) GetLastByBackupID(ctxIn context.Context, back
 
 // MarkDeleted mark table as deleted
 func (r *SourceMetadataRepository) MarkDeleted(ctxIn context.Context, id int) error {
-	_, span := trace.StartSpan(ctxIn, "(*SourceMetadataRepository).MarkDeleted")
+	_, span := otel.Tracer("").Start(ctxIn, "(*SourceMetadataRepository).MarkDeleted")
 	defer span.End()
 
 	for i, s := range r.SourceMetadatas {

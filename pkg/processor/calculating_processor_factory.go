@@ -15,7 +15,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/billing"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 const oneGigiByteInBytes = 1073741824
@@ -39,7 +39,7 @@ func NewCalculatingProcessorFactory(backupProvider provider.SinkGCPProjectProvid
 
 // CreateProcessor return instance of Operations for Calculating
 func (c calculatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.CalculateRequest, requestobjects.CalculatedResponse], error) {
-	_, span := trace.StartSpan(ctxIn, "(*CalculatingProcessorFactory).CreateProcessor")
+	_, span := otel.Tracer("").Start(ctxIn, "(*CalculatingProcessorFactory).CreateProcessor")
 	defer span.End()
 
 	return &calculatingProcessor{
@@ -55,7 +55,7 @@ type calculatingProcessor struct {
 
 // Process request
 func (c *calculatingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.CalculateRequest]) (requestobjects.CalculatedResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*calculatingProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*calculatingProcessor).Process")
 	defer span.End()
 
 	var request = &args.Request
@@ -112,7 +112,7 @@ type bigQueryCalculator struct {
 }
 
 func (c *calculatingProcessor) newCloudStorageCalculator(ctxIn context.Context, targetProjectID string) (*cloudStorageCalculator, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newCloudStorageCalculator")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newCloudStorageCalculator")
 	defer span.End()
 
 	storageClient, err := gcs.NewCloudStorageClient(ctx, c.tokenSourceProvider, targetProjectID)
@@ -128,7 +128,7 @@ func (c *calculatingProcessor) newCloudStorageCalculator(ctxIn context.Context, 
 }
 
 func (c *calculatingProcessor) newBigQueryCalculator(ctxIn context.Context, sourceProjectID, targetProjectID string) (*bigQueryCalculator, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newBigQueryCalculator")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newBigQueryCalculator")
 	defer span.End()
 
 	bigQueryClient, err := bigquery.NewBigQueryClient(ctx, c.tokenSourceProvider, sourceProjectID, targetProjectID)
@@ -144,7 +144,7 @@ func (c *calculatingProcessor) newBigQueryCalculator(ctxIn context.Context, sour
 }
 
 func (c *cloudStorageCalculator) calculateCost(ctxIn context.Context, request *requestobjects.CalculateRequest) (requestobjects.CalculatedResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*cloudStorageCalculator).calculateCost")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cloudStorageCalculator).calculateCost")
 	defer span.End()
 
 	response := requestobjects.CalculatedResponse{}
@@ -157,7 +157,7 @@ func (c *cloudStorageCalculator) calculateCost(ctxIn context.Context, request *r
 }
 
 func (c *bigQueryCalculator) calculateCost(ctxIn context.Context, request *requestobjects.CalculateRequest) (requestobjects.CalculatedResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*bigQueryCalculator).calculateCost")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryCalculator).calculateCost")
 	defer span.End()
 
 	response := requestobjects.CalculatedResponse{}
@@ -170,7 +170,7 @@ func (c *bigQueryCalculator) calculateCost(ctxIn context.Context, request *reque
 }
 
 func (c *bigQueryCalculator) getTotalStorageSize(ctxIn context.Context, request *requestobjects.CalculateRequest) (totalSize float64, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*bigQueryCalculator).getTotalStorageSize")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryCalculator).getTotalStorageSize")
 	defer span.End()
 
 	if 0 < len(request.BigQueryOptions.Table) {
@@ -195,7 +195,7 @@ func (c *bigQueryCalculator) getTotalStorageSize(ctxIn context.Context, request 
 }
 
 func (c *bigQueryCalculator) calculateBigQueryDatasetSize(ctxIn context.Context, project string, dataset string) (datasetSize float64, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*bigQueryCalculator).calculateBigQueryDatasetSize")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryCalculator).calculateBigQueryDatasetSize")
 	defer span.End()
 
 	tables, err := c.bigQueryClient.GetTablesInDataset(ctx, project, dataset)

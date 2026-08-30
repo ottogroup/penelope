@@ -13,7 +13,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type UpdatingProcessorFactory interface {
@@ -32,7 +32,7 @@ func NewUpdatingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipal
 
 // CreateProcessor create instance of Operations
 func (c updatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.UpdateRequest, requestobjects.UpdateResponse], error) {
-	ctx, span := trace.StartSpan(ctxIn, "newUpdatingProcessor")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newUpdatingProcessor")
 	defer span.End()
 
 	backupRepository, err := repository.NewBackupRepository(ctx, c.credentialsProvider)
@@ -63,7 +63,7 @@ type updatingProcessor struct {
 }
 
 func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.UpdateRequest]) (requestobjects.UpdateResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(updatingProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(updatingProcessor).Process")
 	defer span.End()
 
 	var request = args.Request

@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type DatasetListingHandler struct {
@@ -19,7 +19,7 @@ func NewDatasetListingHandler(processorBuilder *builder.ProcessorBuilder) *Datas
 
 // ServeHTTP will handle DatasetListing operation
 func (dl *DatasetListingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "DatasetListingHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "DatasetListingHandler.ServeHTTP")
 	defer span.End()
 
 	projectID, exist := mux.Vars(r)["project_id"]

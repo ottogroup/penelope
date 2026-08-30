@@ -9,7 +9,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 // TrashcanEntry moved objects into trashcan
@@ -62,7 +62,7 @@ type defaultScheduleProcessor struct {
 
 // NewScheduleProcessor create new instance of ScheduleProcessor
 func NewScheduleProcessor(ctxIn context.Context, credentialsProvider secret.SecretProvider) (ScheduleProcessor, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewScheduleProcessor")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewScheduleProcessor")
 	defer span.End()
 
 	backupRepository, err := repository.NewBackupRepository(ctx, credentialsProvider)
@@ -100,14 +100,14 @@ func NewScheduleProcessor(ctxIn context.Context, credentialsProvider secret.Secr
 }
 
 func (d *defaultScheduleProcessor) CreateBigQueryJobCreator(ctxIn context.Context, bigQueryClient bigquery.Client) *BigQueryJobCreator {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultScheduleProcessor).CreateBigQueryJobCreator")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultScheduleProcessor).CreateBigQueryJobCreator")
 	defer span.End()
 
 	return NewBigQueryJobCreator(ctx, d.backupRepository, d.jobRepository, bigQueryClient, d.sourceMetadataRepository, d.sourceMetadataJobRepository)
 }
 
 func (d *defaultScheduleProcessor) CreateCloudStorageJobCreator(ctxIn context.Context, gcsClient gcs.CloudStorageClient) *CloudStorageJobCreator {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultScheduleProcessor).CreateCloudStorageJobCreator")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultScheduleProcessor).CreateCloudStorageJobCreator")
 	defer span.End()
 
 	return NewCloudStorageJobCreator(ctx, d.backupRepository, d.jobRepository, gcsClient)

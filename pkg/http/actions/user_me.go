@@ -3,7 +3,7 @@ package actions
 import (
 	"encoding/json"
 	"fmt"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"net/http"
 )
 
@@ -16,7 +16,7 @@ func NewGetUserMeHandler() *GetUserMeHandler {
 
 // ServeHTTP check user principal after authentication
 func (g *GetUserMeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, span := trace.StartSpan(r.Context(), "GetUserMeHandler.ServeHTTP")
+	_, span := otel.Tracer("").Start(r.Context(), "GetUserMeHandler.ServeHTTP")
 	defer span.End()
 
 	principal, isValid := getPrincipalOrElsePrepareFailedResponse(w, r)

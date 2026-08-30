@@ -11,7 +11,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 func NewTrashcanCleanUpProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) TrashcanCleanUpProcessorFactory {
@@ -32,7 +32,7 @@ type trashcanCleanUpProcessorFactory struct {
 }
 
 func (p *trashcanCleanUpProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.TrashcanCleanUpRequest, requestobjects.TrashcanCleanUpResponse], error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*trashcanCleanUpProcessorFactory).CreateProcessor")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*trashcanCleanUpProcessorFactory).CreateProcessor")
 	defer span.End()
 
 	backupRepository, err := repository.NewBackupRepository(ctx, p.credentialsProvider)
@@ -53,7 +53,7 @@ type trashcanCleanUpProcessor struct {
 }
 
 func (p *trashcanCleanUpProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.TrashcanCleanUpRequest]) (requestobjects.TrashcanCleanUpResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*trashcanCleanUpProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*trashcanCleanUpProcessor).Process")
 	defer span.End()
 
 	var request = &args.Request

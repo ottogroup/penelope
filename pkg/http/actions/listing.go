@@ -5,7 +5,7 @@ import (
 
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type ListingBackupHandler struct {
@@ -18,7 +18,7 @@ func NewListingBackupHandler(processorBuilder *builder.ProcessorBuilder) *Listin
 
 // ServeHTTP will handle Listing operation
 func (dl *ListingBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "ListingBackupHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "ListingBackupHandler.ServeHTTP")
 	defer span.End()
 
 	request := requestobjects.ListRequest{Project: r.URL.Query().Get("project")}

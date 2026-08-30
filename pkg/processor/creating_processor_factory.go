@@ -20,7 +20,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 const sinkSTSAccountScheme = "project-%s@storage-transfer-service.iam.gserviceaccount.com"
@@ -48,7 +48,7 @@ func NewCreatingProcessorFactory(backupProvider provider.SinkGCPProjectProvider,
 
 // CreateProcessor return instance of Operations for Creating
 func (c *creatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.CreateRequest, requestobjects.BackupResponse], error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*CreatingProcessorFactory).CreateProcessor")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*CreatingProcessorFactory).CreateProcessor")
 	defer span.End()
 
 	backupRepository, err := repository.NewBackupRepository(ctx, c.credentialsProvider)
@@ -80,7 +80,7 @@ type creatingProcessor struct {
 }
 
 func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.CreateRequest]) (requestobjects.BackupResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*creatingProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*creatingProcessor).Process")
 	defer span.End()
 
 	var request requestobjects.CreateRequest = args.Request
@@ -120,7 +120,7 @@ func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[reques
 }
 
 func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, request requestobjects.CreateRequest) (*repository.Backup, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*creatingProcessor).prepareBackupFromRequest")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*creatingProcessor).prepareBackupFromRequest")
 	defer span.End()
 
 	id := generateNewID()
@@ -239,7 +239,7 @@ func normalizePath(pathList []string) []string {
 }
 
 func (b *creatingProcessor) createBigQueryImpl(ctxIn context.Context, request requestobjects.CreateRequest) (creatingProcessorImpl, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*creatingProcessor).createBigQueryImpl")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*creatingProcessor).createBigQueryImpl")
 	defer span.End()
 
 	sourceProject := request.Project
@@ -268,7 +268,7 @@ func (b *creatingProcessor) createBigQueryImpl(ctxIn context.Context, request re
 }
 
 func (b *creatingProcessor) createCloudStorageImpl(ctxIn context.Context, request requestobjects.CreateRequest) (creatingProcessorImpl, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*creatingProcessor).createCloudStorageImpl")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*creatingProcessor).createCloudStorageImpl")
 	defer span.End()
 
 	targetProject, err := b.backupProvider.GetSinkGCPProjectID(ctx, request.Project)
@@ -306,14 +306,14 @@ type cloudStorageProcessorImpl struct {
 }
 
 func (b *bigQueryProcessorImpl) close(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*bigQueryProcessorImpl).close")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryProcessorImpl).close")
 	defer span.End()
 
 	b.CloudStorage.Close(ctx)
 }
 
 func (b *bigQueryProcessorImpl) process(ctxIn context.Context, backup *repository.Backup) (*repository.Backup, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*bigQueryProcessorImpl).process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryProcessorImpl).process")
 	defer span.End()
 
 	err := b.validateSource(ctx, backup)
@@ -334,7 +334,7 @@ func (b *bigQueryProcessorImpl) process(ctxIn context.Context, backup *repositor
 }
 
 func (b *bigQueryProcessorImpl) validateSource(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*bigQueryProcessorImpl).validateSource")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryProcessorImpl).validateSource")
 	defer span.End()
 
 	exists, err := b.BigQuery.DoesDatasetExists(ctx, backup.SourceProject, backup.Dataset)
@@ -363,14 +363,14 @@ func (b *bigQueryProcessorImpl) validateSource(ctxIn context.Context, backup *re
 }
 
 func (c *cloudStorageProcessorImpl) close(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*bigQueryProcessorImpl).close")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryProcessorImpl).close")
 	defer span.End()
 
 	c.CloudStorage.Close(ctx)
 }
 
 func (c *cloudStorageProcessorImpl) process(ctxIn context.Context, backup *repository.Backup) (*repository.Backup, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*cloudStorageProcessorImpl).process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cloudStorageProcessorImpl).process")
 	defer span.End()
 
 	err := c.validateSource(ctx, backup)
@@ -391,7 +391,7 @@ func (c *cloudStorageProcessorImpl) process(ctxIn context.Context, backup *repos
 }
 
 func (c *cloudStorageProcessorImpl) validateSource(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*cloudStorageProcessorImpl).validateSource")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*cloudStorageProcessorImpl).validateSource")
 	defer span.End()
 
 	exists, err := c.CloudStorage.DoesBucketExist(ctx, backup.SourceProject, backup.CloudStorageOptions.Bucket)
@@ -408,7 +408,7 @@ func (c *cloudStorageProcessorImpl) validateSource(ctxIn context.Context, backup
 }
 
 func prepareSink(ctxIn context.Context, cloudStorageClient gcs.CloudStorageClient, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "prepareSink")
+	ctx, span := otel.Tracer("").Start(ctxIn, "prepareSink")
 	defer span.End()
 
 	exists, err := cloudStorageClient.DoesBucketExist(ctx, backup.TargetProject, backup.Sink)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"gopkg.in/yaml.v3"
 	"time"
 )
@@ -47,7 +47,7 @@ type gcpSourceProject struct {
 }
 
 func (d *defaultSourceGCPProjectProvider) GetSourceGCPProject(ctxIn context.Context, gcpProjectID string) (SourceGCPProject, error) {
-	ctx, span := trace.StartSpan(ctxIn, "GetSourceGCPProject")
+	ctx, span := otel.Tracer("").Start(ctxIn, "GetSourceGCPProject")
 	defer span.End()
 
 	if len(d.cache) == 0 || time.Since(d.lastFetch) > d.refreshDuration {
@@ -79,7 +79,7 @@ func (d *defaultSourceGCPProjectProvider) GetSourceGCPProject(ctxIn context.Cont
 }
 
 func NewDefaultSourceGCPBackupProvider(ctxIn context.Context, gcsClient gcs.CloudStorageClient) (SourceGCPProjectProvider, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewDefaultSourceGCPBackupProvider")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewDefaultSourceGCPBackupProvider")
 	defer span.End()
 
 	if gcsClient == nil || !gcsClient.IsInitialized(ctx) {

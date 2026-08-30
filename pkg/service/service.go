@@ -7,7 +7,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/sql"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 // Service represent operation with PostgresSQL
@@ -17,7 +17,7 @@ type Service struct {
 
 // DefaultConnectionOptions returns default ConnectOptions
 func DefaultConnectionOptions(ctxIn context.Context, credentialsProvider secret.SecretProvider) (sql.ConnectOptions, error) {
-	ctx, span := trace.StartSpan(ctxIn, "DefaultConnectionOptions")
+	ctx, span := otel.Tracer("").Start(ctxIn, "DefaultConnectionOptions")
 	defer span.End()
 
 	requiredEnvKeys := []config.EnvKey{config.PgUserEnv, config.PgDbEnv}
@@ -59,7 +59,7 @@ func DefaultConnectionOptions(ctxIn context.Context, credentialsProvider secret.
 
 // NewStorageService create new instance of Service
 func NewStorageService(ctxIn context.Context, credentialsProvider secret.SecretProvider) (*Service, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewStorageService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewStorageService")
 	defer span.End()
 
 	options, err := DefaultConnectionOptions(ctx, credentialsProvider)
@@ -72,7 +72,7 @@ func NewStorageService(ctxIn context.Context, credentialsProvider secret.SecretP
 
 // NewStorageServiceWithConnectionOptions create new instance of Service with connection options
 func NewStorageServiceWithConnectionOptions(ctxIn context.Context, options sql.ConnectOptions) (*Service, error) {
-	_, span := trace.StartSpan(ctxIn, "NewStorageServiceWithConnectionOptions")
+	_, span := otel.Tracer("").Start(ctxIn, "NewStorageServiceWithConnectionOptions")
 	defer span.End()
 
 	sqlClient := sql.NewCloudSQLClient(options)

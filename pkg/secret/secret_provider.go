@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/config"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type SecretProvider interface {
@@ -20,7 +20,7 @@ func NewEnvSecretProvider() SecretProvider {
 }
 
 func (p *defaultEnvSecretProvider) GetSecret(ctxIn context.Context, _ string) (string, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultEnvSecretProvider).GetSecret")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultEnvSecretProvider).GetSecret")
 	defer span.End()
 
 	if config.PgPasswordEnv.Exist() {

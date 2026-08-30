@@ -8,7 +8,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/tasks"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"net"
 	"net/http"
 	"strings"
@@ -24,7 +24,7 @@ func NewTaskRunHandler(tokenSourceProvider impersonate.TargetPrincipalForProject
 }
 
 func (g *TaskRunHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, span := trace.StartSpan(r.Context(), "TaskRunHandler.ServeHTTP")
+	_, span := otel.Tracer("").Start(r.Context(), "TaskRunHandler.ServeHTTP")
 	defer span.End()
 
 	if err := validateRequest(r); err != nil {

@@ -12,7 +12,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -76,7 +76,7 @@ type defaultBigQueryClient struct {
 }
 
 func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJobID repository.ExtractJobID) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).DeleteExtractJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).DeleteExtractJob")
 	defer span.End()
 
 	var err error
@@ -95,7 +95,7 @@ func (d *defaultBigQueryClient) DeleteExtractJob(ctxIn context.Context, extractJ
 
 // NewBigQueryClient crete new instance of defaultBigQueryClient
 func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonate.TargetPrincipalForProjectProvider, sourceProjectID string, targetProjectID string) (Client, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewBigQueryClient")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewBigQueryClient")
 	defer span.End()
 
 	target, delegates, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
@@ -131,7 +131,7 @@ func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonat
 
 // IsInitialized check if BigQuery client is initialized
 func (d *defaultBigQueryClient) IsInitialized(ctxIn context.Context) bool {
-	_, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).IsInitialized")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).IsInitialized")
 	defer span.End()
 
 	return d.client != nil
@@ -140,7 +140,7 @@ func (d *defaultBigQueryClient) IsInitialized(ctxIn context.Context) bool {
 // ExtractTableToGcsAsAvro will export data into GCS Bucket in AVRO format
 // FIXME: method overlapping with ExtractJobHandler
 func (d *defaultBigQueryClient) ExtractTableToGcsAsAvro(ctxIn context.Context, dataset, table, sinkURI string) *bq.Extractor {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).ExtractTableToGcsAsAvro")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).ExtractTableToGcsAsAvro")
 	defer span.End()
 
 	gcsURI := bq.NewGCSReference(sinkURI)
@@ -151,7 +151,7 @@ func (d *defaultBigQueryClient) ExtractTableToGcsAsAvro(ctxIn context.Context, d
 
 // GetExtractJobStatus return status for extract job
 func (d *defaultBigQueryClient) GetExtractJobStatus(ctxIn context.Context, extractJobID repository.ExtractJobID) (*bq.JobStatus, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).GetExtractJobStatus")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).GetExtractJobStatus")
 	defer span.End()
 
 	var err error
@@ -175,7 +175,7 @@ func (d *defaultBigQueryClient) GetExtractJobStatus(ctxIn context.Context, extra
 
 // DoesDatasetExists check if dataset exist
 func (d *defaultBigQueryClient) DoesDatasetExists(ctxIn context.Context, project string, dataset string) (bool, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).DoesDatasetExists")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).DoesDatasetExists")
 	defer span.End()
 
 	oDataset := d.client.DatasetInProject(project, dataset)
@@ -191,7 +191,7 @@ func (d *defaultBigQueryClient) DoesDatasetExists(ctxIn context.Context, project
 
 // GetTable return metadata of the table
 func (d *defaultBigQueryClient) GetTable(ctxIn context.Context, project string, dataset string, table string) (*Table, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).GetTable")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).GetTable")
 	defer span.End()
 
 	oDataset := d.client.DatasetInProject(project, dataset)
@@ -204,7 +204,7 @@ func (d *defaultBigQueryClient) GetTable(ctxIn context.Context, project string, 
 
 // GetTablesInDataset list all tables in a dataset
 func (d *defaultBigQueryClient) GetTablesInDataset(ctxIn context.Context, project string, dataset string) ([]*Table, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).GetTablesInDataset")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).GetTablesInDataset")
 	defer span.End()
 
 	var tables []*Table
@@ -235,7 +235,7 @@ func (d *defaultBigQueryClient) GetTablesInDataset(ctxIn context.Context, projec
 
 // HasTablePartitions check if table has partitions
 func (d *defaultBigQueryClient) HasTablePartitions(ctxIn context.Context, project string, dataset string, table string) (bool, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).HasTablePartitions")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).HasTablePartitions")
 	defer span.End()
 
 	metadata, err := d.client.DatasetInProject(project, dataset).Table(table).Metadata(ctx)
@@ -255,7 +255,7 @@ type tablePartition struct {
 
 // GetTablePartitions list all partitions in table
 func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, project string, dataset string, table string) ([]*Table, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).GetTablePartitions")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).GetTablePartitions")
 	defer span.End()
 
 	metadata, err := d.client.DatasetInProject(project, dataset).Table(table).Metadata(ctx)
@@ -311,7 +311,7 @@ func (d *defaultBigQueryClient) GetTablePartitions(ctxIn context.Context, projec
 
 // GetDatasets list all datasets in a project
 func (d *defaultBigQueryClient) GetDatasets(ctxIn context.Context, project string) (datasets []string, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).GetDatasets")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).GetDatasets")
 	defer span.End()
 
 	it := d.client.Datasets(ctx)
@@ -333,7 +333,7 @@ func (d *defaultBigQueryClient) GetDatasets(ctxIn context.Context, project strin
 
 // GetDatasetDetails get the details of a bigquery dataset
 func (d *defaultBigQueryClient) GetDatasetDetails(ctxIn context.Context, project string, dataset string) (*bq.DatasetMetadata, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBigQueryClient).GetDatasetDetails")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).GetDatasetDetails")
 	defer span.End()
 
 	return d.client.DatasetInProject(project, dataset).Metadata(ctx)

@@ -7,7 +7,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/api/googleapi"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/option"
@@ -25,7 +25,7 @@ type TransferJobHandler struct {
 
 // NewTransferJobHandler create new TransferJobHandler
 func NewTransferJobHandler(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, targetProjectID string) (*TransferJobHandler, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewTransferJobHandler")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewTransferJobHandler")
 	defer span.End()
 
 	storageClient, err := NewCloudStorageClient(ctx, tokenSourceProvider, targetProjectID)
@@ -42,7 +42,7 @@ func (t *TransferJobHandler) Close(ctxIn context.Context) {
 }
 
 func (t *TransferJobHandler) createClient(ctxIn context.Context, targetProjectID string) (*storagetransfer.Service, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).createClient")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*TransferJobHandler).createClient")
 	defer span.End()
 
 	var options []option.ClientOption
@@ -76,7 +76,7 @@ func (t *TransferJobHandler) createClient(ctxIn context.Context, targetProjectID
 // ReuseTransferJob takes a StorageTransferJob with the id transferJobID, patches (changes) the configuration so it meets
 // the given backup specification and then starts a run.
 func (t *TransferJobHandler) ReuseTransferJob(ctxIn context.Context, srcProjectID, targetProjectID, srcBucket, targetBucket string, includePath, excludePath []string, transferJobID repository.TransferJobID) (string, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).ReuseTransferJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*TransferJobHandler).ReuseTransferJob")
 	defer span.End()
 
 	storageTransferService, err := t.createClient(ctx, targetProjectID)
@@ -120,7 +120,7 @@ func (t *TransferJobHandler) ReuseTransferJob(ctxIn context.Context, srcProjectI
 
 // CreateTransferJob create new transfer job
 func (t *TransferJobHandler) CreateTransferJob(ctxIn context.Context, srcProjectID, targetProjectID, srcBucket, targetBucket string, includePath, excludePath []string) (string, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).CreateTransferJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*TransferJobHandler).CreateTransferJob")
 	defer span.End()
 
 	storageTransferService, err := t.createClient(ctx, targetProjectID)
@@ -174,7 +174,7 @@ func newTransferJobObject(srcProjectID string, srcBucket string, targetProjectID
 
 // GetStatusOfJob return actual status of transfer job
 func (t *TransferJobHandler) GetStatusOfJob(ctxIn context.Context, targetProjectID, name string) (TransferJobState, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).GetStatusOfJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*TransferJobHandler).GetStatusOfJob")
 	defer span.End()
 
 	storageTransferService, err := t.createClient(ctx, targetProjectID)
@@ -208,7 +208,7 @@ func (t *TransferJobHandler) GetStatusOfJob(ctxIn context.Context, targetProject
 // DeleteTransferJob delete transfer job
 // If job does not exist, it returns nil
 func (t *TransferJobHandler) DeleteTransferJob(ctxIn context.Context, targetProjectID, transferJobID string) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*TransferJobHandler).DeleteTransferJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*TransferJobHandler).DeleteTransferJob")
 	defer span.End()
 
 	storageTransferService, err := t.createClient(ctx, targetProjectID)

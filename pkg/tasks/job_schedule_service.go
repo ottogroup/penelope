@@ -13,7 +13,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type jobScheduleService struct {
@@ -22,7 +22,7 @@ type jobScheduleService struct {
 }
 
 func newJobScheduleService(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) (*jobScheduleService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newJobScheduleService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newJobScheduleService")
 	defer span.End()
 
 	scheduleProcessor, err := processor.NewScheduleProcessor(ctx, credentialsProvider)
@@ -37,7 +37,7 @@ func newJobScheduleService(ctxIn context.Context, tokenSourceProvider impersonat
 }
 
 func (j *jobScheduleService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobScheduleService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobScheduleService).Run")
 	defer span.End()
 
 	for _, t := range repository.BackupTypes {
@@ -59,7 +59,7 @@ func (j *jobScheduleService) Run(ctxIn context.Context) {
 }
 
 func (j *jobScheduleService) scheduleJob(ctxIn context.Context, job *repository.Job) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobScheduleService).scheduleJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobScheduleService).scheduleJob")
 	defer span.End()
 
 	glog.Infof("[START] Scheduling job %s", job)
@@ -74,7 +74,7 @@ func (j *jobScheduleService) scheduleJob(ctxIn context.Context, job *repository.
 }
 
 func (j *jobScheduleService) handleJobSchedulingError(ctxIn context.Context, err error, job *repository.Job) {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobScheduleService).handleJobSchedulingError")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobScheduleService).handleJobSchedulingError")
 	defer span.End()
 
 	if err != nil {
@@ -89,7 +89,7 @@ func (j *jobScheduleService) handleJobSchedulingError(ctxIn context.Context, err
 }
 
 func (j *jobScheduleService) scheduleBigQueryBackupJob(ctxIn context.Context, job *repository.Job) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobScheduleService).scheduleBigQueryBackupJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobScheduleService).scheduleBigQueryBackupJob")
 	defer span.End()
 
 	backup, err := j.getBackup(ctx, job.BackupID)
@@ -122,7 +122,7 @@ func (j *jobScheduleService) scheduleBigQueryBackupJob(ctxIn context.Context, jo
 }
 
 func (j *jobScheduleService) scheduleCloudStorageBackupJob(ctxIn context.Context, job *repository.Job) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobScheduleService).scheduleCloudStorageBackupJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobScheduleService).scheduleCloudStorageBackupJob")
 	defer span.End()
 
 	backup, err := j.getBackup(ctx, job.BackupID)
@@ -166,7 +166,7 @@ func (j *jobScheduleService) scheduleCloudStorageBackupJob(ctxIn context.Context
 }
 
 func (j *jobScheduleService) getBackup(ctxIn context.Context, backupID string) (*repository.Backup, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*jobScheduleService).getBackup")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobScheduleService).getBackup")
 	defer span.End()
 
 	backup, err := j.scheduleProcessor.GetBackupForID(ctx, backupID)
