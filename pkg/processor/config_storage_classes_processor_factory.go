@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type ConfigStorageClassesProcessorFactory interface {
@@ -29,7 +29,7 @@ type configStorageClassesProcessor struct {
 
 // Process request
 func (l configStorageClassesProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.EmptyRequest]) (requestobjects.StorageClassListResponse, error) {
-	_, span := trace.StartSpan(ctxIn, "(bucketListingProcessor).Process")
+	_, span := otel.Tracer("").Start(ctxIn, "(bucketListingProcessor).Process")
 	defer span.End()
 
 	var classes []string

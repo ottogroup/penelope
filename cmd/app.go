@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"contrib.go.opencensus.io/exporter/stackdriver"
+	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/config"
@@ -17,7 +17,8 @@ import (
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/secret"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 var envKeys = []config.EnvKey{
@@ -118,16 +119,15 @@ func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
 }
 
 func createAndRegisterExporters() {
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
-	prefix := config.TracingMetricsPrefixEnv.GetOrDefault("penelope-server")
-	se, err := stackdriver.NewExporter(stackdriver.Options{
-		MetricPrefix: prefix,
-		ProjectID:    config.GCPProjectId.MustGet(),
-	})
+	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(config.GCPProjectId.MustGet()))
 	if err != nil {
-		log.Fatalf("Failed to create Stackdriver exporter: %v", err)
+		log.Fatalf("Failed to create Cloud Trace exporter: %v", err)
 	}
-	trace.RegisterExporter(se)
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	)
+	otel.SetTracerProvider(tp)
 }
 
 func newTokenValidator() (auth.TokenValidator, error) {

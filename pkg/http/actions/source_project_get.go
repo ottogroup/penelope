@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type SourceProjectGetHandler struct {
@@ -19,7 +19,7 @@ func NewSourceProjectHandler(processorBuilder *builder.ProcessorBuilder) *Source
 
 // ServeHTTP will handle SourceProject operation
 func (bl *SourceProjectGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "SourceProjectGetHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "SourceProjectGetHandler.ServeHTTP")
 	defer span.End()
 
 	projectID, exist := mux.Vars(r)["project_id"]

@@ -7,7 +7,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/secret"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 const (
@@ -41,7 +41,7 @@ type TaskRunner interface {
 // RunTask triggers specified task
 func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) {
 	background := context.TODO()
-	ctx, span := trace.StartSpan(background, fmt.Sprintf("RunTask/%s", task))
+	ctx, span := otel.Tracer("").Start(background, fmt.Sprintf("RunTask/%s", task))
 	defer span.End()
 
 	glog.Infof("Running task for action %s", task)

@@ -122,8 +122,8 @@ settings. If you not provide required settings, penelope will not run.
 | `POSTGRES_PASSWORD`                                   | required | Set password for user to connect with PostgreSQL database.                                                                          |
 | `TOKEN_HEADER_KEY`                                    | required | Set the key for token header.                                                                                                       |
 | `PENELOPE_PORT`                                       | optional | Set port for localhost when running Penelope local.                                                                                 |
-| `PENELOPE_TRACING`                                    | optional | Set `true` to export tracing metrics to Stackdriver. Default is `true`.                                                             |
-| `PENELOPE_TRACING_METRICS_PREFIX`                     | optional | Set prefix for tracing metrics when activated. Default is `penelope-server`.                                                        |
+| `PENELOPE_TRACING`                                    | optional | Set `true` to export traces to Google Cloud Trace via OpenTelemetry. Default is `false`.                                            |
+| `PENELOPE_TRACING_METRICS_PREFIX`                     | optional | Deprecated – no longer used after migration to OpenTelemetry Cloud Trace exporter. Kept for backwards compatibility.                |
 | `PENELOPE_USE_DEFAULT_HTTP_CLIENT`                    | optional | Switch to use default http request for testing by setting `true`. Default is `false`.                                               |
 | `CORS_ALLOWED_METHODS`                                | optional | Set the allowed methods for CORS with a comma separated list. For example, `POST, PATCH, GET`                                       |
 | `CORS_ALLOWED_ORIGIN`                                 | optional | Set the allowed origins for defined cors methods.                                                                                   |

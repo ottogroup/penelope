@@ -14,7 +14,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type GettingProcessorFactory interface {
@@ -34,7 +34,7 @@ func NewGettingProcessorFactory(tokenSourceProvider impersonate.TargetPrincipalF
 
 // CreateProcessor return instance of Operations for Getting
 func (c gettingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.GetRequest, requestobjects.BackupResponse], error) {
-	ctx, span := trace.StartSpan(ctxIn, "newGettingProcessor")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newGettingProcessor")
 	defer span.End()
 
 	backupRepository, err := repository.NewBackupRepository(ctx, c.credentialProvider)
@@ -59,7 +59,7 @@ type gettingProcessor struct {
 
 // Process request
 func (l gettingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.GetRequest]) (requestobjects.BackupResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(gettingProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(gettingProcessor).Process")
 	defer span.End()
 
 	var request = args.Request

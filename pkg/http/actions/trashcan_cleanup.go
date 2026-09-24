@@ -4,7 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"net/http"
 )
 
@@ -18,7 +18,7 @@ func NewTrashcanCleanUp(processorBuilder *builder.ProcessorBuilder) *TrashcanCle
 
 // ServeHTTP will handle TrashcanCleanUp operation
 func (tc *TrashcanCleanUp) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "TrashcanCleanUp.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "TrashcanCleanUp.ServeHTTP")
 	defer span.End()
 
 	backupID, exist := mux.Vars(r)["backup_id"]

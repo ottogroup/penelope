@@ -8,7 +8,7 @@ import (
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 // TODO include defer .close() for .conn() in each method
@@ -60,7 +60,7 @@ type defaultBackupRepository struct {
 }
 
 func (d *defaultBackupRepository) MarkTrashcanCleanup(ctx context.Context, id string, trashcanCleanup TrashcanCleanup) error {
-	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).MarkTrashcanCleanup")
+	_, span := otel.Tracer("").Start(ctx, "(*defaultBackupRepository).MarkTrashcanCleanup")
 	defer span.End()
 
 	columns := []string{
@@ -92,7 +92,7 @@ func (d *defaultBackupRepository) MarkTrashcanCleanup(ctx context.Context, id st
 }
 
 func (d *defaultBackupRepository) GetBackupsByCleanupTrashcanStatus(ctx context.Context, status TrashcanCleanupStatus) ([]*Backup, error) {
-	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).GetBackupsByCleanupTrashcanStatus")
+	_, span := otel.Tracer("").Start(ctx, "(*defaultBackupRepository).GetBackupsByCleanupTrashcanStatus")
 	defer span.End()
 
 	var backups []*Backup
@@ -111,7 +111,7 @@ func (d *defaultBackupRepository) GetBackupsByCleanupTrashcanStatus(ctx context.
 
 // NewBackupRepository return instance of BackupRepository
 func NewBackupRepository(ctxIn context.Context, credentialsProvider secret.SecretProvider) (BackupRepository, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewBackupRepository")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewBackupRepository")
 	defer span.End()
 	storageService, err := service.NewStorageService(ctx, credentialsProvider)
 	if err != nil {
@@ -123,7 +123,7 @@ func NewBackupRepository(ctxIn context.Context, credentialsProvider secret.Secre
 
 // AddBackup create new backup
 func (d *defaultBackupRepository) AddBackup(ctxIn context.Context, backup *Backup) (*Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).AddBackup")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).AddBackup")
 	defer span.End()
 
 	_, err := d.storageService.DB().Model(backup).Insert()
@@ -132,7 +132,7 @@ func (d *defaultBackupRepository) AddBackup(ctxIn context.Context, backup *Backu
 
 // GetBackups list backups with filtering
 func (d *defaultBackupRepository) GetBackups(ctxIn context.Context, backupFilter BackupFilter) ([]*Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).GetBackups")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).GetBackups")
 	defer span.End()
 
 	var backups []*Backup
@@ -150,7 +150,7 @@ func (d *defaultBackupRepository) GetBackups(ctxIn context.Context, backupFilter
 
 // GetByBackupStrategy return backups by strategy
 func (d *defaultBackupRepository) GetByBackupStrategy(ctxIn context.Context, strategy Strategy) ([]*Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).GetByBackupStrategy")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).GetByBackupStrategy")
 	defer span.End()
 
 	var backups []*Backup
@@ -170,7 +170,7 @@ func (d *defaultBackupRepository) GetByBackupStrategy(ctxIn context.Context, str
 
 // GetBackup get backup details
 func (d *defaultBackupRepository) GetBackup(ctxIn context.Context, backupID string) (*Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).GetBackup")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).GetBackup")
 	defer span.End()
 
 	backup := new(Backup)
@@ -184,7 +184,7 @@ func (d *defaultBackupRepository) GetBackup(ctxIn context.Context, backupID stri
 
 // MarkDeleted mark backup as deleted
 func (d *defaultBackupRepository) MarkDeleted(ctxIn context.Context, backupID string) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).MarkDeleted")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).MarkDeleted")
 	defer span.End()
 
 	err := d.MarkStatus(ctx, backupID, BackupDeleted)
@@ -198,7 +198,7 @@ func (d *defaultBackupRepository) MarkDeleted(ctxIn context.Context, backupID st
 
 // MarkStatus marks backup as specified status
 func (d *defaultBackupRepository) MarkStatus(ctxIn context.Context, id string, status BackupStatus) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).MarkStatus")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).MarkStatus")
 	defer span.End()
 
 	backup := &Backup{
@@ -229,7 +229,7 @@ func (d *defaultBackupRepository) MarkStatus(ctxIn context.Context, id string, s
 
 // UpdateBackup change backup status
 func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields UpdateFields) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).UpdateBackupStatus")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).UpdateBackupStatus")
 	defer span.End()
 
 	backup := &Backup{
@@ -316,7 +316,7 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 
 // UpdateLastScheduledTime set last time when backup was scheduled
 func (d *defaultBackupRepository) UpdateLastScheduledTime(ctxIn context.Context, backupID string, lastScheduledTime time.Time, status BackupStatus) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).UpdateLastScheduledTime")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).UpdateLastScheduledTime")
 	defer span.End()
 
 	backup := &Backup{
@@ -348,7 +348,7 @@ func (d *defaultBackupRepository) UpdateLastScheduledTime(ctxIn context.Context,
 
 // UpdateLastCleanupTime update cleanup time operation
 func (d *defaultBackupRepository) UpdateLastCleanupTime(ctxIn context.Context, backupID string, lastCleanupTime time.Time) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).UpdateLastCleanupTime")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).UpdateLastCleanupTime")
 	defer span.End()
 
 	backup := &Backup{
@@ -379,7 +379,7 @@ func (d *defaultBackupRepository) UpdateLastCleanupTime(ctxIn context.Context, b
 
 // GetByBackupStatus return backups by status
 func (d *defaultBackupRepository) GetByBackupStatus(ctxIn context.Context, status BackupStatus) ([]*Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).GetByBackupStatus")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).GetByBackupStatus")
 	defer span.End()
 
 	var backups []*Backup
@@ -399,7 +399,7 @@ func (d *defaultBackupRepository) GetByBackupStatus(ctxIn context.Context, statu
 
 // GetExpired returns backups that are expired
 func (d *defaultBackupRepository) GetExpired(ctxIn context.Context, backupType BackupType) ([]*Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).GetExpired")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).GetExpired")
 	defer span.End()
 
 	var backups []*Backup
@@ -437,7 +437,7 @@ func removeDuplicateRevisions(revisions []*MirrorRevision) []*MirrorRevision {
 
 // GetExpiredBigQueryMirrorRevisions get expired BigQuery mirror revisions
 func (d *defaultBackupRepository) GetExpiredBigQueryMirrorRevisions(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*MirrorRevision, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).GetExpiredBigQueryMirrorRevisions")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).GetExpiredBigQueryMirrorRevisions")
 	defer span.End()
 
 	revisions, err := d.getBigQueryMirrorPastRevisionsThatExpiredAfterXWeeks(ctx, maxRevisionLifetimeInWeeks)
@@ -456,7 +456,7 @@ func (d *defaultBackupRepository) GetExpiredBigQueryMirrorRevisions(ctxIn contex
 }
 
 func (d *defaultBackupRepository) getBigQueryMirrorPastRevisionsThatExpiredAfterXWeeks(ctxIn context.Context, maxRevisionLifetimeInWeeks int) ([]*MirrorRevision, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).getBigQueryMirrorPastRevisionsThatExpiredAfterXWeeks")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).getBigQueryMirrorPastRevisionsThatExpiredAfterXWeeks")
 	defer span.End()
 
 	var revisions []*MirrorRevision
@@ -502,7 +502,7 @@ func (d *defaultBackupRepository) getBigQueryMirrorPastRevisionsThatExpiredAfter
 }
 
 func (d *defaultBackupRepository) getBigQueryMirrorRevisionsThatExpiredByTTL(ctx context.Context) ([]*MirrorRevision, error) {
-	_, span := trace.StartSpan(ctx, "(*defaultBackupRepository).getBigQueryMirrorRevisionsThatExpiredByTTL")
+	_, span := otel.Tracer("").Start(ctx, "(*defaultBackupRepository).getBigQueryMirrorRevisionsThatExpiredByTTL")
 	defer span.End()
 
 	var revisions []*MirrorRevision
@@ -546,7 +546,7 @@ func (d *defaultBackupRepository) getBigQueryMirrorRevisionsThatExpiredByTTL(ctx
 
 // GetScheduledBackups list backups that can have a new job prepared
 func (d *defaultBackupRepository) GetScheduledBackups(ctxIn context.Context, backupType BackupType) ([]*Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).GetScheduledBackups")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).GetScheduledBackups")
 	defer span.End()
 
 	var backups []*Backup
@@ -566,7 +566,7 @@ func (d *defaultBackupRepository) GetScheduledBackups(ctxIn context.Context, bac
 
 // GetBigQueryOneShotSnapshots return backups that are BigQuery with strategy Snapshot
 func (d *defaultBackupRepository) GetBigQueryOneShotSnapshots(ctxIn context.Context, status BackupStatus) ([]*Backup, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultBackupRepository).GetBigQueryOneShotSnapshots")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBackupRepository).GetBigQueryOneShotSnapshots")
 	defer span.End()
 
 	var backups []*Backup

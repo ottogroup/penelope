@@ -15,7 +15,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -43,7 +43,7 @@ func NewComplianceProcessorFactory(tokenSourceProvider impersonate.TargetPrincip
 
 // CreateProcessor return instance of Operations for Calculating
 func (c complianceProcessorFactory) CreateProcessor(ctxIn context.Context) (Operation[requestobjects.ComplianceRequest, requestobjects.ComplianceResponse], error) {
-	_, span := trace.StartSpan(ctxIn, "(*ComplianceProcessorFactory).CreateProcessor")
+	_, span := otel.Tracer("").Start(ctxIn, "(*ComplianceProcessorFactory).CreateProcessor")
 	defer span.End()
 
 	return &complianceProcessor{
@@ -78,7 +78,7 @@ type complianceProcessor struct {
 
 // Process request
 func (c *complianceProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.ComplianceRequest]) (requestobjects.ComplianceResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*calculatingProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*calculatingProcessor).Process")
 	defer span.End()
 
 	var request = args.Request

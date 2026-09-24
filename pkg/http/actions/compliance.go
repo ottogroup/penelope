@@ -7,7 +7,7 @@ import (
 
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type ComplianceBackupHandler struct {
@@ -20,7 +20,7 @@ func NewComplianceBackupHandler(processorBuilder *builder.ProcessorBuilder) *Com
 
 // ServeHTTP will handle Calculating operation
 func (dl *ComplianceBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "ComplianceBackupHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "ComplianceBackupHandler.ServeHTTP")
 	defer span.End()
 
 	bodyBytes, err := io.ReadAll(r.Body)

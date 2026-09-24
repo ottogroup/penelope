@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"io"
 	"net/http"
 )
@@ -57,7 +57,7 @@ type jwtTokenValidator struct {
 
 // ValidateRequest checks the validity of the claims in the request.
 func (t *jwtTokenValidator) ValidateRequest(req *http.Request) error {
-	_, span := trace.StartSpan(req.Context(), "jwtTokenValidator.ValidateRequest")
+	_, span := otel.Tracer("").Start(req.Context(), "jwtTokenValidator.ValidateRequest")
 	defer span.End()
 
 	token := req.Header.Get(t.keyForToken)

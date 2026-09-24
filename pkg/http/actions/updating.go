@@ -8,7 +8,7 @@ import (
 
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type UpdateBackupHandler struct {
@@ -21,7 +21,7 @@ func NewUpdateBackupHandler(processorBuilder *builder.ProcessorBuilder) *UpdateB
 
 // ServeHTTP will handle Updating operation
 func (dl *UpdateBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "UpdateBackupHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "UpdateBackupHandler.ServeHTTP")
 	defer span.End()
 
 	bodyBytes, err := io.ReadAll(r.Body)

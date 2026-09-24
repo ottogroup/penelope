@@ -11,7 +11,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"time"
 )
 
@@ -21,7 +21,7 @@ type prepareBackupJobsService struct {
 }
 
 func newPrepareBackupJobsService(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) (*prepareBackupJobsService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newPrepareBackupJobsService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newPrepareBackupJobsService")
 	defer span.End()
 
 	scheduleProcessor, err := processor.NewScheduleProcessor(ctx, credentialsProvider)
@@ -33,7 +33,7 @@ func newPrepareBackupJobsService(ctxIn context.Context, tokenSourceProvider impe
 }
 
 func (j *prepareBackupJobsService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*prepareBackupJobsService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*prepareBackupJobsService).Run")
 	defer span.End()
 
 	for _, t := range repository.BackupTypes {
@@ -54,7 +54,7 @@ func (j *prepareBackupJobsService) Run(ctxIn context.Context) {
 }
 
 func (j *prepareBackupJobsService) scheduleJob(ctxIn context.Context, backupType repository.BackupType, backup *repository.Backup) {
-	ctx, span := trace.StartSpan(ctxIn, "(*prepareBackupJobsService).scheduleJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*prepareBackupJobsService).scheduleJob")
 	defer span.End()
 
 	switch backupType {
@@ -66,7 +66,7 @@ func (j *prepareBackupJobsService) scheduleJob(ctxIn context.Context, backupType
 }
 
 func (j *prepareBackupJobsService) createBigQueryBackupJobs(ctxIn context.Context, backup *repository.Backup) {
-	ctx, span := trace.StartSpan(ctxIn, "(*prepareBackupJobsService).createBigQueryBackupJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*prepareBackupJobsService).createBigQueryBackupJobs")
 	defer span.End()
 
 	if !isNextScheduleTime(backup) {
@@ -95,7 +95,7 @@ func (j *prepareBackupJobsService) createBigQueryBackupJobs(ctxIn context.Contex
 }
 
 func (j *prepareBackupJobsService) createCloudStorageBackupJobs(ctxIn context.Context, backup *repository.Backup) {
-	ctx, span := trace.StartSpan(ctxIn, "(*prepareBackupJobsService).createCloudStorageBackupJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*prepareBackupJobsService).createCloudStorageBackupJobs")
 	defer span.End()
 
 	if !isNextScheduleTime(backup) {

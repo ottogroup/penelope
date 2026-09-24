@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"time"
 )
 
@@ -21,7 +21,7 @@ var BucketNotFound = errors.New("error: bucket not found")
 
 // NewCloudStorageJobCreator return instance of CloudStorageJobCreator
 func NewCloudStorageJobCreator(ctxIn context.Context, backupRepository repository.BackupRepository, jobRepository repository.JobRepository, gcsClient gcs.CloudStorageClient) *CloudStorageJobCreator {
-	_, span := trace.StartSpan(ctxIn, "NewCloudStorageJobCreator")
+	_, span := otel.Tracer("").Start(ctxIn, "NewCloudStorageJobCreator")
 	defer span.End()
 
 	return &CloudStorageJobCreator{
@@ -33,7 +33,7 @@ func NewCloudStorageJobCreator(ctxIn context.Context, backupRepository repositor
 
 // PrepareJobs for GCS backup
 func (b *CloudStorageJobCreator) PrepareJobs(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*CloudStorageJobCreator).PrepareJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*CloudStorageJobCreator).PrepareJobs")
 	defer span.End()
 
 	var bucketExists, _ = b.gcsClient.DoesBucketExist(ctx, backup.SourceProject, backup.Bucket)
@@ -48,7 +48,7 @@ func (b *CloudStorageJobCreator) PrepareJobs(ctxIn context.Context, backup *repo
 }
 
 func (b *CloudStorageJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *repository.Backup) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*CloudStorageJobCreator).prepareSnapshotJobs")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*CloudStorageJobCreator).prepareSnapshotJobs")
 	defer span.End()
 
 	// In a CloudStorageTransferJob Snapshot case defensively try to re-use an old Job.

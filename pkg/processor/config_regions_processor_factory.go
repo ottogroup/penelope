@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type ConfigRegionsProcessorFactory interface {
@@ -29,7 +29,7 @@ type configRegionsProcessor struct {
 
 // Process request
 func (l configRegionsProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.EmptyRequest]) (requestobjects.RegionsListResponse, error) {
-	_, span := trace.StartSpan(ctxIn, "(bucketListingProcessor).Process")
+	_, span := otel.Tracer("").Start(ctxIn, "(bucketListingProcessor).Process")
 	defer span.End()
 
 	var regions []string

@@ -12,7 +12,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/auth/model"
 	"github.com/ottogroup/penelope/pkg/provider"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"gopkg.in/dc0d/tinykv.v4"
 )
 
@@ -35,7 +35,7 @@ func NewPrincipalRetriever(provider provider.PrincipalProvider) (PrincipalRetrie
 }
 
 func (p *defaultPrincipalRetriever) RetrieveCurrentPrincipal(ctxIn context.Context, r *http.Request) (*model.Principal, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultPrincipalRetriever).RetrieveCurrentPrincipal")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultPrincipalRetriever).RetrieveCurrentPrincipal")
 	defer span.End()
 
 	if config.SetTestUser.Exist() {

@@ -5,7 +5,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type oneShotBackupStatusService struct {
@@ -14,7 +14,7 @@ type oneShotBackupStatusService struct {
 }
 
 func newOneShotBackupStatusService(ctxIn context.Context, credentialsProvider secret.SecretProvider) (*oneShotBackupStatusService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newOneShotBackupStatusService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newOneShotBackupStatusService")
 	defer span.End()
 
 	backupRepository, err := repository.NewBackupRepository(ctx, credentialsProvider)
@@ -31,7 +31,7 @@ func newOneShotBackupStatusService(ctxIn context.Context, credentialsProvider se
 }
 
 func (b *oneShotBackupStatusService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*oneShotBackupStatusService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*oneShotBackupStatusService).Run")
 	defer span.End()
 
 	backups, err := b.backupRepository.GetBigQueryOneShotSnapshots(ctx, repository.Prepared)

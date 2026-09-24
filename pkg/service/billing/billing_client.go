@@ -8,7 +8,7 @@ import (
 
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	gcpBilling "google.golang.org/api/cloudbilling/v1"
 	"google.golang.org/api/option"
 )
@@ -28,7 +28,7 @@ type defaultCloudBillingClient struct {
 
 // NewCloudBillingClient crete new instance of Client
 func NewCloudBillingClient(ctxIn context.Context) (Client, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewCloudBillingClient")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewCloudBillingClient")
 	defer span.End()
 
 	o := []option.ClientOption{option.WithScopes("https://www.googleapis.com/auth/cloud-platform")}

@@ -10,7 +10,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/requestobjects"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type AddBackupHandler struct {
@@ -23,7 +23,7 @@ func NewAddBackupHandler(processorBuilder *builder.ProcessorBuilder) *AddBackupH
 
 // HandleAddBackup will handle Creating operation
 func (dl *AddBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, span := trace.StartSpan(r.Context(), "AddBackupHandler.ServeHTTP")
+	ctx, span := otel.Tracer("").Start(r.Context(), "AddBackupHandler.ServeHTTP")
 	defer span.End()
 
 	bodyBytes, err := io.ReadAll(r.Body)

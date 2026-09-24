@@ -19,7 +19,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -101,7 +101,7 @@ type defaultGcsClient struct {
 }
 
 func (c *defaultGcsClient) DeleteObjectWithPrefix(ctxIn context.Context, bucket string, objectPrefixName string) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).DeleteObjectWithPrefix")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).DeleteObjectWithPrefix")
 	defer span.End()
 
 	objectIterator := c.client.Bucket(bucket).Objects(ctx, &storage.Query{Prefix: objectPrefixName})
@@ -122,7 +122,7 @@ func (c *defaultGcsClient) DeleteObjectWithPrefix(ctxIn context.Context, bucket 
 }
 
 func (c *defaultGcsClient) GetProject(ctxIn context.Context, projectID string) (*resourcemanagerpb.Project, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).GetProject")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).GetProject")
 	defer span.End()
 
 	return c.projectClient.GetProject(ctxIn, &resourcemanagerpb.GetProjectRequest{Name: fmt.Sprintf("projects/%s", projectID)})
@@ -130,7 +130,7 @@ func (c *defaultGcsClient) GetProject(ctxIn context.Context, projectID string) (
 
 // Close terminates all resources in use
 func (c *defaultGcsClient) Close(ctxIn context.Context) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).Close")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).Close")
 	defer span.End()
 
 	c.client.Close()
@@ -140,7 +140,7 @@ func (c *defaultGcsClient) Close(ctxIn context.Context) {
 
 // NewCloudStorageClient create a new CloudStorageClient
 func NewCloudStorageClient(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, targetProjectID string) (CloudStorageClient, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewCloudStorageClient")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewCloudStorageClient")
 	defer span.End()
 
 	if strings.EqualFold(targetProjectID, config.GCPProjectId.GetOrDefault("")) {
@@ -150,7 +150,7 @@ func NewCloudStorageClient(ctxIn context.Context, tokenSourceProvider impersonat
 }
 
 func createCloudStorageClient(ctxIn context.Context) (CloudStorageClient, error) {
-	ctx, span := trace.StartSpan(ctxIn, "createCloudStorageClient")
+	ctx, span := otel.Tracer("").Start(ctxIn, "createCloudStorageClient")
 	defer span.End()
 
 	var storageOptions []option.ClientOption
@@ -187,7 +187,7 @@ func createCloudStorageClient(ctxIn context.Context) (CloudStorageClient, error)
 }
 
 func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipalProvider impersonate.TargetPrincipalForProjectProvider, targetProjectID string) (CloudStorageClient, error) {
-	ctx, span := trace.StartSpan(ctxIn, "createImpersonatedCloudStorageClient")
+	ctx, span := otel.Tracer("").Start(ctxIn, "createImpersonatedCloudStorageClient")
 	defer span.End()
 
 	target, delegates, err := targetPrincipalProvider.GetTargetPrincipalForProject(ctx, targetProjectID)
@@ -271,7 +271,7 @@ func createImpersonatedCloudStorageClient(ctxIn context.Context, targetPrincipal
 }
 
 func (c *defaultGcsClient) SetBucketIAMPolicy(ctxIn context.Context, bucket string, policy *iam.Policy) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).SetBucketIAMPolicy")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).SetBucketIAMPolicy")
 	defer span.End()
 
 	return c.client.Bucket(bucket).IAM().SetPolicy(ctxIn, policy)
@@ -279,7 +279,7 @@ func (c *defaultGcsClient) SetBucketIAMPolicy(ctxIn context.Context, bucket stri
 
 // IsInitialized check if client is initialized
 func (c *defaultGcsClient) IsInitialized(ctxIn context.Context) bool {
-	_, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).IsInitialized")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).IsInitialized")
 	defer span.End()
 
 	return c.client != nil
@@ -287,7 +287,7 @@ func (c *defaultGcsClient) IsInitialized(ctxIn context.Context) bool {
 
 // DoesBucketExist check if bucket exist
 func (c *defaultGcsClient) DoesBucketExist(ctxIn context.Context, project string, bucket string) (bool, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).DoesBucketExist")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).DoesBucketExist")
 	defer span.End()
 
 	bucketsIterator := c.client.Buckets(ctx, project)
@@ -310,7 +310,7 @@ func (c *defaultGcsClient) DoesBucketExist(ctxIn context.Context, project string
 
 // BucketUsageInBytes report how many data are stored in the bucket
 func (c *defaultGcsClient) BucketUsageInBytes(ctxIn context.Context, project string, bucket string) (totalSize float64, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).BucketUsageInBytes")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).BucketUsageInBytes")
 	defer span.End()
 
 	startTime := time.Now().UTC().Add(time.Minute * -11) // storage/total_bytes metric is written every 5 minutes
@@ -353,7 +353,7 @@ func (c *defaultGcsClient) BucketUsageInBytes(ctxIn context.Context, project str
 }
 
 func (c *defaultGcsClient) UpdateBucket(ctxIn context.Context, bucket string, lifetimeInDays uint, archiveTTM uint, labels LabelsProvider) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).UpdateBucket")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).UpdateBucket")
 	defer span.End()
 
 	attributes, err := c.client.Bucket(bucket).Attrs(ctx)
@@ -468,7 +468,7 @@ func labelsEqual(want, have map[string]string) bool {
 
 // CreateBucket create new bucket in a given project
 func (c *defaultGcsClient) CreateBucket(ctxIn context.Context, bucket CloudStorageBucket) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).CreateBucket")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).CreateBucket")
 	defer span.End()
 
 	var bucketAttrs = storage.BucketAttrs{
@@ -516,7 +516,7 @@ func (c *defaultGcsClient) CreateBucket(ctxIn context.Context, bucket CloudStora
 
 // DeleteBucket remove whole bucket
 func (c *defaultGcsClient) DeleteBucket(ctxIn context.Context, bucket string) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).DeleteBucket")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).DeleteBucket")
 	defer span.End()
 
 	err := c.client.Bucket(bucket).Delete(ctx)
@@ -529,7 +529,7 @@ func (c *defaultGcsClient) DeleteBucket(ctxIn context.Context, bucket string) er
 
 // ReadObject get content of a bucket object
 func (c *defaultGcsClient) ReadObject(ctxIn context.Context, bucketName, objectName string) ([]byte, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).ReadObject")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).ReadObject")
 	defer span.End()
 
 	rc, err := c.client.Bucket(bucketName).Object(objectName).ReadCompressed(true).NewReader(ctx)
@@ -547,7 +547,7 @@ func (c *defaultGcsClient) ReadObject(ctxIn context.Context, bucketName, objectN
 
 // DeleteObjectsWithObjectMatch delete all bucket objects that have same prefix
 func (c *defaultGcsClient) DeleteObjectsWithObjectMatch(ctxIn context.Context, bucketName string, prefix string, objectPattern *regexp.Regexp) (deleted int, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).DeleteObjectsWithObjectMatch")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).DeleteObjectsWithObjectMatch")
 	defer span.End()
 
 	storageQuery := storage.Query{}
@@ -583,7 +583,7 @@ func (c *defaultGcsClient) DeleteObjectsWithObjectMatch(ctxIn context.Context, b
 
 // DeleteObject delete bucket object
 func (c *defaultGcsClient) DeleteObject(ctxIn context.Context, bucketName string, objectName string) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).DeleteObject")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).DeleteObject")
 	defer span.End()
 
 	return c.client.Bucket(bucketName).Object(objectName).Delete(ctx)
@@ -592,7 +592,7 @@ func (c *defaultGcsClient) DeleteObject(ctxIn context.Context, bucketName string
 
 // CreateObject create new bucket object
 func (c *defaultGcsClient) CreateObject(ctxIn context.Context, bucketName, objectName, content string) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).CreateObject")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).CreateObject")
 	defer span.End()
 
 	w := c.client.Bucket(bucketName).Object(objectName).NewWriter(ctx)
@@ -605,7 +605,7 @@ func (c *defaultGcsClient) CreateObject(ctxIn context.Context, bucketName, objec
 
 // MoveObject move bucket object
 func (c *defaultGcsClient) MoveObject(ctxIn context.Context, bucketName, oldObjectName, newObjectName string) error {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).MoveObject")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).MoveObject")
 	defer span.End()
 
 	bucket := c.client.Bucket(bucketName)
@@ -618,7 +618,7 @@ func (c *defaultGcsClient) MoveObject(ctxIn context.Context, bucketName, oldObje
 
 // GetBuckets list all buckets that belongs to a given project
 func (c *defaultGcsClient) GetBuckets(ctxIn context.Context, project string) (buckets []string, err error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).GetBuckets")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).GetBuckets")
 	defer span.End()
 
 	bucketsIterator := c.client.Buckets(ctx, project)
@@ -638,7 +638,7 @@ func (c *defaultGcsClient) GetBuckets(ctxIn context.Context, project string) (bu
 
 // GetBucketDetails get details of a bucket
 func (c *defaultGcsClient) GetBucketDetails(ctxIn context.Context, bucket string) (*storage.BucketAttrs, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultGcsClient).GetBucketDetails")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultGcsClient).GetBucketDetails")
 	defer span.End()
 
 	return c.client.Bucket(bucket).Attrs(ctx)

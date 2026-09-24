@@ -8,7 +8,7 @@ import (
 
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/api/googleapi"
 )
 
@@ -19,7 +19,7 @@ type ExtractJobHandler struct {
 
 // NewExtractJobHandler create new instance of ExtractJobHandler
 func NewExtractJobHandler(ctxIn context.Context, tokenSourceProvider impersonate.TargetPrincipalForProjectProvider, srcProjectID, targetProjectID string) (*ExtractJobHandler, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewExtractJobHandler")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewExtractJobHandler")
 	defer span.End()
 
 	bgClient, err := NewBigQueryClient(ctx, tokenSourceProvider, srcProjectID, targetProjectID)
@@ -35,7 +35,7 @@ func NewExtractJobHandler(ctxIn context.Context, tokenSourceProvider impersonate
 
 // CreateAvroJob start a BigQuery job that export data in AVRO format
 func (e *ExtractJobHandler) CreateAvroJob(ctxIn context.Context, dataset, table, sinkURI string) (repository.ExtractJobID, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*ExtractJobHandler).CreateAvroJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*ExtractJobHandler).CreateAvroJob")
 	defer span.End()
 
 	extractor := e.bq.ExtractTableToGcsAsAvro(ctx, dataset, table, sinkURI)
@@ -50,7 +50,7 @@ func (e *ExtractJobHandler) CreateAvroJob(ctxIn context.Context, dataset, table,
 
 // GetStatusOfJob get actual status for a BigQuery job
 func (e *ExtractJobHandler) GetStatusOfJob(ctxIn context.Context, extractJobID repository.ExtractJobID) (ExtractJobState, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*ExtractJobHandler).GetStatusOfJob")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*ExtractJobHandler).GetStatusOfJob")
 	defer span.End()
 
 	jobStatus, err := e.bq.GetExtractJobStatus(ctx, extractJobID)
@@ -75,7 +75,7 @@ func (e *ExtractJobHandler) GetStatusOfJob(ctxIn context.Context, extractJobID r
 // DeleteExtractJob delete a BigQuery job
 // If job does not exist, it returns nil
 func (e *ExtractJobHandler) DeleteExtractJob(ctx context.Context, jobID repository.ExtractJobID) error {
-	ctx, span := trace.StartSpan(ctx, "(*ExtractJobHandler).DeleteExtractJob")
+	ctx, span := otel.Tracer("").Start(ctx, "(*ExtractJobHandler).DeleteExtractJob")
 	defer span.End()
 
 	err := e.bq.DeleteExtractJob(ctx, jobID)

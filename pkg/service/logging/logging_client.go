@@ -10,7 +10,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/genproto/googleapis/cloud/audit"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -33,7 +33,7 @@ type DefaultLoggingClient struct {
 
 // NewLoggingClient creates new DefaultLoggingClient
 func NewLoggingClient(ctxIn context.Context, targetPrincipalProvider impersonate.TargetPrincipalForProjectProvider, srcProjectID, targetProjectID string) (*DefaultLoggingClient, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewLoggingClient")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewLoggingClient")
 	defer span.End()
 
 	var options []option.ClientOption

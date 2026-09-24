@@ -11,7 +11,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/ottogroup/penelope/pkg/service/util"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type reconcileService struct {
@@ -22,7 +22,7 @@ type reconcileService struct {
 }
 
 func newReconcileService(ctxIn context.Context, provider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) (*reconcileService, error) {
-	ctx, span := trace.StartSpan(ctxIn, "newReconcileService")
+	ctx, span := otel.Tracer("").Start(ctxIn, "newReconcileService")
 	defer span.End()
 
 	db, err := repository.NewBackupRepository(ctx, credentialsProvider)
@@ -34,7 +34,7 @@ func newReconcileService(ctxIn context.Context, provider impersonate.TargetPrinc
 }
 
 func (j *reconcileService) Run(ctxIn context.Context) {
-	ctx, span := trace.StartSpan(ctxIn, "(*reconcileService).Run")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*reconcileService).Run")
 	defer span.End()
 
 	backups, err := j.db.GetBackups(ctx, repository.BackupFilter{})

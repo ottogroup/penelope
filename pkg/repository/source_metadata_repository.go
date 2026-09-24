@@ -8,7 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 // SourceMetadataRepository defines operation for SourceMetadata
@@ -20,7 +20,7 @@ type SourceMetadataRepository interface {
 
 // NewSourceMetadataRepository return instance of SourceMetadataRepository
 func NewSourceMetadataRepository(ctxIn context.Context, credentialsProvider secret.SecretProvider) (SourceMetadataRepository, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewSourceMetadataRepository")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewSourceMetadataRepository")
 	defer span.End()
 
 	storageService, err := service.NewStorageService(ctx, credentialsProvider)
@@ -36,7 +36,7 @@ type defaultSourceMetadataRepository struct {
 
 // Add new SourceMetadata entries
 func (b *defaultSourceMetadataRepository) Add(ctxIn context.Context, sourceMetadata []*SourceMetadata) ([]*SourceMetadata, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultSourceMetadataRepository).Add")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultSourceMetadataRepository).Add")
 	defer span.End()
 
 	err := b.storageService.DB().RunInTransaction(ctx, func(tx *pg.Tx) error {
@@ -54,7 +54,7 @@ func (b *defaultSourceMetadataRepository) Add(ctxIn context.Context, sourceMetad
 
 // GetLastByBackupID get the latest created source metadata for backup
 func (b *defaultSourceMetadataRepository) GetLastByBackupID(ctxIn context.Context, backupID string) ([]*SourceMetadata, error) {
-	_, span := trace.StartSpan(ctxIn, "(*defaultSourceMetadataRepository).GetLastByBackupID")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultSourceMetadataRepository).GetLastByBackupID")
 	defer span.End()
 
 	var sourceMetadata []*SourceMetadata
@@ -84,7 +84,7 @@ func (b *defaultSourceMetadataRepository) GetLastByBackupID(ctxIn context.Contex
 
 // MarkDeleted
 func (b *defaultSourceMetadataRepository) MarkDeleted(ctxIn context.Context, id int) error {
-	_, span := trace.StartSpan(ctxIn, "(*defaultSourceMetadataRepository).MarkDeleted")
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultSourceMetadataRepository).MarkDeleted")
 	defer span.End()
 
 	sourceMetadata := &SourceMetadata{

@@ -5,7 +5,7 @@ import (
 
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 // SourceMetadataJobRepository defines operation for sourceMetadata
@@ -20,7 +20,7 @@ type DefaultSourceMetadataJobRepository struct {
 
 // NewSourceMetadataJobRepository return instance of SourceMetadataJobRepository
 func NewSourceMetadataJobRepository(ctxIn context.Context, credentialsProvider secret.SecretProvider) (SourceMetadataJobRepository, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewSourceMetadataJobRepository")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewSourceMetadataJobRepository")
 	defer span.End()
 
 	storageService, err := service.NewStorageService(ctx, credentialsProvider)
@@ -33,7 +33,7 @@ func NewSourceMetadataJobRepository(ctxIn context.Context, credentialsProvider s
 
 // Add mew sourceMetadata entry
 func (d *DefaultSourceMetadataJobRepository) Add(ctxIn context.Context, sourceMetadataID int, jobID string) error {
-	_, span := trace.StartSpan(ctxIn, "(*DefaultSourceMetadataJobRepository).Add")
+	_, span := otel.Tracer("").Start(ctxIn, "(*DefaultSourceMetadataJobRepository).Add")
 	defer span.End()
 
 	_, err := d.storageService.DB().Model(&SourceMetadataJob{

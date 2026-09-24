@@ -10,7 +10,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/requestobjects"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 )
 
 type BucketListingProcessorFactory interface {
@@ -45,7 +45,7 @@ type bucketListingProcessor struct {
 
 // Process request
 func (l bucketListingProcessor) Process(ctxIn context.Context, args *Argument[requestobjects.BucketListRequest]) (requestobjects.BucketListResponse, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(bucketListingProcessor).Process")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(bucketListingProcessor).Process")
 	defer span.End()
 
 	var request *requestobjects.BucketListRequest = &args.Request

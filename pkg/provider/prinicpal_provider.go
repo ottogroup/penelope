@@ -10,7 +10,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/config"
 	authmodel "github.com/ottogroup/penelope/pkg/http/auth/model"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel"
 	"gopkg.in/yaml.v2"
 )
 
@@ -23,7 +23,7 @@ type defaultUserProvider struct {
 }
 
 func NewDefaultUserProvider(ctxIn context.Context, gcsClient gcs.CloudStorageClient) (PrincipalProvider, error) {
-	ctx, span := trace.StartSpan(ctxIn, "NewDefaultGCPBackupProvider")
+	ctx, span := otel.Tracer("").Start(ctxIn, "NewDefaultGCPBackupProvider")
 	defer span.End()
 
 	if gcsClient == nil || !gcsClient.IsInitialized(ctx) {
@@ -36,7 +36,7 @@ func NewDefaultUserProvider(ctxIn context.Context, gcsClient gcs.CloudStorageCli
 }
 
 func (p *defaultUserProvider) GetPrincipalForEmail(ctxIn context.Context, email string) (*authmodel.Principal, error) {
-	ctx, span := trace.StartSpan(ctxIn, "(*defaultUserProvider).GetSinkGCPProjectID")
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultUserProvider).GetSinkGCPProjectID")
 	defer span.End()
 
 	bucketName := config.DefaultProviderBucketEnv.MustGet()
