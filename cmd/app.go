@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 
-	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/config"
@@ -17,8 +17,15 @@ import (
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/secret"
+	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/oauth"
 )
 
 var envKeys = []config.EnvKey{
@@ -119,11 +126,37 @@ func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
 }
 
 func createAndRegisterExporters() {
-	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(config.GCPProjectId.MustGet()))
+	ctx := context.Background()
+
+	creds, err := oauth.NewApplicationDefault(ctx)
 	if err != nil {
-		log.Fatalf("Failed to create Cloud Trace exporter: %v", err)
+		log.Fatalf("Failed to load application default credentials: %v", err)
+	}
+
+	res, err := resource.New(
+		ctx,
+		resource.WithDetectors(gcp.NewDetector()),
+		resource.WithTelemetrySDK(),
+		resource.WithFromEnv(),
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String("penelope"),
+			attribute.String("gcp.project_id", config.GCPProjectId.MustGet()),
+		),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create OpenTelemetry resource: %v", err)
+	}
+
+	exporter, err := otlptracegrpc.New(
+		ctx,
+		otlptracegrpc.WithEndpoint("telemetry.googleapis.com:443"),
+		otlptracegrpc.WithDialOption(grpc.WithPerRPCCredentials(creds)),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create OTLP trace exporter: %v", err)
 	}
 	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithResource(res),
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 	)
