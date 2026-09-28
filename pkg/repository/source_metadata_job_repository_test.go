@@ -2,12 +2,12 @@ package repository
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go/service/backup"
+	"os"
+	"testing"
+
 	"github.com/ottogroup/penelope/pkg/service"
 	"github.com/ottogroup/penelope/pkg/service/sql"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
 )
 
 func TestDefaultSourceMetadataJobRepository_Add_Simple(t *testing.T) {
@@ -26,7 +26,7 @@ func TestDefaultSourceMetadataJobRepository_Add_Simple(t *testing.T) {
 			ID:           "123",
 			BackupID:     "",
 			Type:         "",
-			Status:       backup.JobStateCreated,
+			Status:       NotScheduled,
 			Source:       "",
 			ForeignJobID: ForeignJobID{},
 			EntityAudit:  EntityAudit{},
@@ -72,7 +72,7 @@ func TestDefaultSourceMetadataJobRepository_Add_UnknownSourceMetadata(t *testing
 			ID:           "123",
 			BackupID:     "",
 			Type:         "",
-			Status:       backup.JobStateCreated,
+			Status:       NotScheduled,
 			Source:       "",
 			ForeignJobID: ForeignJobID{},
 			EntityAudit:  EntityAudit{},

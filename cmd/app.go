@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 
-	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/config"
@@ -17,8 +17,9 @@ import (
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/secret"
+	"github.com/ottogroup/penelope/pkg/tracing"
 	"go.opentelemetry.io/otel"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var envKeys = []config.EnvKey{
@@ -35,15 +36,17 @@ type AppStartArguments struct {
 	TargetPrincipalForProjectProvider impersonate.TargetPrincipalForProjectProvider
 	SecretProvider                    secret.SecretProvider
 	PrincipalProvider                 provider.PrincipalProvider
+
+	// TracerProvider is optional. If nil and PENELOPE_TRACING is true, a vendor-neutral OTLP
+	// exporter configured via the standard OTEL_* environment variables is used.
+	TracerProvider trace.TracerProvider
 }
 
 // Run penelope app and starts rest api
 func Run(args AppStartArguments) {
 	glog.Infoln("Starting penelope...")
 
-	if config.EnableTracingEnv.GetBoolOrDefault(false) {
-		createAndRegisterExporters()
-	}
+	registerTracerProvider(args.TracerProvider)
 
 	flag.Parse()
 
@@ -118,16 +121,21 @@ func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
 	)
 }
 
-func createAndRegisterExporters() {
-	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(config.GCPProjectId.MustGet()))
-	if err != nil {
-		log.Fatalf("Failed to create Cloud Trace exporter: %v", err)
+func registerTracerProvider(tp trace.TracerProvider) {
+	if tp != nil {
+		otel.SetTracerProvider(tp)
+		return
 	}
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-	)
-	otel.SetTracerProvider(tp)
+
+	if !config.EnableTracingEnv.GetBoolOrDefault(false) {
+		return
+	}
+
+	otlpProvider, err := tracing.NewOTLPTracerProvider(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to create tracer provider: %v", err)
+	}
+	otel.SetTracerProvider(otlpProvider)
 }
 
 func newTokenValidator() (auth.TokenValidator, error) {
