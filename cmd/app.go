@@ -17,15 +17,9 @@ import (
 	"github.com/ottogroup/penelope/pkg/processor"
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/secret"
-	"go.opentelemetry.io/contrib/detectors/gcp"
+	"github.com/ottogroup/penelope/pkg/tracing"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/oauth"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var envKeys = []config.EnvKey{
@@ -42,15 +36,17 @@ type AppStartArguments struct {
 	TargetPrincipalForProjectProvider impersonate.TargetPrincipalForProjectProvider
 	SecretProvider                    secret.SecretProvider
 	PrincipalProvider                 provider.PrincipalProvider
+
+	// TracerProvider is optional. If nil and PENELOPE_TRACING is true, a vendor-neutral OTLP
+	// exporter configured via the standard OTEL_* environment variables is used.
+	TracerProvider trace.TracerProvider
 }
 
 // Run penelope app and starts rest api
 func Run(args AppStartArguments) {
 	glog.Infoln("Starting penelope...")
 
-	if config.EnableTracingEnv.GetBoolOrDefault(false) {
-		createAndRegisterExporters()
-	}
+	registerTracerProvider(args.TracerProvider)
 
 	flag.Parse()
 
@@ -125,42 +121,21 @@ func createBuilder(provider AppStartArguments) *builder.ProcessorBuilder {
 	)
 }
 
-func createAndRegisterExporters() {
-	ctx := context.Background()
-
-	creds, err := oauth.NewApplicationDefault(ctx)
-	if err != nil {
-		log.Fatalf("Failed to load application default credentials: %v", err)
+func registerTracerProvider(tp trace.TracerProvider) {
+	if tp != nil {
+		otel.SetTracerProvider(tp)
+		return
 	}
 
-	res, err := resource.New(
-		ctx,
-		resource.WithDetectors(gcp.NewDetector()),
-		resource.WithTelemetrySDK(),
-		resource.WithFromEnv(),
-		resource.WithAttributes(
-			semconv.ServiceNameKey.String("penelope"),
-			attribute.String("gcp.project_id", config.GCPProjectId.MustGet()),
-		),
-	)
-	if err != nil {
-		log.Fatalf("Failed to create OpenTelemetry resource: %v", err)
+	if !config.EnableTracingEnv.GetBoolOrDefault(false) {
+		return
 	}
 
-	exporter, err := otlptracegrpc.New(
-		ctx,
-		otlptracegrpc.WithEndpoint("telemetry.googleapis.com:443"),
-		otlptracegrpc.WithDialOption(grpc.WithPerRPCCredentials(creds)),
-	)
+	otlpProvider, err := tracing.NewOTLPTracerProvider(context.Background())
 	if err != nil {
-		log.Fatalf("Failed to create OTLP trace exporter: %v", err)
+		log.Fatalf("Failed to create tracer provider: %v", err)
 	}
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithResource(res),
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-	)
-	otel.SetTracerProvider(tp)
+	otel.SetTracerProvider(otlpProvider)
 }
 
 func newTokenValidator() (auth.TokenValidator, error) {

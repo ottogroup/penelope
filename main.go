@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"os"
+
 	"github.com/golang/glog"
 	app "github.com/ottogroup/penelope/cmd"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/provider"
 	"github.com/ottogroup/penelope/pkg/secret"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
-	"os"
+	"github.com/ottogroup/penelope/pkg/tracing"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func main() {
@@ -38,11 +41,21 @@ func main() {
 
 	secretProvider := secret.NewEnvSecretProvider()
 
+	var tracerProvider trace.TracerProvider
+	if config.EnableTracingEnv.GetBoolOrDefault(false) {
+		tracerProvider, err = tracing.NewGCPTracerProvider(bgContext, appProjectID)
+		if err != nil {
+			glog.Errorf("could not create GCP TracerProvider: %s", err)
+			os.Exit(1)
+		}
+	}
+
 	appStartArguments := app.AppStartArguments{
 		PrincipalProvider:                 principalProvider,
 		SinkGCPProjectProvider:            sinkGCPProjectProvider,
 		TargetPrincipalForProjectProvider: targetPrincipalForProjectProvider,
 		SecretProvider:                    secretProvider,
+		TracerProvider:                    tracerProvider,
 	}
 
 	app.Run(appStartArguments)
