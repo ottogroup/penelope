@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/logging v1.20.0
 	cloud.google.com/go/monitoring v1.31.0
 	cloud.google.com/go/resourcemanager v1.17.0
-	cloud.google.com/go/storage v1.68.0
+	cloud.google.com/go/storage v1.69.0
 	github.com/go-pg/pg/extra/pgdebug v0.2.0
 	github.com/go-pg/pg/v10 v10.15.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
@@ -20,7 +20,8 @@ require (
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.46.0
 	go.opentelemetry.io/otel/sdk v1.46.0
-	google.golang.org/api v0.299.0
+	go.opentelemetry.io/otel/trace v1.46.0
+	google.golang.org/api v0.300.0
 	google.golang.org/genproto v0.0.0-20260921155816-b14227669459
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
@@ -75,7 +76,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.46.0 // indirect
 	go.opentelemetry.io/otel/metric v1.46.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.46.0 // indirect
-	go.opentelemetry.io/otel/trace v1.46.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
