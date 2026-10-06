@@ -7,7 +7,7 @@ import { BackupType } from "@/models/api/models/BackupType";
 import { CreateRequest } from "@/models/api/models/CreateRequest";
 import Notification from "@/models/notification";
 import { useNotificationsStore, usePrincipalStore } from "@/stores";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 const principalStore = usePrincipalStore();
 const notificationsStore = useNotificationsStore();
@@ -153,7 +153,10 @@ const apiRequestBody = () => {
   if (request.value.type == BackupType.CLOUD_STORAGE) {
     req.gcs_options = request.value.gcs_options;
   } else if (request.value.type == BackupType.BIG_QUERY) {
-    req.bigquery_options = request.value.bigquery_options;
+    req.bigquery_options = {
+      ...request.value.bigquery_options,
+      use_native_table_snapshots: allowsNativeTableSnapshots.value && usesNativeTableSnapshots.value,
+    };
   }
 
   if (request.value.strategy == BackupStrategy.ONESHOT) {
@@ -189,6 +192,16 @@ const saveBackup = () => {
 const requiredRule = (fieldName: string) => {
   return (v: string) => (!!v && v.length > 0) || `${fieldName} is required`;
 };
+
+// native BigQuery table snapshots are only valid for Snapshot/Oneshot strategy BigQuery backups
+const allowsNativeTableSnapshots = computed(
+  () =>
+    request.value.type == BackupType.BIG_QUERY &&
+    (request.value.strategy == BackupStrategy.SNAPSHOT || request.value.strategy == BackupStrategy.ONESHOT),
+);
+const usesNativeTableSnapshots = computed(
+  () => allowsNativeTableSnapshots.value && !!request.value.bigquery_options?.use_native_table_snapshots,
+);
 
 const integerRequiredRule = (fieldName: string) => {
   return (v: number) => (!!v && v > 0) || `${fieldName} is required and must be bigger than 0`;
@@ -297,7 +310,7 @@ watch(
                   multiple
                   clearable
                   label="BigQuery tables"
-                  hint="When empty will take all tables."
+                  hint="When empty will take all tables (one snapshot per table when using native table snapshots)."
                   v-model="request.bigquery_options!.table"
                 ></v-combobox>
                 <v-combobox
@@ -309,9 +322,17 @@ watch(
                   hint="When present will ignore given tables."
                   v-model="request.bigquery_options!.excluded_tables"
                 ></v-combobox>
+                <v-checkbox
+                  v-if="allowsNativeTableSnapshots"
+                  class="mb-2"
+                  label="Use native BigQuery table snapshot"
+                  hint="Creates a point-in-time copy directly in BigQuery instead of exporting to a GCS bucket. No Target storage settings apply."
+                  persistent-hint
+                  v-model="request.bigquery_options!.use_native_table_snapshots"
+                ></v-checkbox>
               </template>
             </v-col>
-            <v-col>
+            <v-col v-if="!usesNativeTableSnapshots">
               <h3 class="mb-1">Target</h3>
               <v-select
                 class="mb-2"
