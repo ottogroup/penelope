@@ -129,9 +129,10 @@ func (j *cleanupBackupService) cleanupBackup(ctxIn context.Context, backup *repo
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).cleanupBackup")
 	defer span.End()
 
-	err := j.deleteSink(ctx, backup)
-	if err != nil {
-		return err
+	if backup.UsesCloudStorageSink() {
+		if err := j.deleteSink(ctx, backup); err != nil {
+			return err
+		}
 	}
 
 	if repository.CloudStorage == backup.Type {

@@ -87,9 +87,10 @@ func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job, sour
 				LifetimeInDays: backup.MirrorOptions.LifetimeInDays,
 			},
 			BigQueryOptions: requestobjects.BigQueryOptions{
-				Dataset:        backup.Dataset,
-				Table:          backup.Table,
-				ExcludedTables: backup.ExcludedTables,
+				Dataset:                 backup.Dataset,
+				Table:                   backup.Table,
+				ExcludedTables:          backup.ExcludedTables,
+				UseNativeTableSnapshots: backup.UseNativeTableSnapshots,
 			},
 			GCSOptions: requestobjects.GCSOptions{
 				Bucket:      backup.Bucket,

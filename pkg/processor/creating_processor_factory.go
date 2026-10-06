@@ -202,9 +202,10 @@ func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, requ
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{
-				Dataset:        request.BigQueryOptions.Dataset,
-				Table:          request.BigQueryOptions.Table,
-				ExcludedTables: request.BigQueryOptions.ExcludedTables,
+				Dataset:                 request.BigQueryOptions.Dataset,
+				Table:                   request.BigQueryOptions.Table,
+				ExcludedTables:          request.BigQueryOptions.ExcludedTables,
+				UseNativeTableSnapshots: request.BigQueryOptions.UseNativeTableSnapshots,
 			},
 			CloudStorageOptions: repository.CloudStorageOptions{
 				Bucket:      request.GCSOptions.Bucket,
@@ -324,11 +325,17 @@ func (b *bigQueryProcessorImpl) process(ctxIn context.Context, backup *repositor
 	if err != nil {
 		return nil, err
 	}
+	if backup.BigQueryOptions.UseNativeTableSnapshots && backup.Strategy != repository.Snapshot {
+		return nil, fmt.Errorf("native BigQuery table snapshots are only supported for strategy %q, got %q", repository.Snapshot, backup.Strategy)
+	}
 	backup, err = b.BackupRepository.AddBackup(ctx, backup)
 	if err != nil {
 		return nil, err
 	}
 
+	if !backup.UsesCloudStorageSink() {
+		return backup, nil
+	}
 	err = prepareSink(ctx, b.CloudStorage, backup)
 	return backup, err
 }
