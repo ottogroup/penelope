@@ -322,14 +322,6 @@ watch(
                   hint="When present will ignore given tables."
                   v-model="request.bigquery_options!.excluded_tables"
                 ></v-combobox>
-                <v-checkbox
-                  v-if="allowsNativeTableSnapshots"
-                  class="mb-2"
-                  label="Use native BigQuery table snapshot"
-                  hint="Creates a point-in-time copy directly in BigQuery instead of exporting to a GCS bucket. No Target storage settings apply."
-                  persistent-hint
-                  v-model="request.bigquery_options!.use_native_table_snapshots"
-                ></v-checkbox>
               </template>
             </v-col>
             <v-col v-if="!usesNativeTableSnapshots">
@@ -379,6 +371,14 @@ watch(
                 hint="Snapshot: one or many shots. Mirror: hourly sync."
                 :rules="[requiredRule('Strategy')]"
               ></v-select>
+              <v-checkbox
+                v-if="allowsNativeTableSnapshots"
+                class="mb-2"
+                label="Use native BigQuery table snapshot"
+                hint="Creates a point-in-time copy directly in BigQuery instead of exporting to a GCS bucket. No Target storage settings apply."
+                persistent-hint
+                v-model="request.bigquery_options!.use_native_table_snapshots"
+              ></v-checkbox>
               <template v-if="request.strategy == BackupStrategy.SNAPSHOT">
                 <v-text-field
                   class="mb-2"
