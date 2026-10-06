@@ -103,11 +103,22 @@ func (j *jobScheduleService) scheduleBigQueryBackupJob(ctxIn context.Context, jo
 	}
 
 	bigQueryOptions := backup.BackupOptions.BigQueryOptions
-	sinkURI := repository.BuildFullObjectStoragePath(backup.Sink, bigQueryOptions.Dataset, job.Source, job.ID)
-	glog.Infof("Creating bigquery extractJob with sink %s for job %s", sinkURI, job.ID)
-	extractJobID, err := jobHandler.CreateAvroJob(ctx, bigQueryOptions.Dataset, job.Source, sinkURI)
-	if err != nil {
-		return fmt.Errorf("could not create avro job: %s", err)
+
+	var extractJobID repository.ExtractJobID
+	if bigQueryOptions.UseNativeTableSnapshots {
+		dstTable := repository.BuildSnapshotTableName(job.Source, job.ID)
+		glog.Infof("Creating bigquery table snapshot job for %s.%s -> %s for job %s", bigQueryOptions.Dataset, job.Source, dstTable, job.ID)
+		extractJobID, err = jobHandler.CreateTableSnapshotJob(ctx, bigQueryOptions.Dataset, job.Source, dstTable)
+		if err != nil {
+			return fmt.Errorf("could not create table snapshot job: %s", err)
+		}
+	} else {
+		sinkURI := repository.BuildFullObjectStoragePath(backup.Sink, bigQueryOptions.Dataset, job.Source, job.ID)
+		glog.Infof("Creating bigquery extractJob with sink %s for job %s", sinkURI, job.ID)
+		extractJobID, err = jobHandler.CreateAvroJob(ctx, bigQueryOptions.Dataset, job.Source, sinkURI)
+		if err != nil {
+			return fmt.Errorf("could not create avro job: %s", err)
+		}
 	}
 	glog.Infof("Successfully created bigquery extractJob with id %s for job %s", extractJobID, job.ID)
 

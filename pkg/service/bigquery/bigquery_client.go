@@ -57,6 +57,10 @@ func newTableEntryFromMetadata(name string, t *bq.TableMetadata) *Table {
 type Client interface {
 	IsInitialized(ctxIn context.Context) bool
 	ExtractTableToGcsAsAvro(ctxIn context.Context, dataset, table, gcsURI string) *bq.Extractor
+	CopyTableAsSnapshot(ctxIn context.Context, srcDataset, srcTable, dstDataset, dstTable string) *bq.Copier
+	UpdateTableExpiration(ctxIn context.Context, project, dataset, table string, expiration time.Time) error
+	DeleteTable(ctxIn context.Context, project, dataset, table string) error
+	CreateDataset(ctxIn context.Context, project, dataset, location string) error
 	GetExtractJobStatus(ctxIn context.Context, extractJobID repository.ExtractJobID) (*bq.JobStatus, error)
 	DoesDatasetExists(ctxIn context.Context, project string, dataset string) (bool, error)
 	GetTable(ctxIn context.Context, project string, dataset string, table string) (*Table, error)
@@ -147,6 +151,44 @@ func (d *defaultBigQueryClient) ExtractTableToGcsAsAvro(ctxIn context.Context, d
 	extractor := d.client.DatasetInProject(d.sourceProjectID, dataset).Table(table).ExtractorTo(gcsURI)
 	extractor.Dst.DestinationFormat = bq.Avro
 	return extractor
+}
+
+// CopyTableAsSnapshot prepares a copy job that creates a native BigQuery table snapshot of a source table
+func (d *defaultBigQueryClient) CopyTableAsSnapshot(ctxIn context.Context, srcDataset, srcTable, dstDataset, dstTable string) *bq.Copier {
+	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).CopyTableAsSnapshot")
+	defer span.End()
+
+	src := d.client.DatasetInProject(d.sourceProjectID, srcDataset).Table(srcTable)
+	dst := d.client.DatasetInProject(d.targetProjectID, dstDataset).Table(dstTable)
+	copier := dst.CopierFrom(src)
+	copier.OperationType = bq.SnapshotOperation
+	copier.CreateDisposition = bq.CreateIfNeeded
+	return copier
+}
+
+// UpdateTableExpiration sets a table's expiration time, used as a best-effort TTL for native table snapshots
+func (d *defaultBigQueryClient) UpdateTableExpiration(ctxIn context.Context, project, dataset, table string, expiration time.Time) error {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).UpdateTableExpiration")
+	defer span.End()
+
+	_, err := d.client.DatasetInProject(project, dataset).Table(table).Update(ctx, bq.TableMetadataToUpdate{ExpirationTime: expiration}, "")
+	return err
+}
+
+// DeleteTable deletes a table, e.g. a native table snapshot when its backup is removed
+func (d *defaultBigQueryClient) DeleteTable(ctxIn context.Context, project, dataset, table string) error {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).DeleteTable")
+	defer span.End()
+
+	return d.client.DatasetInProject(project, dataset).Table(table).Delete(ctx)
+}
+
+// CreateDataset creates a dataset in the given project and location
+func (d *defaultBigQueryClient) CreateDataset(ctxIn context.Context, project, dataset, location string) error {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).CreateDataset")
+	defer span.End()
+
+	return d.client.DatasetInProject(project, dataset).Create(ctx, &bq.DatasetMetadata{Location: location})
 }
 
 // GetExtractJobStatus return status for extract job

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
@@ -132,8 +133,29 @@ func (j *jobStatusService) checkBigQueryBackupJob(ctxIn context.Context, job *re
 	if state == repository.FinishedQuotaError {
 		glog.Warningf("[FAIL] Job finished with quota error %s: %s", job, err)
 	}
+	if state == repository.FinishedOk && backup.BackupOptions.BigQueryOptions.UseNativeTableSnapshots {
+		j.applyTableSnapshotExpiration(ctx, jobHandler, backup, job)
+	}
 
 	return nil
+}
+
+// applyTableSnapshotExpiration sets a best-effort TTL on a finished native table snapshot;
+// failures are only logged since the update is retried on the next status-check poll
+func (j *jobStatusService) applyTableSnapshotExpiration(ctxIn context.Context, jobHandler *bigquery.ExtractJobHandler, backup *repository.Backup, job *repository.Job) {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*jobStatusService).applyTableSnapshotExpiration")
+	defer span.End()
+
+	if backup.SnapshotOptions.LifetimeInDays == 0 {
+		return
+	}
+
+	expiration := time.Now().Add(time.Duration(backup.SnapshotOptions.LifetimeInDays) * 24 * time.Hour)
+	table := repository.BuildSnapshotTableName(job.Source, job.ID)
+	err := jobHandler.UpdateTableExpiration(ctx, backup.TargetProject, backup.BackupOptions.BigQueryOptions.Dataset, table, expiration)
+	if err != nil {
+		glog.Warningf("[FAIL] Error setting expiration on table snapshot %s.%s: %s", backup.BackupOptions.BigQueryOptions.Dataset, table, err)
+	}
 }
 
 func (j *jobStatusService) checkCloudStorageBackupJob(ctxIn context.Context, job *repository.Job, backupType repository.BackupType) error {
