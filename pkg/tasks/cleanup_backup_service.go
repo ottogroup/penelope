@@ -435,6 +435,14 @@ func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *re
 				}
 			}
 
+			if backup.BackupOptions.BigQueryOptions.UseNativeTableSnapshots {
+				table := repository.BuildSnapshotTableName(job.Source, job.ID)
+				if err := jobHandler.DeleteTable(ctx, backup.TargetProject, backup.BackupOptions.BigQueryOptions.Dataset, table); err != nil {
+					glog.Warningf("[FAIL] Error deleting table snapshot %s.%s: %s", backup.BackupOptions.BigQueryOptions.Dataset, table, err)
+					continue
+				}
+			}
+
 			err = j.scheduleProcessor.MarkJobDeleted(ctx, job.ID)
 			if err != nil {
 				glog.Warningf("[FAIL] Error marking job %s as deleted: %s", job.ID, err)
