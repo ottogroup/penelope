@@ -48,6 +48,22 @@ func (e *ExtractJobHandler) CreateAvroJob(ctxIn context.Context, dataset, table,
 	return repository.NewExtractJobIDWithLocation(job.ID(), job.Location()), nil
 }
 
+// CreateTableSnapshotJob start a BigQuery copy job that creates a native table snapshot
+func (e *ExtractJobHandler) CreateTableSnapshotJob(ctxIn context.Context, dataset, table, dstTable string) (repository.ExtractJobID, error) {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*ExtractJobHandler).CreateTableSnapshotJob")
+	defer span.End()
+
+	// snapshot destination dataset shares the source dataset's name, in the target project
+	copier := e.bq.CopyTableAsSnapshot(ctx, dataset, table, dataset, dstTable)
+
+	job, err := copier.Run(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return repository.NewExtractJobIDWithLocation(job.ID(), job.Location()), nil
+}
+
 // GetStatusOfJob get actual status for a BigQuery job
 func (e *ExtractJobHandler) GetStatusOfJob(ctxIn context.Context, extractJobID repository.ExtractJobID) (ExtractJobState, error) {
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*ExtractJobHandler).GetStatusOfJob")

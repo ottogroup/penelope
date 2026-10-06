@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
+	"google.golang.org/api/googleapi"
 )
 
 const sinkSTSAccountScheme = "project-%s@storage-transfer-service.iam.gserviceaccount.com"
@@ -334,10 +336,32 @@ func (b *bigQueryProcessorImpl) process(ctxIn context.Context, backup *repositor
 	}
 
 	if !backup.UsesCloudStorageSink() {
-		return backup, nil
+		return backup, b.ensureTargetDatasetExists(ctx, backup)
 	}
 	err = prepareSink(ctx, b.CloudStorage, backup)
 	return backup, err
+}
+
+// ensureTargetDatasetExists creates the backup's dataset in the target project if it is missing,
+// using the source dataset's location, since the destination dataset isn't auto-created by a copy job
+func (b *bigQueryProcessorImpl) ensureTargetDatasetExists(ctxIn context.Context, backup *repository.Backup) error {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryProcessorImpl).ensureTargetDatasetExists")
+	defer span.End()
+
+	exists, err := b.BigQuery.DoesDatasetExists(ctx, backup.TargetProject, backup.Dataset)
+	var googleAPIErr *googleapi.Error
+	if err != nil && !(errors.As(err, &googleAPIErr) && googleAPIErr.Code == http.StatusNotFound) {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
+	sourceDataset, err := b.BigQuery.GetDatasetDetails(ctx, backup.SourceProject, backup.Dataset)
+	if err != nil {
+		return err
+	}
+	return b.BigQuery.CreateDataset(ctx, backup.TargetProject, backup.Dataset, sourceDataset.Location)
 }
 
 func (b *bigQueryProcessorImpl) validateSource(ctxIn context.Context, backup *repository.Backup) error {
