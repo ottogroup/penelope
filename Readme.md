@@ -42,6 +42,7 @@
     - [Cloud Storage limitations](#cloud-storage-limitations)
   - [BigQuery](#bigquery)
     - [BigQuery limitations](#bigquery-limitations)
+    - [Native BigQuery Table Snapshots](#native-bigquery-table-snapshots)
 
 <!--TOC-->
 
@@ -607,6 +608,10 @@ The ```backup``` service account should have the following roles in the target (
     * `storage.objects.update`
 * to be able to trigger export jobs in BigQuery from source project(s)
     * BigQuery Job User (`roles/bigquery.jobUser`)
+* to be able to create and manage native BigQuery table snapshots
+    * `bigquery.datasets.create`
+    * `bigquery.tables.update`
+    * `bigquery.tables.delete`
 * to be able to create&update Storage Transfer jobs
     * Storage Transfer User (`roles/storagetransfer.user`)
 * to be able to clean up backups that transit to status `BackupDeleted`
@@ -731,3 +736,24 @@ Penelope is deployed in Google App Engine Standard Environment. After years of t
 * up to 1800 new BigQuery export jobs (for each Table/Partition) can be started every 5 minutes
 * up to 100,000 new BigQuery export jobs can be handled per project per day - this is hard quota from Google Cloud Platform
 * up to 15,000 objects deleted objets in source can be deleted from trashcan per minute
+
+### Native BigQuery Table Snapshots
+
+By default, BigQuery backups export table data to a GCS bucket in AVRO format, as described above. As an opt-in
+alternative, a BigQuery backup can be configured to use GCP's native
+[Table Snapshots](https://cloud.google.com/bigquery/docs/table-snapshots-intro) feature instead, by setting
+`bigquery_options.use_native_table_snapshots=true` on the backup. This creates a point-in-time copy of each source
+table directly in BigQuery - no data is exported to Cloud Storage, and **no GCS sink bucket is created** for the
+backup.
+
+* Only supported for `Strategy=Snapshot` backups (including Oneshot); rejected at creation time for `Strategy=Mirror`.
+* The snapshot dataset uses the **same name** as the source dataset, created if needed in the target (backup)
+  project and the source dataset's location.
+* Each snapshot table is named `<table>_snapshot_<jobID>`, one snapshot table per source table.
+* The configured **Snapshot TTL** (`SnapshotOptions.LifetimeInDays`) is applied as the snapshot table's native
+  BigQuery expiration time once the copy job finishes successfully, instead of a GCS bucket lifecycle rule. A TTL
+  of `0` means the snapshot table never expires.
+* Deleting the backup immediately deletes the snapshot table data (there is no trashcan support, same as the
+  existing BigQuery Oneshot/Snapshot behavior).
+* Because there is no GCS sink bucket, Storage class/region/secondary region/Archive Transition settings do not
+  apply and are ignored for backups using this option.
