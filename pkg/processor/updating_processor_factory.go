@@ -139,7 +139,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 	}
 
 	// if backup was deleted, create bucket sink again
-	if repository.BackupDeleted.EqualTo(backup.Status.String()) && repository.NotStarted.EqualTo(request.Status) {
+	if backup.UsesCloudStorageSink() && repository.BackupDeleted.EqualTo(backup.Status.String()) && repository.NotStarted.EqualTo(request.Status) {
 		exist, err := client.DoesBucketExist(ctx, backup.TargetProject, backup.Sink)
 		if err != nil {
 			return requestobjects.UpdateResponse{}, fmt.Errorf("couldn't check if bucket sink exist for backup: %v", backup)
@@ -159,7 +159,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 			return requestobjects.UpdateResponse{}, fmt.Errorf("updatingProcessor.Process UpdateBucket for Mirror failed: %v", err)
 		}
 	}
-	if backup.Strategy == repository.Snapshot {
+	if backup.Strategy == repository.Snapshot && backup.UsesCloudStorageSink() {
 		err = client.UpdateBucket(ctx, backup.Sink, request.SnapshotTTL, request.ArchiveTTM, nil)
 		if err != nil {
 			return requestobjects.UpdateResponse{}, fmt.Errorf("updatingProcessor.Process UpdateBucket for Snapshot failed: %v", err)

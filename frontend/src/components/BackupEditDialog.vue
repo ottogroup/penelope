@@ -41,6 +41,11 @@ const backupStatusIsDeleted = computed(() => {
   return backup.value.status === BackupStatus.BACKUP_DELETED;
 });
 
+// use_native_table_snapshots is immutable after creation, shown read-only below
+const usesNativeTableSnapshots = computed(() => {
+  return backup.value.type === BackupType.BIG_QUERY && !!backup.value.bigquery_options?.use_native_table_snapshots;
+});
+
 const updateData = () => {
   isLoading.value = true;
   if (props.id) {
@@ -158,7 +163,7 @@ watch(
                   multiple
                   clearable
                   label="BigQuery tables"
-                  hint="When empty will take all tables."
+                  hint="When empty will take all tables (one snapshot per table when using native table snapshots)."
                   v-model="backup!.bigquery_options!.table"
                 ></v-combobox>
                 <v-combobox
@@ -169,9 +174,16 @@ watch(
                   hint="When present will ignore given tables."
                   v-model="backup!.bigquery_options!.excluded_tables"
                 ></v-combobox>
+                <v-checkbox
+                  label="Use native BigQuery table snapshot"
+                  hint="Immutable after creation."
+                  persistent-hint
+                  readonly
+                  :model-value="usesNativeTableSnapshots"
+                ></v-checkbox>
               </template>
             </v-col>
-            <v-col>
+            <v-col v-if="!usesNativeTableSnapshots">
               <h3 class="mb-1">Target</h3>
               <v-text-field
                 label="Archive TTM"

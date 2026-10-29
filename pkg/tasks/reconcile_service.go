@@ -46,7 +46,7 @@ func (j *reconcileService) Run(ctxIn context.Context) {
 	var successBackups []string
 	for _, backup := range backups {
 		hasActiveStatus := backup.Status == repository.Prepared || backup.Status == repository.NotStarted || backup.Status == repository.Paused || backup.Status == repository.Finished
-		if !hasActiveStatus {
+		if !hasActiveStatus || !backup.UsesCloudStorageSink() {
 			continue
 		}
 		err = j.syncSinkBucket(ctx, backup)
