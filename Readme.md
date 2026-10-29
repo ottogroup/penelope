@@ -757,3 +757,4 @@ backup.
   existing BigQuery Oneshot/Snapshot behavior).
 * Because there is no GCS sink bucket, Storage class/region/secondary region/Archive Transition settings do not
   apply and are ignored for backups using this option.
+
