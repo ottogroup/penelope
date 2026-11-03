@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/ottogroup/penelope/pkg/builder"
 	"github.com/ottogroup/penelope/pkg/processor"
@@ -47,7 +48,7 @@ func (dl *AddBackupHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func getUnsetMandatoryFields(request requestobjects.CreateRequest) []string {
 	var unsetMandatoryFields []string
 
-	if request.TargetOptions.Region == "" {
+	if request.TargetOptions.Region == "" && !request.BigQueryOptions.UseNativeTableSnapshots {
 		unsetMandatoryFields = append(unsetMandatoryFields, "region")
 	} else if request.Type == "" {
 		unsetMandatoryFields = append(unsetMandatoryFields, "type")
@@ -63,10 +64,7 @@ func getUnsetMandatoryFields(request requestobjects.CreateRequest) []string {
 func checkMandatoryFieldsAreSet(w http.ResponseWriter, unsetMandatoryFields []string, body string) bool {
 	if len(unsetMandatoryFields) > 0 {
 		logMsg := fmt.Sprintf("Error request does not contain all mandatory fields\n body: %s", body)
-		respMsg := "Request does not contain all mandatory fields:\n"
-		for _, field := range unsetMandatoryFields {
-			respMsg += field + "\n"
-		}
+		respMsg := fmt.Sprintf("Request does not contain all mandatory fields: %s", strings.Join(unsetMandatoryFields, ", ")) + "\n"
 		prepareResponse(w, logMsg, respMsg, http.StatusBadRequest)
 
 		return false
@@ -152,7 +150,7 @@ func checkDualRegionIsValid(w http.ResponseWriter, region string, body string) b
 }
 
 func checkStorageClassIsValid(w http.ResponseWriter, storageClass string, body string) bool {
-	if storageClass == "" { //this will fall back to default
+	if storageClass == "" { // this will fall back to default
 		return true
 	}
 
