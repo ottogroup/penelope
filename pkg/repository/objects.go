@@ -214,7 +214,17 @@ func BuildObjectStoragePathPattern(dataset, table, jobID string) string {
 	return fmt.Sprintf("%s/%s-.*.avro", BuildStoragePath(dataset, table), jobID)
 }
 
-func logQueryError(source string, err error, args ...interface{}) {
+// BuildSnapshotDatasetName create a deterministic name for a native BigQuery dataset snapshot
+func BuildSnapshotDatasetName(srcDataset, uniqueID string) string {
+	return fmt.Sprintf("bkp_%s_%s", srcDataset, strings.Replace(uniqueID, "-", "_", -1))
+}
+
+// BuildSnapshotTableName create a deterministic name for a native BigQuery table snapshot
+func BuildSnapshotTableName(table, jobID string) string {
+	return fmt.Sprintf("%s_snapshot_%s", table, strings.Replace(jobID, "-", "_", -1))
+}
+
+func logQueryError(source string, err error, args ...any) {
 	glog.Errorf("%s had error: %s. args: %v", source, err, args)
 }
 

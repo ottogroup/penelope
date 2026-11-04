@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"cloud.google.com/go/iam"
 	"cloud.google.com/go/resourcemanager/apiv3/resourcemanagerpb"
@@ -606,6 +607,22 @@ func (*testBigQueryClient) IsInitialized(context.Context) bool {
 }
 
 func (*testBigQueryClient) ExtractTableToGcsAsAvro(c context.Context, dataset, table, gcsURI string) *bigquery.Extractor {
+	panic("implement me")
+}
+
+func (*testBigQueryClient) CopyTableAsSnapshot(c context.Context, srcDataset, srcTable, dstDataset, dstTable string) *bigquery.Copier {
+	panic("implement me")
+}
+
+func (*testBigQueryClient) UpdateTableExpiration(c context.Context, project, dataset, table string, expiration time.Time) error {
+	panic("implement me")
+}
+
+func (*testBigQueryClient) DeleteTable(c context.Context, project, dataset, table string) error {
+	panic("implement me")
+}
+
+func (*testBigQueryClient) CreateDataset(c context.Context, project, dataset, location string) error {
 	panic("implement me")
 }
 
