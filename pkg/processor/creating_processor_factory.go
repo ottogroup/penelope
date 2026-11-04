@@ -85,7 +85,7 @@ func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[reques
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*creatingProcessor).Process")
 	defer span.End()
 
-	var request requestobjects.CreateRequest = args.Request
+	var request = args.Request
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.Creating, request.Project) {
 		return requestobjects.BackupResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Creating.String(), args.Principal.User.Email, request.Project)
@@ -348,7 +348,8 @@ func (b *bigQueryProcessorImpl) ensureTargetDatasetExists(ctxIn context.Context,
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryProcessorImpl).ensureTargetDatasetExists")
 	defer span.End()
 
-	exists, err := b.BigQuery.DoesDatasetExists(ctx, backup.TargetProject, backup.Dataset)
+	sinkDataset := repository.BuildSnapshotDatasetName(backup.Dataset, backup.ID)
+	exists, err := b.BigQuery.DoesDatasetExists(ctx, backup.TargetProject, sinkDataset)
 	var googleAPIErr *googleapi.Error
 	if err != nil && !(errors.As(err, &googleAPIErr) && googleAPIErr.Code == http.StatusNotFound) {
 		return err
@@ -361,7 +362,8 @@ func (b *bigQueryProcessorImpl) ensureTargetDatasetExists(ctxIn context.Context,
 	if err != nil {
 		return err
 	}
-	return b.BigQuery.CreateDataset(ctx, backup.TargetProject, backup.Dataset, sourceDataset.Location)
+	// table snapshots must be done in the same location as source
+	return b.BigQuery.CreateDataset(ctx, backup.TargetProject, sinkDataset, sourceDataset.Location)
 }
 
 func (b *bigQueryProcessorImpl) validateSource(ctxIn context.Context, backup *repository.Backup) error {
