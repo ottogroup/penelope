@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
@@ -112,14 +111,6 @@ func (e *ExtractJobHandler) DeleteExtractJob(ctx context.Context, jobID reposito
 	}
 
 	return err
-}
-
-// UpdateTableExpiration sets a table's expiration time, used as a best-effort TTL for native table snapshots
-func (e *ExtractJobHandler) UpdateTableExpiration(ctxIn context.Context, project, dataset, table string, expiration time.Time) error {
-	ctx, span := otel.Tracer("").Start(ctxIn, "(*ExtractJobHandler).UpdateTableExpiration")
-	defer span.End()
-
-	return e.bq.UpdateTableExpiration(ctx, project, dataset, table, expiration)
 }
 
 // DeleteTable deletes a table, e.g. a native table snapshot when its backup is removed

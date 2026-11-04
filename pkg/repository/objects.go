@@ -221,7 +221,7 @@ func BuildSnapshotDatasetName(srcDataset, uniqueID string) string {
 
 // BuildSnapshotTableName create a deterministic name for a native BigQuery table snapshot
 func BuildSnapshotTableName(table, jobID string) string {
-	return fmt.Sprintf("%s_snapshot_%s", table, strings.Replace(jobID, "-", "_", -1))
+	return fmt.Sprintf("snapshot_%s_%s", strings.Replace(jobID, "-", "_", -1), table)
 }
 
 func logQueryError(source string, err error, args ...any) {

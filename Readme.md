@@ -612,6 +612,9 @@ The ```backup``` service account should have the following roles in the target (
     * `bigquery.datasets.create`
     * `bigquery.tables.update`
     * `bigquery.tables.delete`
+* to reconcile native snapshot expiration using SQL in the target project
+    * BigQuery Job User (`roles/bigquery.jobUser`) on the target project
+    * `bigquery.tables.get` and `bigquery.tables.list` on the snapshot dataset
 * to be able to create&update Storage Transfer jobs
     * Storage Transfer User (`roles/storagetransfer.user`)
 * to be able to clean up backups that transit to status `BackupDeleted`
@@ -751,10 +754,12 @@ backup.
   project and the source dataset's location.
 * Each snapshot table is named `<table>_snapshot_<jobID>`, one snapshot table per source table.
 * The configured **Snapshot TTL** (`SnapshotOptions.LifetimeInDays`) is applied as the snapshot table's native
-  BigQuery expiration time once the copy job finishes successfully, instead of a GCS bucket lifecycle rule. A TTL
-  of `0` means the snapshot table never expires.
+  BigQuery expiration time by reconciliation using a BigQuery SQL script, instead of a GCS bucket lifecycle rule.
+  The script discovers all standard tables, snapshots, and clones in the backup dataset and sets expiration to
+  **each table's creation time + Snapshot TTL**; views and external tables are excluded.
+  Reconciliation does not extend retention. Changing the TTL updates existing tables on the next reconciliation.
+  A TTL of `0` removes table expiration. Setting an expiration in the past can immediately delete the snapshot.
 * Deleting the backup immediately deletes the snapshot table data (there is no trashcan support, same as the
   existing BigQuery Oneshot/Snapshot behavior).
 * Because there is no GCS sink bucket, Storage class/region/secondary region/Archive Transition settings do not
   apply and are ignored for backups using this option.
-

@@ -5,7 +5,9 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
+	"regexp"
 	"time"
 
 	bq "cloud.google.com/go/bigquery"
@@ -59,6 +61,7 @@ type Client interface {
 	ExtractTableToGcsAsAvro(ctxIn context.Context, dataset, table, gcsURI string) *bq.Extractor
 	CopyTableAsSnapshot(ctxIn context.Context, srcDataset, srcTable, dstDataset, dstTable string) *bq.Copier
 	UpdateTableExpiration(ctxIn context.Context, project, dataset, table string, expiration time.Time) error
+	UpdateDatasetTableExpirations(ctxIn context.Context, project, dataset string, lifetimeInDays uint) error
 	DeleteTable(ctxIn context.Context, project, dataset, table string) error
 	CreateDataset(ctxIn context.Context, project, dataset, location string) error
 	GetExtractJobStatus(ctxIn context.Context, extractJobID repository.ExtractJobID) (*bq.JobStatus, error)
@@ -173,6 +176,60 @@ func (d *defaultBigQueryClient) UpdateTableExpiration(ctxIn context.Context, pro
 
 	_, err := d.client.DatasetInProject(project, dataset).Table(table).Update(ctx, bq.TableMetadataToUpdate{ExpirationTime: expiration}, "")
 	return err
+}
+
+// UpdateDatasetTableExpirations applies retention from each table's creation time using a SQL script.
+// A lifetime of zero clears existing table expiration so tables never expire.
+func (d *defaultBigQueryClient) UpdateDatasetTableExpirations(ctxIn context.Context, project, dataset string, lifetimeInDays uint) error {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).UpdateDatasetTableExpirations")
+	defer span.End()
+
+	if !regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]*$`).MatchString(project) ||
+		!regexp.MustCompile(`^[A-Za-z0-9_]+$`).MatchString(dataset) {
+		return fmt.Errorf("invalid BigQuery project or dataset identifier: %q.%q", project, dataset)
+	}
+	if uint64(lifetimeInDays) > math.MaxInt64 {
+		return fmt.Errorf("invalid table lifetime in days: %d", lifetimeInDays)
+	}
+	metadata, err := d.GetDatasetDetails(ctx, project, dataset)
+	if err != nil {
+		return fmt.Errorf("could not get dataset location for %s.%s: %w", project, dataset, err)
+	}
+
+	query := d.client.Query(fmt.Sprintf(`
+FOR table_record IN (
+  SELECT table_catalog, table_schema, table_name, creation_time
+  FROM `+"`%s.%s.INFORMATION_SCHEMA.TABLES`"+`
+  WHERE table_type IN ('BASE TABLE', 'SNAPSHOT', 'CLONE')
+)
+DO
+  EXECUTE IMMEDIATE FORMAT(
+    'ALTER TABLE IF EXISTS `+"`%%s.%%s.%%s`"+` SET OPTIONS (expiration_timestamp = @expiration)',
+    table_record.table_catalog,
+    table_record.table_schema,
+    REPLACE(table_record.table_name, '`+"`"+`', '\\`+"`"+`')
+  )
+  USING IF(
+    @lifetime_in_days = 0,
+    CAST(NULL AS TIMESTAMP),
+    TIMESTAMP_ADD(table_record.creation_time, INTERVAL @lifetime_in_days DAY)
+  ) AS expiration;
+END FOR;`, project, dataset))
+	query.Location = metadata.Location
+	query.Parameters = []bq.QueryParameter{{Name: "lifetime_in_days", Value: int64(lifetimeInDays)}}
+
+	job, err := query.Run(ctx)
+	if err != nil {
+		return fmt.Errorf("could not start table expiration query for %s.%s: %w", project, dataset, err)
+	}
+	status, err := job.Wait(ctx)
+	if err != nil {
+		return fmt.Errorf("could not wait for table expiration query for %s.%s: %w", project, dataset, err)
+	}
+	if err := status.Err(); err != nil {
+		return fmt.Errorf("table expiration query failed for %s.%s: %w", project, dataset, err)
+	}
+	return nil
 }
 
 // DeleteTable deletes a table, e.g. a native table snapshot when its backup is removed

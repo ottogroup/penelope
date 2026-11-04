@@ -9,6 +9,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"github.com/ottogroup/penelope/pkg/secret"
+	"github.com/ottogroup/penelope/pkg/service/bigquery"
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/ottogroup/penelope/pkg/service/util"
 	"go.opentelemetry.io/otel"
@@ -19,6 +20,7 @@ type reconcileService struct {
 	db                                repository.BackupRepository
 	targetPrincipalForProjectProvider impersonate.TargetPrincipalForProjectProvider
 	cloudStorageClients               map[string]gcs.CloudStorageClient
+	bigQueryClients                   map[string]bigquery.Client
 }
 
 func newReconcileService(ctxIn context.Context, provider impersonate.TargetPrincipalForProjectProvider, credentialsProvider secret.SecretProvider) (*reconcileService, error) {
@@ -30,7 +32,7 @@ func newReconcileService(ctxIn context.Context, provider impersonate.TargetPrinc
 		return &reconcileService{}, fmt.Errorf("could not instantiate new BackupRepository: %s", err)
 	}
 
-	return &reconcileService{db: db, ctx: ctx, targetPrincipalForProjectProvider: provider, cloudStorageClients: make(map[string]gcs.CloudStorageClient)}, nil
+	return &reconcileService{db: db, ctx: ctx, targetPrincipalForProjectProvider: provider, cloudStorageClients: make(map[string]gcs.CloudStorageClient), bigQueryClients: make(map[string]bigquery.Client)}, nil
 }
 
 func (j *reconcileService) Run(ctxIn context.Context) {
@@ -46,12 +48,16 @@ func (j *reconcileService) Run(ctxIn context.Context) {
 	var successBackups []string
 	for _, backup := range backups {
 		hasActiveStatus := backup.Status == repository.Prepared || backup.Status == repository.NotStarted || backup.Status == repository.Paused || backup.Status == repository.Finished
-		if !hasActiveStatus || !backup.UsesCloudStorageSink() {
+		if !hasActiveStatus {
 			continue
 		}
-		err = j.syncSinkBucket(ctx, backup)
+		if backup.UsesCloudStorageSink() {
+			err = j.syncSinkBucket(ctx, backup)
+		} else {
+			err = j.syncTableSnapshotExpiration(ctx, backup)
+		}
 		if err != nil {
-			glog.Errorf("could not sync bucket labels and lifecycle for backup %s: %s", backup.ID, err)
+			glog.Errorf("could not sync sink for backup %s: %s", backup.ID, err)
 			failedBackups = append(failedBackups, backup.ID)
 			continue
 		}
@@ -73,6 +79,27 @@ func (j *reconcileService) Run(ctxIn context.Context) {
 	logMessage := "[FAIL] Reconcile backup:"
 	logMessage += strings.Join(failedBackups, "|")
 	glog.Info(logMessage)
+}
+
+func (j *reconcileService) syncTableSnapshotExpiration(ctx context.Context, backup *repository.Backup) error {
+	client, exists := j.bigQueryClients[backup.TargetProject]
+	if !exists {
+		var err error
+		client, err = bigquery.NewBigQueryClient(ctx, j.targetPrincipalForProjectProvider, backup.SourceProject, backup.TargetProject)
+		if err != nil {
+			return fmt.Errorf("could not create bigquery client for backup %s: %w", backup.ID, err)
+		}
+		if j.bigQueryClients == nil {
+			j.bigQueryClients = make(map[string]bigquery.Client)
+		}
+		j.bigQueryClients[backup.TargetProject] = client
+	}
+
+	dataset := repository.BuildSnapshotDatasetName(backup.Dataset, backup.ID)
+	if err := client.UpdateDatasetTableExpirations(ctx, backup.TargetProject, dataset, backup.SnapshotOptions.LifetimeInDays); err != nil {
+		return fmt.Errorf("could not update table expirations for backup %s: %w", backup.ID, err)
+	}
+	return nil
 }
 
 func (j *reconcileService) syncSinkBucket(ctx context.Context, backup *repository.Backup) error {

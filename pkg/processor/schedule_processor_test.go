@@ -618,6 +618,10 @@ func (*testBigQueryClient) UpdateTableExpiration(c context.Context, project, dat
 	panic("implement me")
 }
 
+func (*testBigQueryClient) UpdateDatasetTableExpirations(c context.Context, project, dataset string, lifetimeInDays uint) error {
+	panic("implement me")
+}
+
 func (*testBigQueryClient) DeleteTable(c context.Context, project, dataset, table string) error {
 	panic("implement me")
 }
