@@ -217,16 +217,12 @@ func validateCreateRequest(w http.ResponseWriter, request requestobjects.CreateR
 		return false
 	}
 
-	if !checkRegionIsValid(w, request.TargetOptions.Region, body) {
-		return false
-	}
-
-	if !checkDualRegionIsValid(w, request.TargetOptions.Region, body) {
-		return false
-	}
-
-	if !checkStorageClassIsValid(w, request.TargetOptions.StorageClass, body) {
-		return false
+	if !request.BigQueryOptions.UseNativeTableSnapshots {
+		if !checkRegionIsValid(w, request.TargetOptions.Region, body) ||
+			!checkDualRegionIsValid(w, request.TargetOptions.Region, body) ||
+			!checkStorageClassIsValid(w, request.TargetOptions.StorageClass, body) {
+			return false
+		}
 	}
 
 	if !checkSourceOptionsAreValid(w, request) {
