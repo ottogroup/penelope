@@ -113,6 +113,8 @@ settings. If you not provide required settings, penelope will not run.
 | `DEV_MODE`                                            | required | Set Penelope to run locally in dev mode any skipping user authentification.                                                         |
 | `APP_JWT_AUDIENCE`                                    | required | Set the expected audience value of the jwt token.                                                                                   |
 | `COMPANY_DOMAINS`                                     | required | Set the company domains for validating user email. Value can be a comma separated list.                                             |
+| `ALLOWED_DOMAINS`                                     | required | Semicolon-separated destination hostnames for normal requests, including UI. No schemes, ports, or wildcards.                         |
+| `TASKS_ALLOWED_DOMAINS`                               | required | Separate semicolon-separated hostnames for tasks and App Engine health checks. No fallback to `ALLOWED_DOMAINS`.                      |
 | `DEFAULT_BUCKET_STORAGE_CLASS`                        | required | Set the default storage class for backup sinks.                                                                                     |
 | `POSTGRES_SOCKET`                                     | required | Set socket address to PostgreSQL server.                                                                                            |
 | `POSTGRES_HOST`                                       | required | Set host address to PostgreSQL server. If PostgreSQL socket is specified, setting this is optional.                                 |
@@ -164,10 +166,9 @@ free to change the values, but be carefully with the handlers.
 runtime: go125
 service: default
 handlers:
-  - url: /
-    static_files: static/ui/index.html
-    upload: static/ui/index.html
-  # ...
+  - url: /.*
+    script: auto
+    secure: always
 
 env_variables:
   GCP_PROJECT_ID: <GCP_PROJECT_ID>
@@ -176,8 +177,25 @@ env_variables:
   POSTGRES_USER: <POSTGRES_USER>
   POSTGRES_DB: <POSTGRES_DB>
   POSTGRES_PASSWORD: <POSTGRES_PASSWORD>
+  ALLOWED_DOMAINS: 'penelope.example.com;PROJECT_ID.REGION_ID.r.appspot.com'
+  TASKS_ALLOWED_DOMAINS: 'PROJECT_ID.REGION_ID.r.appspot.com'
   # ...
 ```
+
+Both hostname lists must be nonempty and valid or the HTTP server will not start, including in dev mode.
+For local development, set both to `localhost;127.0.0.1`. Matching is case-insensitive and ignores the
+request's port and a trailing DNS dot, but never permits unlisted subdomains. Checks use the HTTP `Host`
+field, not `Origin`, `X-Forwarded-Host`, or `Forwarded`, and reject disallowed requests with HTTP 403
+before routing, authentication, or task execution. Hostname checks supplement, not replace, authentication
+and the existing task header/IP checks.
+
+`TASKS_ALLOWED_DOMAINS` applies to `/api/tasks`, `/api/tasks/*`, `/_ah/health`, `/liveness_check`, and
+`/readiness_check`, including health-check URLs with a trailing slash. This selects the hostname list only;
+it does not add new health-check handlers. Other `/_ah/*` paths still use `ALLOWED_DOMAINS`.
+Allow the actual hostnames used by App Engine cron and health checks in `TASKS_ALLOWED_DOMAINS`.
+Do not add deleted development-version hostnames to the production lists. Build and deploy
+the UI into `static/ui` as before; Go now serves it behind hostname validation. Do not reintroduce
+App Engine `static_files` or `static_dir` handlers, because they bypass application validation.
 
 ## 3. Step: Penelope Deployment
 
