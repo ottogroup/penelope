@@ -757,6 +757,8 @@ backup.
   BigQuery expiration time by reconciliation using a BigQuery SQL script, instead of a GCS bucket lifecycle rule.
   The script discovers all standard tables, snapshots, and clones in the backup dataset and sets expiration to
   **each table's creation time + Snapshot TTL**; views and external tables are excluded.
+  Existing partition expiration is cleared before table expiration is updated, so old partitions are
+  retained until the whole table expires rather than expiring based on their partition date.
   Reconciliation does not extend retention. Changing the TTL updates existing tables on the next reconciliation.
   A TTL of `0` removes table expiration. Setting an expiration in the past can immediately delete the snapshot.
 * Deleting the backup immediately deletes the snapshot table data (there is no trashcan support, same as the

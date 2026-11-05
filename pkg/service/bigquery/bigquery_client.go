@@ -60,7 +60,6 @@ type Client interface {
 	IsInitialized(ctxIn context.Context) bool
 	ExtractTableToGcsAsAvro(ctxIn context.Context, dataset, table, gcsURI string) *bq.Extractor
 	CopyTableAsSnapshot(ctxIn context.Context, srcDataset, srcTable, dstDataset, dstTable string) *bq.Copier
-	UpdateTableExpiration(ctxIn context.Context, project, dataset, table string, expiration time.Time) error
 	UpdateDatasetTableExpirations(ctxIn context.Context, project, dataset string, lifetimeInDays uint) error
 	DeleteTable(ctxIn context.Context, project, dataset, table string) error
 	CreateDataset(ctxIn context.Context, project, dataset, location string) error
@@ -169,17 +168,8 @@ func (d *defaultBigQueryClient) CopyTableAsSnapshot(ctxIn context.Context, srcDa
 	return copier
 }
 
-// UpdateTableExpiration sets a table's expiration time, used as a best-effort TTL for native table snapshots
-func (d *defaultBigQueryClient) UpdateTableExpiration(ctxIn context.Context, project, dataset, table string, expiration time.Time) error {
-	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).UpdateTableExpiration")
-	defer span.End()
-
-	_, err := d.client.DatasetInProject(project, dataset).Table(table).Update(ctx, bq.TableMetadataToUpdate{ExpirationTime: expiration}, "")
-	return err
-}
-
 // UpdateDatasetTableExpirations applies retention from each table's creation time using a SQL script.
-// A lifetime of zero clears existing table expiration so tables never expire.
+// Partition expiration is cleared so partitions follow table retention; zero clears table expiration too.
 func (d *defaultBigQueryClient) UpdateDatasetTableExpirations(ctxIn context.Context, project, dataset string, lifetimeInDays uint) error {
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).UpdateDatasetTableExpirations")
 	defer span.End()
@@ -198,11 +188,25 @@ func (d *defaultBigQueryClient) UpdateDatasetTableExpirations(ctxIn context.Cont
 
 	query := d.client.Query(fmt.Sprintf(`
 FOR table_record IN (
-  SELECT table_catalog, table_schema, table_name, creation_time
-  FROM `+"`%s.%s.INFORMATION_SCHEMA.TABLES`"+`
+  SELECT tables.table_catalog, tables.table_schema, tables.table_name, tables.creation_time,
+    EXISTS (
+      SELECT 1
+      FROM `+"`%s.%s.INFORMATION_SCHEMA.TABLE_OPTIONS`"+` AS options
+      WHERE options.table_name = tables.table_name
+        AND options.option_name = 'partition_expiration_days'
+    ) AS has_partition_expiration
+  FROM `+"`%s.%s.INFORMATION_SCHEMA.TABLES`"+` AS tables
   WHERE table_type IN ('BASE TABLE', 'SNAPSHOT', 'CLONE')
 )
 DO
+  IF table_record.has_partition_expiration THEN
+    EXECUTE IMMEDIATE FORMAT(
+      'ALTER TABLE IF EXISTS `+"`%%s.%%s.%%s`"+` SET OPTIONS (partition_expiration_days = NULL)',
+      table_record.table_catalog,
+      table_record.table_schema,
+      REPLACE(table_record.table_name, '`+"`"+`', '\\`+"`"+`')
+    );
+  END IF;
   EXECUTE IMMEDIATE FORMAT(
     'ALTER TABLE IF EXISTS `+"`%%s.%%s.%%s`"+` SET OPTIONS (expiration_timestamp = @expiration)',
     table_record.table_catalog,
@@ -214,7 +218,7 @@ DO
     CAST(NULL AS TIMESTAMP),
     TIMESTAMP_ADD(table_record.creation_time, INTERVAL @lifetime_in_days DAY)
   ) AS expiration;
-END FOR;`, project, dataset))
+END FOR;`, project, dataset, project, dataset))
 	query.Location = metadata.Location
 	query.Parameters = []bq.QueryParameter{{Name: "lifetime_in_days", Value: int64(lifetimeInDays)}}
 
