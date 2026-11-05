@@ -66,8 +66,9 @@ type UpdateRequest struct {
 	IncludePath []string `json:"include_path,omitempty"`
 	ExcludePath []string `json:"exclude_path,omitempty"`
 	// only for BigQuery backups
-	Table          []string `json:"table,omitempty"`
-	ExcludedTables []string `json:"excluded_tables,omitempty"`
+	Table             []string `json:"table,omitempty"`
+	ExcludedTables    []string `json:"excluded_tables,omitempty"`
+	SnapshotFrequency uint     `json:"snapshot_frequency,omitempty"`
 }
 
 // CreateRequest make a new backup

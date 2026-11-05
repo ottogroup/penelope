@@ -201,10 +201,24 @@ watch(
               ></v-text-field>
               <template v-if="backup?.strategy == BackupStrategy.SNAPSHOT">
                 <v-text-field
-                  label="Snapshot TTL"
+                  :label="backup?.type === BackupType.BIG_QUERY ? 'Table TTL' : 'Snapshot TTL'"
                   type="number"
                   hint="After X days data will be deleted. Default is 0."
                   v-model="backup!.snapshot_options!.lifetime_in_days"
+                ></v-text-field>
+                <v-text-field
+                  label="Snapshot schedule"
+                  type="number"
+                  hint="Snapshot will be created every X hours at full hour"
+                  v-model="backup!.snapshot_options!.frequency_in_hours"
+                  :rules="[
+                    (v) => {
+                      if (backup.strategy === BackupStrategy.SNAPSHOT) {
+                        return (!!v && Number(v) > 0) || 'Snapshot schedule must be greater than 0';
+                      }
+                      return true;
+                    },
+                  ]"
                 ></v-text-field>
               </template>
               <template v-if="backup?.strategy == BackupStrategy.ONESHOT">

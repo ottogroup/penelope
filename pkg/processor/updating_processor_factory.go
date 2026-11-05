@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-pg/pg/v10"
@@ -69,7 +70,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 	var request = args.Request
 	backup, err := c.BackupRepository.GetBackup(ctx, request.BackupID)
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return requestobjects.UpdateResponse{}, requestobjects.ApiError{
 				Code:    404,
 				Message: fmt.Sprintf("no backup with id %q found", request.BackupID),
@@ -123,6 +124,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 		ExcludedTables:         request.ExcludedTables,
 		MirrorTTL:              request.MirrorTTL,
 		SnapshotTTL:            request.SnapshotTTL,
+		SnapshotFrequency:      request.SnapshotFrequency,
 		ArchiveTTM:             request.ArchiveTTM,
 		RecoveryPointObjective: request.RecoveryPointObjective,
 		RecoveryTimeObjective:  request.RecoveryTimeObjective,

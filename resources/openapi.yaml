@@ -586,6 +586,8 @@ components:
           type: integer
         snapshot_ttl:
           type: integer
+        snapshot_frequency:
+          type: integer
         archive_ttm:
           type: integer
         include_path:
