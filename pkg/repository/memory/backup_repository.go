@@ -3,9 +3,10 @@ package memory
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opentelemetry.io/otel"
-	"time"
 )
 
 // BackupRepository access to stored state of backups
@@ -50,6 +51,9 @@ func (r *BackupRepository) UpdateBackup(ctxIn context.Context, updateFields repo
 		if repository.CloudStorage == backup.Type {
 			backup.IncludePath = updateFields.IncludePath
 			backup.ExcludePath = updateFields.ExcludePath
+		}
+		if backup.Strategy == repository.Snapshot {
+			backup.FrequencyInHours = updateFields.SnapshotFrequency
 		}
 		return nil
 	}
