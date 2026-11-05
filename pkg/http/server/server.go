@@ -21,11 +21,15 @@ type defaultServer struct {
 }
 
 func (s *defaultServer) Run() error {
+	handler, err := newDomainAllowlist(s.handler, config.AllowedDomains.GetOrDefault(""), config.TasksAllowedDomains.GetOrDefault(""))
+	if err != nil {
+		return fmt.Errorf("could not configure hostname validation: %w", err)
+	}
 	port := config.LocalPort.GetOrDefault("8080")
 	addr := fmt.Sprintf(":%s", port)
 	glog.Infoln("Starting app server on port", port)
 
-	if err := http.ListenAndServe(addr, s.handler); err != nil {
+	if err := http.ListenAndServe(addr, handler); err != nil {
 		return fmt.Errorf("could not start http server. err: %s", err)
 	}
 
