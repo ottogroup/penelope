@@ -382,7 +382,7 @@ watch(
               <template v-if="request.strategy == BackupStrategy.SNAPSHOT">
                 <v-text-field
                   class="mb-2"
-                  label="Snapshot TTL"
+                  :label="request?.type === BackupType.BIG_QUERY ? 'Table TTL' : 'Snapshot TTL'"
                   type="number"
                   hint="After X days data will be deleted. Default is 0."
                   v-model="request.snapshot_options!.lifetime_in_days"
