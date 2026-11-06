@@ -185,7 +185,7 @@ func (j *jobStatusService) checkCloudStorageBackupJob(ctxIn context.Context, job
 	}
 	glog.Infof("Updating jobStatus to %s of job %s", jobStatus.String(), job.ID)
 
-	//update status of backup if it is an oneshot snapshot
+	// update status of backup if it is an oneshot snapshot
 	if jobStatus == repository.FinishedOk && backup.IsOneshot() {
 		err = j.scheduleProcessor.UpdateBackupStatus(ctx, backup.ID, repository.Finished)
 		if err != nil {

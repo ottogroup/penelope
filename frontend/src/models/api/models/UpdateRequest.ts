@@ -11,6 +11,7 @@ export type UpdateRequest = {
     status?: BackupStatus;
     mirror_ttl?: number;
     snapshot_ttl?: number;
+    snapshot_frequency?: number;
     archive_ttm?: number;
     include_path?: Array<string>;
     exclude_path?: Array<string>;

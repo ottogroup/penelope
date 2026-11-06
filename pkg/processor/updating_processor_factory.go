@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-pg/pg/v10"
@@ -46,18 +47,25 @@ func (c updatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operat
 		glog.Error(err)
 		return &updatingProcessor{}, err
 	}
+	maintenanceTaskRepository, err := repository.NewBackupMaintenanceTaskRepository(ctx, c.credentialsProvider)
+	if err != nil {
+		glog.Error(err)
+		return &updatingProcessor{}, err
+	}
 
 	return &updatingProcessor{
-		BackupRepository:    backupRepository,
-		JobRepository:       jobRepository,
-		tokenSourceProvider: c.tokenSourceProvider,
+		BackupRepository:          backupRepository,
+		JobRepository:             jobRepository,
+		MaintenanceTaskRepository: maintenanceTaskRepository,
+		tokenSourceProvider:       c.tokenSourceProvider,
 	}, nil
 }
 
 type updatingProcessor struct {
-	BackupRepository repository.BackupRepository
-	JobRepository    repository.JobRepository
-	Context          context.Context
+	BackupRepository          repository.BackupRepository
+	MaintenanceTaskRepository repository.BackupMaintenanceTaskRepository
+	JobRepository             repository.JobRepository
+	Context                   context.Context
 
 	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
 }
@@ -69,7 +77,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 	var request = args.Request
 	backup, err := c.BackupRepository.GetBackup(ctx, request.BackupID)
 	if err != nil {
-		if err == pg.ErrNoRows {
+		if errors.Is(err, pg.ErrNoRows) {
 			return requestobjects.UpdateResponse{}, requestobjects.ApiError{
 				Code:    404,
 				Message: fmt.Sprintf("no backup with id %q found", request.BackupID),
@@ -123,6 +131,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 		ExcludedTables:         request.ExcludedTables,
 		MirrorTTL:              request.MirrorTTL,
 		SnapshotTTL:            request.SnapshotTTL,
+		SnapshotFrequency:      request.SnapshotFrequency,
 		ArchiveTTM:             request.ArchiveTTM,
 		RecoveryPointObjective: request.RecoveryPointObjective,
 		RecoveryTimeObjective:  request.RecoveryTimeObjective,
@@ -139,7 +148,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 	}
 
 	// if backup was deleted, create bucket sink again
-	if repository.BackupDeleted.EqualTo(backup.Status.String()) && repository.NotStarted.EqualTo(request.Status) {
+	if backup.UsesCloudStorageSink() && repository.BackupDeleted.EqualTo(backup.Status.String()) && repository.NotStarted.EqualTo(request.Status) {
 		exist, err := client.DoesBucketExist(ctx, backup.TargetProject, backup.Sink)
 		if err != nil {
 			return requestobjects.UpdateResponse{}, fmt.Errorf("couldn't check if bucket sink exist for backup: %v", backup)
@@ -159,11 +168,19 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 			return requestobjects.UpdateResponse{}, fmt.Errorf("updatingProcessor.Process UpdateBucket for Mirror failed: %v", err)
 		}
 	}
-	if backup.Strategy == repository.Snapshot {
+	if backup.Strategy == repository.Snapshot && backup.UsesCloudStorageSink() {
 		err = client.UpdateBucket(ctx, backup.Sink, request.SnapshotTTL, request.ArchiveTTM, nil)
 		if err != nil {
 			return requestobjects.UpdateResponse{}, fmt.Errorf("updatingProcessor.Process UpdateBucket for Snapshot failed: %v", err)
 		}
+	}
+
+	if backup.BigQueryOptions.UseNativeTableSnapshots && backup.FrequencyInHours != request.SnapshotFrequency {
+		task, err := c.MaintenanceTaskRepository.Add(ctx, backup.ID, repository.UpdateTableSnapshotExpirationDate, repository.TaskParameters{repository.ExpirationInDays: request.SnapshotFrequency})
+		if err != nil {
+			return requestobjects.UpdateResponse{}, fmt.Errorf("could not add maintenance task: %v", err)
+		}
+		glog.Infof("added maintenance task %d for backup %s to update table snapshot expiration date to %d days", task.ID, backup.ID, request.SnapshotFrequency)
 	}
 
 	backup, err = c.BackupRepository.GetBackup(ctx, request.BackupID)

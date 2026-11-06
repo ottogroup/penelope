@@ -42,6 +42,7 @@
     - [Cloud Storage limitations](#cloud-storage-limitations)
   - [BigQuery](#bigquery)
     - [BigQuery limitations](#bigquery-limitations)
+    - [Native BigQuery Table Snapshots](#native-bigquery-table-snapshots)
 
 <!--TOC-->
 
@@ -94,6 +95,44 @@ specific providers:
 Penelope uses a PostgreSQL database to store the backup state. You can find the migrations under the
 folder `resources/migrations/`.
 You can use [Flyway](https://flywaydb.org/) to run the migrations against your own PostgreSQL database.
+
+Migration `V1.0.9` adds `backup_maintenance_tasks`: an identity BIGINT key, a backup foreign key,
+task name, JSONB parameters, and created/updated/finished audit timestamps. Updated timestamps are
+maintained by a trigger. Only one unfinished task per `(backup_id, task_name)` is allowed, regardless
+of parameters; completed rows remain as history and allow another task of the same name.
+
+Workers must atomically claim an unfinished row whose lease is absent or expired, using
+`SELECT ... FOR UPDATE SKIP LOCKED` and an `UPDATE ... RETURNING` in the same short transaction.
+Each claim sets `locked_by`, a fresh application-generated UUID `lock_token`, `last_heartbeat_at`,
+and `lease_expires_at`. Commit the claim before performing external work.
+Heartbeat updates and completion must match the row ID and claim token and require an unexpired lease.
+Renew the heartbeat and expiry together; on completion set `audit_finished_timestamp` and clear all
+four lease fields. A zero-row update means ownership was lost and the worker must stop.
+
+Expired leases allow another worker to retry after a crash. This is not an exactly-once execution
+guarantee: a stalled worker may still be performing an external operation when its lease expires.
+Maintenance operations must be idempotent or use fencing supported by the destination system.
+`pkg/repository.NewBackupMaintenanceTaskRepository` exposes `Add`, `Claim`, `Heartbeat`, and `Finish`.
+`Add` defaults omitted parameters to `{}` and returns `ErrMaintenanceTaskAlreadyPending` for an
+unfinished duplicate without changing its parameters. `Claim` returns `(nil, nil)` when no task is
+available and assigns a new claim token even when the same worker reclaims a task. `Heartbeat` returns
+the renewed row; `Heartbeat` and `Finish` return `ErrMaintenanceTaskLeaseLost` for an expired, replaced,
+or completed claim. Callers must inspect errors with `errors.Is`. Lease durations must be at least one
+microsecond, and all lease decisions use the database clock. Workers must schedule heartbeats well
+before expiry.
+
+`pkg/tasks.NewMaintenanceWorker` accepts the repository, a worker ID, lease duration, heartbeat interval,
+and a map of task names to `MaintenanceTaskHandler` functions. `RunOnce` processes at most one task;
+`Run` drains available tasks sequentially until the queue is empty or an error occurs. The heartbeat
+interval must be less than half the lease duration and is also the timeout for repository calls.
+While a handler runs, the worker renews its lease in the background. Renewal failure cancels the handler
+context; handlers must honor cancellation and make external operations idempotent. Only successful
+handlers with no cancellation or renewal error are finished. Failed or unknown tasks remain unfinished
+and become claimable after lease expiry; the worker stops on the first error instead of retrying in a loop.
+The `maintenance` task runs this worker with the `update_table_snapshot_expiration_date` handler.
+Enqueue it with the backup ID; it reads the backup's current retention and updates all tables in the
+generated destination dataset. Task parameters are not required for this handler. Updates are idempotent:
+expiration is anchored to table creation, not the retry time. A partial failure leaves the task unfinished.
 
 ## Configuration
 
@@ -607,6 +646,13 @@ The ```backup``` service account should have the following roles in the target (
     * `storage.objects.update`
 * to be able to trigger export jobs in BigQuery from source project(s)
     * BigQuery Job User (`roles/bigquery.jobUser`)
+* to be able to create and manage native BigQuery table snapshots
+    * `bigquery.datasets.create`
+    * `bigquery.tables.update`
+    * `bigquery.tables.delete`
+* to reconcile native snapshot expiration using SQL in the target project
+    * BigQuery Job User (`roles/bigquery.jobUser`) on the target project
+    * `bigquery.tables.get` and `bigquery.tables.list` on the snapshot dataset
 * to be able to create&update Storage Transfer jobs
     * Storage Transfer User (`roles/storagetransfer.user`)
 * to be able to clean up backups that transit to status `BackupDeleted`
@@ -731,3 +777,32 @@ Penelope is deployed in Google App Engine Standard Environment. After years of t
 * up to 1800 new BigQuery export jobs (for each Table/Partition) can be started every 5 minutes
 * up to 100,000 new BigQuery export jobs can be handled per project per day - this is hard quota from Google Cloud Platform
 * up to 15,000 objects deleted objets in source can be deleted from trashcan per minute
+
+### Native BigQuery Table Snapshots
+
+By default, BigQuery backups export table data to a GCS bucket in AVRO format, as described above. As an opt-in
+alternative, a BigQuery backup can be configured to use GCP's native
+[Table Snapshots](https://cloud.google.com/bigquery/docs/table-snapshots-intro) feature instead, by setting
+`bigquery_options.use_native_table_snapshots=true` on the backup. This creates a point-in-time copy of each source
+table directly in BigQuery - no data is exported to Cloud Storage, and **no GCS sink bucket is created** for the
+backup.
+
+* Only supported for `Strategy=Snapshot` backups (including Oneshot); rejected at creation time for `Strategy=Mirror`.
+* The snapshot dataset uses the **same name** as the source dataset, created if needed in the target (backup)
+  project and the source dataset's location.
+* Each snapshot table is named `<table>_snapshot_<jobID>`, one snapshot table per source table.
+* The configured **Snapshot TTL** (`SnapshotOptions.LifetimeInDays`) is applied as the snapshot table's native
+  expiration when the REST API snapshot copy job is submitted (`DestinationExpirationTime` = submission time
+  + Snapshot TTL). A TTL of `0` omits this field; reconciliation clears any inherited expiration.
+  Retention is also enforced as the native
+  BigQuery expiration time by reconciliation and maintenance using the REST Tables API, instead of a GCS bucket lifecycle rule.
+  The handler discovers all standard tables, snapshots, and clones in the backup dataset and sets expiration to
+  **each table's creation time + Snapshot TTL**; views and external tables are excluded.
+  Existing partition expiration is cleared for regular tables and clones while preserving their partitioning
+  configuration. Snapshot partitioning is immutable and is not modified; only snapshot table expiration is patched.
+  Reconciliation does not extend retention. Changing the TTL updates existing tables on the next reconciliation.
+  A TTL of `0` removes table expiration. Setting an expiration in the past can immediately delete the snapshot.
+* Deleting the backup immediately deletes the snapshot table data (there is no trashcan support, same as the
+  existing BigQuery Oneshot/Snapshot behavior).
+* Because there is no GCS sink bucket, Storage class/region/secondary region/Archive Transition settings do not
+  apply and are ignored for backups using this option.
