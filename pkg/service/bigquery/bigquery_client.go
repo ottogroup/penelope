@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"regexp"
 	"time"
@@ -209,8 +208,7 @@ func (d *defaultBigQueryClient) CopyTableAsSnapshot(ctxIn context.Context, req C
 	return repository.NewExtractJobIDWithLocation(job.JobReference.JobId, job.JobReference.Location), nil
 }
 
-// UpdateDatasetTableExpirations applies retention from each table's creation time using a SQL script.
-// Partition expiration is cleared so partitions follow table retention; zero clears table expiration too.
+// UpdateDatasetTableExpirations applies retention from table creation using the REST API, including snapshots.
 func (d *defaultBigQueryClient) UpdateDatasetTableExpirations(ctxIn context.Context, project, dataset string, lifetimeInDays uint) error {
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).UpdateDatasetTableExpirations")
 	defer span.End()
@@ -219,62 +217,48 @@ func (d *defaultBigQueryClient) UpdateDatasetTableExpirations(ctxIn context.Cont
 		!regexp.MustCompile(`^[A-Za-z0-9_]+$`).MatchString(dataset) {
 		return fmt.Errorf("invalid BigQuery project or dataset identifier: %q.%q", project, dataset)
 	}
-	if uint64(lifetimeInDays) > math.MaxInt64 {
+	if lifetimeInDays > 3652058 {
 		return fmt.Errorf("invalid table lifetime in days: %d", lifetimeInDays)
 	}
-	metadata, err := d.GetDatasetDetails(ctx, project, dataset)
-	if err != nil {
-		return fmt.Errorf("could not get dataset location for %s.%s: %w", project, dataset, err)
-	}
-
-	query := d.client.Query(fmt.Sprintf(`
-FOR table_record IN (
-  SELECT tables.table_catalog, tables.table_schema, tables.table_name, tables.creation_time,
-    EXISTS (
-      SELECT 1
-      FROM `+"`%s.%s.INFORMATION_SCHEMA.TABLE_OPTIONS`"+` AS options
-      WHERE options.table_name = tables.table_name
-        AND options.option_name = 'partition_expiration_days'
-    ) AS has_partition_expiration
-  FROM `+"`%s.%s.INFORMATION_SCHEMA.TABLES`"+` AS tables
-  WHERE table_type IN ('BASE TABLE', 'SNAPSHOT', 'CLONE')
-)
-DO
-  IF table_record.has_partition_expiration THEN
-    EXECUTE IMMEDIATE FORMAT(
-      'ALTER TABLE IF EXISTS `+"`%%s.%%s.%%s`"+` SET OPTIONS (partition_expiration_days = NULL)',
-      table_record.table_catalog,
-      table_record.table_schema,
-      REPLACE(table_record.table_name, '`+"`"+`', '\\`+"`"+`')
-    );
-  END IF;
-  EXECUTE IMMEDIATE FORMAT(
-    'ALTER TABLE IF EXISTS `+"`%%s.%%s.%%s`"+` SET OPTIONS (expiration_timestamp = @expiration)',
-    table_record.table_catalog,
-    table_record.table_schema,
-    REPLACE(table_record.table_name, '`+"`"+`', '\\`+"`"+`')
-  )
-  USING IF(
-    @lifetime_in_days = 0,
-    CAST(NULL AS TIMESTAMP),
-    TIMESTAMP_ADD(table_record.creation_time, INTERVAL @lifetime_in_days DAY)
-  ) AS expiration;
-END FOR;`, project, dataset, project, dataset))
-	query.Location = metadata.Location
-	query.Parameters = []bq.QueryParameter{{Name: "lifetime_in_days", Value: int64(lifetimeInDays)}}
-
-	job, err := query.Run(ctx)
-	if err != nil {
-		return fmt.Errorf("could not start table expiration query for %s.%s: %w", project, dataset, err)
-	}
-	status, err := job.Wait(ctx)
-	if err != nil {
-		return fmt.Errorf("could not wait for table expiration query for %s.%s: %w", project, dataset, err)
-	}
-	if err := status.Err(); err != nil {
-		return fmt.Errorf("table expiration query failed for %s.%s: %w", project, dataset, err)
-	}
-	return nil
+	return d.api.Tables.List(project, dataset).Pages(ctx, func(page *bqapi.TableList) error {
+		for _, entry := range page.Tables {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if entry.Type != "TABLE" && entry.Type != "SNAPSHOT" && entry.Type != "CLONE" {
+				continue
+			}
+			table := entry.TableReference.TableId
+			metadata, err := d.api.Tables.Get(project, dataset, table).Context(ctx).Do()
+			if err != nil {
+				return fmt.Errorf("could not get table %s.%s.%s: %w", project, dataset, table, err)
+			}
+			update := &bqapi.Table{}
+			if lifetimeInDays == 0 {
+				update.NullFields = []string{"ExpirationTime"}
+			} else {
+				if metadata.CreationTime <= 0 {
+					return fmt.Errorf("table %s.%s.%s has no creation time", project, dataset, table)
+				}
+				expiration := time.UnixMilli(metadata.CreationTime).UTC().AddDate(0, 0, int(lifetimeInDays))
+				if expiration.Year() > 9999 {
+					return fmt.Errorf("expiration for table %s.%s.%s exceeds year 9999", project, dataset, table)
+				}
+				update.ExpirationTime = expiration.UnixMilli()
+			}
+			// Snapshot partitioning is immutable; only regular tables and clones can change it.
+			if entry.Type != "SNAPSHOT" && metadata.TimePartitioning != nil && metadata.TimePartitioning.ExpirationMs != 0 {
+				partitioning := *metadata.TimePartitioning
+				partitioning.ExpirationMs = 0
+				partitioning.NullFields = append(partitioning.NullFields, "ExpirationMs")
+				update.TimePartitioning = &partitioning
+			}
+			if _, err := d.api.Tables.Patch(project, dataset, table, update).Context(ctx).Do(); err != nil {
+				return fmt.Errorf("could not update expiration of table %s.%s.%s: %w", project, dataset, table, err)
+			}
+		}
+		return nil
+	})
 }
 
 // DeleteTable deletes a table, e.g. a native table snapshot when its backup is removed

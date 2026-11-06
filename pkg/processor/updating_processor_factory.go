@@ -47,18 +47,25 @@ func (c updatingProcessorFactory) CreateProcessor(ctxIn context.Context) (Operat
 		glog.Error(err)
 		return &updatingProcessor{}, err
 	}
+	maintenanceTaskRepository, err := repository.NewBackupMaintenanceTaskRepository(ctx, c.credentialsProvider)
+	if err != nil {
+		glog.Error(err)
+		return &updatingProcessor{}, err
+	}
 
 	return &updatingProcessor{
-		BackupRepository:    backupRepository,
-		JobRepository:       jobRepository,
-		tokenSourceProvider: c.tokenSourceProvider,
+		BackupRepository:          backupRepository,
+		JobRepository:             jobRepository,
+		MaintenanceTaskRepository: maintenanceTaskRepository,
+		tokenSourceProvider:       c.tokenSourceProvider,
 	}, nil
 }
 
 type updatingProcessor struct {
-	BackupRepository repository.BackupRepository
-	JobRepository    repository.JobRepository
-	Context          context.Context
+	BackupRepository          repository.BackupRepository
+	MaintenanceTaskRepository repository.BackupMaintenanceTaskRepository
+	JobRepository             repository.JobRepository
+	Context                   context.Context
 
 	tokenSourceProvider impersonate.TargetPrincipalForProjectProvider
 }
@@ -166,6 +173,14 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 		if err != nil {
 			return requestobjects.UpdateResponse{}, fmt.Errorf("updatingProcessor.Process UpdateBucket for Snapshot failed: %v", err)
 		}
+	}
+
+	if backup.BigQueryOptions.UseNativeTableSnapshots && backup.FrequencyInHours != request.SnapshotFrequency {
+		task, err := c.MaintenanceTaskRepository.Add(ctx, backup.ID, repository.UpdateTableSnapshotExpirationDate, repository.TaskParameters{repository.ExpirationInDays: request.SnapshotFrequency})
+		if err != nil {
+			return requestobjects.UpdateResponse{}, fmt.Errorf("could not add maintenance task: %v", err)
+		}
+		glog.Infof("added maintenance task %d for backup %s to update table snapshot expiration date to %d days", task.ID, backup.ID, request.SnapshotFrequency)
 	}
 
 	backup, err = c.BackupRepository.GetBackup(ctx, request.BackupID)
