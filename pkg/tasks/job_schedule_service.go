@@ -110,6 +110,7 @@ func (j *jobScheduleService) scheduleBigQueryBackupJob(ctxIn context.Context, jo
 		dstTable := repository.BuildSnapshotTableName(job.Source, job.ID)
 		glog.Infof("Creating bigquery table snapshot job for %s.%s -> %s for job %s", bigQueryOptions.Dataset, job.Source, dstTable, job.ID)
 		extractJobID, err = jobHandler.CreateTableSnapshotJob(ctx, bigquery.CreateTableSnapshotJobRequest{
+			LifetimeInDays: backup.SnapshotOptions.LifetimeInDays,
 			Source: bigquery.SnapshotTable{
 				Dataset: backup.Dataset,
 				Name:    job.Source,

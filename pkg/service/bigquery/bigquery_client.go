@@ -11,10 +11,12 @@ import (
 	"time"
 
 	bq "cloud.google.com/go/bigquery"
+	"github.com/google/uuid"
 	"github.com/ottogroup/penelope/pkg/config"
 	"github.com/ottogroup/penelope/pkg/http/impersonate"
 	"github.com/ottogroup/penelope/pkg/repository"
 	"go.opentelemetry.io/otel"
+	bqapi "google.golang.org/api/bigquery/v2"
 	gimpersonate "google.golang.org/api/impersonate"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
@@ -59,7 +61,7 @@ func newTableEntryFromMetadata(name string, t *bq.TableMetadata) *Table {
 type Client interface {
 	IsInitialized(ctxIn context.Context) bool
 	ExtractTableToGcsAsAvro(ctxIn context.Context, dataset, table, gcsURI string) *bq.Extractor
-	CopyTableAsSnapshot(ctxIn context.Context, srcDataset, srcTable, dstDataset, dstTable string) *bq.Copier
+	CopyTableAsSnapshot(ctxIn context.Context, req CreateTableSnapshotJobRequest) (repository.ExtractJobID, error)
 	UpdateDatasetTableExpirations(ctxIn context.Context, project, dataset string, lifetimeInDays uint) error
 	DeleteTable(ctxIn context.Context, project, dataset, table string) error
 	CreateDataset(ctxIn context.Context, project, dataset, location string) error
@@ -77,6 +79,7 @@ type Client interface {
 // defaultBigQueryClient represent BigqUEry Client implementation
 type defaultBigQueryClient struct {
 	client          *bq.Client
+	api             *bqapi.Service
 	sourceProjectID string
 	targetProjectID string
 }
@@ -132,7 +135,12 @@ func NewBigQueryClient(ctxIn context.Context, targetPrincipalProvider impersonat
 	if err != nil {
 		return &defaultBigQueryClient{}, fmt.Errorf("failed to create client: %s", err)
 	}
-	return &defaultBigQueryClient{client: client, sourceProjectID: sourceProjectID, targetProjectID: targetProjectID}, nil
+	api, err := bqapi.NewService(ctx, options...)
+	if err != nil {
+		client.Close()
+		return nil, fmt.Errorf("failed to create BigQuery REST service: %w", err)
+	}
+	return &defaultBigQueryClient{client: client, api: api, sourceProjectID: sourceProjectID, targetProjectID: targetProjectID}, nil
 }
 
 // IsInitialized check if BigQuery client is initialized
@@ -155,17 +163,50 @@ func (d *defaultBigQueryClient) ExtractTableToGcsAsAvro(ctxIn context.Context, d
 	return extractor
 }
 
-// CopyTableAsSnapshot prepares a copy job that creates a native BigQuery table snapshot of a source table
-func (d *defaultBigQueryClient) CopyTableAsSnapshot(ctxIn context.Context, srcDataset, srcTable, dstDataset, dstTable string) *bq.Copier {
-	_, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).CopyTableAsSnapshot")
+// CopyTableAsSnapshot submits a native snapshot copy job with expiration set atomically.
+func (d *defaultBigQueryClient) CopyTableAsSnapshot(ctxIn context.Context, req CreateTableSnapshotJobRequest) (repository.ExtractJobID, error) {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*defaultBigQueryClient).CopyTableAsSnapshot")
 	defer span.End()
 
-	src := d.client.DatasetInProject(d.sourceProjectID, srcDataset).Table(srcTable)
-	dst := d.client.DatasetInProject(d.targetProjectID, dstDataset).Table(dstTable)
-	copier := dst.CopierFrom(src)
-	copier.OperationType = bq.SnapshotOperation
-	copier.CreateDisposition = bq.CreateIfNeeded
-	return copier
+	copyConfig := &bqapi.JobConfigurationTableCopy{
+		SourceTable: &bqapi.TableReference{
+			ProjectId: d.sourceProjectID, DatasetId: req.Source.Dataset, TableId: req.Source.Name,
+		},
+		DestinationTable: &bqapi.TableReference{
+			ProjectId: d.targetProjectID, DatasetId: req.Target.Dataset, TableId: req.Target.Name,
+		},
+		OperationType:     "SNAPSHOT",
+		CreateDisposition: "CREATE_IF_NEEDED",
+		WriteDisposition:  "WRITE_EMPTY",
+	}
+	if req.LifetimeInDays > 0 {
+		// BigQuery timestamps must remain within year 9999.
+		if req.LifetimeInDays > 3652058 {
+			return "", fmt.Errorf("invalid snapshot lifetime in days: %d", req.LifetimeInDays)
+		}
+		expiration := time.Now().UTC().AddDate(0, 0, int(req.LifetimeInDays))
+		if expiration.Year() > 9999 {
+			return "", fmt.Errorf("snapshot expiration exceeds year 9999")
+		}
+		copyConfig.DestinationExpirationTime = expiration.Format(time.RFC3339Nano)
+	}
+	metadata, err := d.GetDatasetDetails(ctx, d.sourceProjectID, req.Source.Dataset)
+	if err != nil {
+		return "", fmt.Errorf("could not get source dataset location: %w", err)
+	}
+	job, err := d.api.Jobs.Insert(d.targetProjectID, &bqapi.Job{
+		JobReference: &bqapi.JobReference{
+			ProjectId: d.targetProjectID, JobId: "snapshot_" + uuid.NewString(), Location: metadata.Location,
+		},
+		Configuration: &bqapi.JobConfiguration{Copy: copyConfig},
+	}).Context(ctx).Do()
+	if err != nil {
+		return "", fmt.Errorf("could not create snapshot copy job: %w", err)
+	}
+	if job.JobReference == nil || job.JobReference.JobId == "" {
+		return "", fmt.Errorf("snapshot copy job response has no job reference")
+	}
+	return repository.NewExtractJobIDWithLocation(job.JobReference.JobId, job.JobReference.Location), nil
 }
 
 // UpdateDatasetTableExpirations applies retention from each table's creation time using a SQL script.

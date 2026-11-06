@@ -754,6 +754,9 @@ backup.
   project and the source dataset's location.
 * Each snapshot table is named `<table>_snapshot_<jobID>`, one snapshot table per source table.
 * The configured **Snapshot TTL** (`SnapshotOptions.LifetimeInDays`) is applied as the snapshot table's native
+  expiration when the REST API snapshot copy job is submitted (`DestinationExpirationTime` = submission time
+  + Snapshot TTL). A TTL of `0` omits this field; reconciliation clears any inherited expiration.
+  Retention is also enforced as the native
   BigQuery expiration time by reconciliation using a BigQuery SQL script, instead of a GCS bucket lifecycle rule.
   The script discovers all standard tables, snapshots, and clones in the backup dataset and sets expiration to
   **each table's creation time + Snapshot TTL**; views and external tables are excluded.

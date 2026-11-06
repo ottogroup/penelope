@@ -54,8 +54,9 @@ type SnapshotTable struct {
 }
 
 type CreateTableSnapshotJobRequest struct {
-	Source SnapshotTable
-	Target SnapshotTable
+	Source         SnapshotTable
+	Target         SnapshotTable
+	LifetimeInDays uint
 }
 
 // CreateTableSnapshotJob start a BigQuery copy job that creates a native table snapshot
@@ -63,15 +64,7 @@ func (e *ExtractJobHandler) CreateTableSnapshotJob(ctxIn context.Context, req Cr
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*ExtractJobHandler).CreateTableSnapshotJob")
 	defer span.End()
 
-	// snapshot destination dataset shares the source dataset's name, in the target project
-	copier := e.bq.CopyTableAsSnapshot(ctx, req.Source.Dataset, req.Source.Name, req.Target.Dataset, req.Target.Name)
-
-	job, err := copier.Run(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return repository.NewExtractJobIDWithLocation(job.ID(), job.Location()), nil
+	return e.bq.CopyTableAsSnapshot(ctx, req)
 }
 
 // GetStatusOfJob get actual status for a BigQuery job

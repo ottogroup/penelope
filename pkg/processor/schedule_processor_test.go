@@ -609,7 +609,7 @@ func (*testBigQueryClient) ExtractTableToGcsAsAvro(c context.Context, dataset, t
 	panic("implement me")
 }
 
-func (*testBigQueryClient) CopyTableAsSnapshot(c context.Context, srcDataset, srcTable, dstDataset, dstTable string) *bigquery.Copier {
+func (*testBigQueryClient) CopyTableAsSnapshot(c context.Context, req bq.CreateTableSnapshotJobRequest) (repository.ExtractJobID, error) {
 	panic("implement me")
 }
 
