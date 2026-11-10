@@ -74,10 +74,7 @@ func (b *BigQueryJobCreator) prepareSnapshotJobs(ctxIn context.Context, backup *
 	}
 
 	for i := 0; i < len(tables); i += batchSize {
-		end := i + batchSize
-		if end > len(tables) {
-			end = len(tables)
-		}
+		end := min(i+batchSize, len(tables))
 		batch := tables[i:end]
 
 		// Process batch
@@ -283,12 +280,13 @@ func (b *BigQueryJobCreator) listBigQueryTable(ctxIn context.Context, backup *re
 		return tables, err
 	}
 
-	partitions, err := b.BigQuery.HasTablePartitions(ctx, backup.SourceProject, dataset, table)
+	hasTablePartitions, err := b.BigQuery.HasTablePartitions(ctx, backup.SourceProject, dataset, table)
 	if err != nil {
 		return nil, err
 	}
 
-	if !partitions {
+	// native table snapshots will make snapshot with the partitions, so we don't need to list the partitions, just the table itself
+	if !hasTablePartitions || backup.UseNativeTableSnapshots {
 		bqTable, err := b.BigQuery.GetTable(ctx, backup.SourceProject, dataset, table)
 		if err != nil {
 			return tables, err
