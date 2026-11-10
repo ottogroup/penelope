@@ -28,6 +28,7 @@ type UpdateFields struct {
 	ExcludedTables         []string
 	MirrorTTL              uint
 	SnapshotTTL            uint
+	SnapshotFrequency      uint
 	ArchiveTTM             uint
 	RecoveryPointObjective int
 	RecoveryTimeObjective  int
@@ -237,7 +238,8 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 		Description: fields.Description,
 		Status:      fields.Status,
 		SnapshotOptions: SnapshotOptions{
-			LifetimeInDays: fields.SnapshotTTL,
+			LifetimeInDays:   fields.SnapshotTTL,
+			FrequencyInHours: fields.SnapshotFrequency,
 		},
 		BackupOptions: BackupOptions{
 			BigQueryOptions: BigQueryOptions{
