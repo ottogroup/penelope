@@ -113,6 +113,13 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 			return requestobjects.UpdateResponse{}, fmt.Errorf("bigQuery request has intersection in tables: %s, %s", request.Table, request.ExcludedTables)
 		}
 	}
+	// a zero frequency marks a Oneshot backup, so switching between both is not allowed
+	if 0 < request.SnapshotFrequencyInHours && (backup.Strategy != repository.Snapshot || backup.IsOneshot()) {
+		return requestobjects.UpdateResponse{}, requestobjects.ApiError{
+			Code:    400,
+			Message: fmt.Sprintf("snapshot frequency can only be updated for scheduled Snapshot backups, backup %q has strategy %s", backup.ID, backup.Strategy),
+		}
+	}
 	fields := repository.UpdateFields{
 		BackupID:               request.BackupID,
 		Status:                 repository.BackupStatus(request.Status),
@@ -123,6 +130,7 @@ func (c updatingProcessor) Process(ctxIn context.Context, args *Argument[request
 		ExcludedTables:         request.ExcludedTables,
 		MirrorTTL:              request.MirrorTTL,
 		SnapshotTTL:            request.SnapshotTTL,
+		SnapshotFrequency:      request.SnapshotFrequencyInHours,
 		ArchiveTTM:             request.ArchiveTTM,
 		RecoveryPointObjective: request.RecoveryPointObjective,
 		RecoveryTimeObjective:  request.RecoveryTimeObjective,

@@ -161,6 +161,7 @@ func TestDefaultBackupRepository_UpdateBackup(t *testing.T) {
 		ExcludedTables:         excludedTables,
 		MirrorTTL:              1000,
 		SnapshotTTL:            1001,
+		SnapshotFrequency:      48,
 		ArchiveTTM:             1002,
 		RecoveryPointObjective: 23,
 		RecoveryTimeObjective:  23,
@@ -177,6 +178,7 @@ func TestDefaultBackupRepository_UpdateBackup(t *testing.T) {
 	assertContainsSameElements(t, excludedTables, backup.ExcludedTables)
 	assert.Equal(t, uint(1000), backup.MirrorOptions.LifetimeInDays)
 	assert.Equal(t, uint(1001), backup.SnapshotOptions.LifetimeInDays)
+	assert.Equal(t, uint(48), backup.SnapshotOptions.FrequencyInHours)
 	assert.Equal(t, uint(1002), backup.ArchiveTTM)
 
 	assert.Equal(t, CloudStorage, backup.Type, "type should not change")
