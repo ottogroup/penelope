@@ -292,6 +292,9 @@ func (d *defaultBackupRepository) UpdateBackup(ctxIn context.Context, fields Upd
 	if fields.SnapshotTTL > 0 {
 		columns = append(columns, "snapshot_lifetime_in_days")
 	}
+	if fields.SnapshotFrequency > 0 {
+		columns = append(columns, "snapshot_frequency_in_hours")
+	}
 	if fields.Status != "" {
 		columns = append(columns, "status")
 	}

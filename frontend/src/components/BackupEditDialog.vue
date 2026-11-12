@@ -72,6 +72,9 @@ const saveBackup = () => {
     description: backup.value.description,
     mirror_ttl: Number(backup.value.mirror_options?.lifetime_in_days),
     snapshot_ttl: Number(backup.value.snapshot_options?.lifetime_in_days),
+    snapshot_frequency_in_hours: backup.value.strategy == BackupStrategy.SNAPSHOT
+      ? Number(backup.value.snapshot_options?.frequency_in_hours)
+      : undefined,
     archive_ttm: Number(backup.value.target?.archive_ttm),
     include_path: backup.value.gcs_options?.include_prefixes,
     exclude_path: backup.value.gcs_options?.exclude_prefixes,
@@ -207,18 +210,11 @@ watch(
                   v-model="backup!.snapshot_options!.lifetime_in_days"
                 ></v-text-field>
                 <v-text-field
-                  label="Snapshot schedule"
+                  label="Snapshot schedule (hours)s*"
                   type="number"
                   hint="Snapshot will be created every X hours at full hour"
                   v-model="backup!.snapshot_options!.frequency_in_hours"
-                  :rules="[
-                    (v) => {
-                      if (backup.strategy === BackupStrategy.SNAPSHOT) {
-                        return (!!v && Number(v) > 0) || 'Snapshot schedule must be greater than 0';
-                      }
-                      return true;
-                    },
-                  ]"
+                  :rules="[integerRequiredRule('Snapshot schedule (hours)')]"
                 ></v-text-field>
               </template>
               <template v-if="backup?.strategy == BackupStrategy.ONESHOT">
