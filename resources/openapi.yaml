@@ -518,6 +518,9 @@ components:
           type: array
           items:
             type: string
+        use_native_table_snapshots:
+          type: boolean
+          description: Create native BigQuery table snapshots instead of exporting to a GCS sink bucket. Only valid for strategy=Snapshot. Immutable after creation.
     GCSOptions:
       type: object
       properties:

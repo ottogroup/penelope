@@ -148,10 +148,22 @@ const projectLink = (project: string) => {
       <a :href="projectLink(item.project ?? '')" target="_blank">{{ item.project }}</a>
     </template>
     <template #[`item.sink`]="{ item }">
-      <a :href="cloudStorageLink(item.sink_project ?? '', item.sink ?? '')" target="_blank">{{ item.sink }}</a>
+      <a
+        v-if="!item.bigquery_options?.use_native_table_snapshots"
+        :href="cloudStorageLink(item.sink_project ?? '', item.sink ?? '')"
+        target="_blank"
+        >{{ item.sink }}</a
+      >
+      <template v-else>n/a (native table snapshot)</template>
     </template>
     <template #[`item.sink_project`]="{ item }">
-      <a :href="projectLink(item.sink_project ?? '')" target="_blank">{{ item.sink_project }} </a>
+      <a
+        v-if="!item.bigquery_options?.use_native_table_snapshots"
+        :href="projectLink(item.sink_project ?? '')"
+        target="_blank"
+        >{{ item.sink_project }} </a
+      >
+      <template v-else>n/a</template>
     </template>
     <template #[`item.created`]="{ item }">
       {{
@@ -182,6 +194,7 @@ const projectLink = (project: string) => {
         <a :href="bigqueryDatasetLink(item.project ?? '', item.bigquery_options?.dataset ?? '')" target="_blank">{{
           item.bigquery_options?.dataset
         }}</a>
+        <template v-if="item.bigquery_options?.use_native_table_snapshots"> (native table snapshot)</template>
         <ul>
           <li v-for="(table, idx) in item.bigquery_options?.table" :key="idx">
             Table:

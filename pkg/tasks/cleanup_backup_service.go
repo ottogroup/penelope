@@ -129,9 +129,10 @@ func (j *cleanupBackupService) cleanupBackup(ctxIn context.Context, backup *repo
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*cleanupBackupService).cleanupBackup")
 	defer span.End()
 
-	err := j.deleteSink(ctx, backup)
-	if err != nil {
-		return err
+	if backup.UsesCloudStorageSink() {
+		if err := j.deleteSink(ctx, backup); err != nil {
+			return err
+		}
 	}
 
 	if repository.CloudStorage == backup.Type {
@@ -430,6 +431,14 @@ func (j *cleanupBackupService) deleteExtractJobs(ctx context.Context, backup *re
 				err := jobHandler.DeleteExtractJob(ctx, job.ForeignJobID.BigQueryID)
 				if err != nil {
 					glog.Warningf("[FAIL] Error deleting extract job %s: %s", job.ForeignJobID.BigQueryID.String(), err)
+					continue
+				}
+			}
+
+			if backup.BackupOptions.BigQueryOptions.UseNativeTableSnapshots {
+				table := repository.BuildSnapshotTableName(job.Source, job.ID)
+				if err := jobHandler.DeleteTable(ctx, backup.TargetProject, backup.BackupOptions.BigQueryOptions.Dataset, table); err != nil {
+					glog.Warningf("[FAIL] Error deleting table snapshot %s.%s: %s", backup.BackupOptions.BigQueryOptions.Dataset, table, err)
 					continue
 				}
 			}
