@@ -84,7 +84,7 @@ func TestGetting_WithKnownResponse(t *testing.T) {
 			ArchiveTTM:    10203,
 		},
 		BackupOptions: repository.BackupOptions{
-			BigQueryOptions: repository.BigQueryOptions{"demo_delete_me_backup_target", []string{"gcp_billing_budget_amount_plan"}, []string{}},
+			BigQueryOptions: repository.BigQueryOptions{Dataset: "demo_delete_me_backup_target", Table: []string{"gcp_billing_budget_amount_plan"}, ExcludedTables: []string{}},
 		},
 		EntityAudit: repository.EntityAudit{
 			CreatedTimestamp: time.Now(),

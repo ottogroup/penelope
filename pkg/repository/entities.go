@@ -70,6 +70,11 @@ func (b Backup) IsOneshot() bool {
 	return b.Strategy == Snapshot && b.SnapshotOptions.FrequencyInHours == 0
 }
 
+// UsesCloudStorageSink returns false only for BigQuery backups using native table snapshots, which have no GCS sink bucket
+func (b Backup) UsesCloudStorageSink() bool {
+	return !(b.Type == BigQuery && b.BigQueryOptions.UseNativeTableSnapshots)
+}
+
 func (b Backup) String() string {
 	snapshotOptionsString := ""
 	if Snapshot == b.Strategy {
@@ -128,9 +133,10 @@ type MirrorOptions struct {
 
 // BigQueryOptions for a BigQuery backup
 type BigQueryOptions struct {
-	Dataset        string   `pg:"bigquery_dataset"`
-	Table          []string `pg:"bigquery_table"`
-	ExcludedTables []string `pg:"bigquery_excluded_tables"`
+	Dataset                 string   `pg:"bigquery_dataset"`
+	Table                   []string `pg:"bigquery_table"`
+	ExcludedTables          []string `pg:"bigquery_excluded_tables"`
+	UseNativeTableSnapshots bool     `pg:"bigquery_use_native_table_snapshots,use_zero"`
 }
 
 // CloudStorageOptions for a GCS backup

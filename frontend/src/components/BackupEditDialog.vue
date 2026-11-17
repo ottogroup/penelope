@@ -41,6 +41,11 @@ const backupStatusIsDeleted = computed(() => {
   return backup.value.status === BackupStatus.BACKUP_DELETED;
 });
 
+// use_native_table_snapshots is immutable after creation, shown read-only below
+const usesNativeTableSnapshots = computed(() => {
+  return backup.value.type === BackupType.BIG_QUERY && !!backup.value.bigquery_options?.use_native_table_snapshots;
+});
+
 const updateData = () => {
   isLoading.value = true;
   if (props.id) {
@@ -67,6 +72,9 @@ const saveBackup = () => {
     description: backup.value.description,
     mirror_ttl: Number(backup.value.mirror_options?.lifetime_in_days),
     snapshot_ttl: Number(backup.value.snapshot_options?.lifetime_in_days),
+    snapshot_frequency_in_hours: backup.value.strategy == BackupStrategy.SNAPSHOT
+      ? Number(backup.value.snapshot_options?.frequency_in_hours)
+      : undefined,
     archive_ttm: Number(backup.value.target?.archive_ttm),
     include_path: backup.value.gcs_options?.include_prefixes,
     exclude_path: backup.value.gcs_options?.exclude_prefixes,
@@ -158,7 +166,7 @@ watch(
                   multiple
                   clearable
                   label="BigQuery tables"
-                  hint="When empty will take all tables."
+                  hint="When empty will take all tables (one snapshot per table when using native table snapshots)."
                   v-model="backup!.bigquery_options!.table"
                 ></v-combobox>
                 <v-combobox
@@ -169,9 +177,16 @@ watch(
                   hint="When present will ignore given tables."
                   v-model="backup!.bigquery_options!.excluded_tables"
                 ></v-combobox>
+                <v-checkbox
+                  label="Use native BigQuery table snapshot"
+                  hint="Immutable after creation."
+                  persistent-hint
+                  readonly
+                  :model-value="usesNativeTableSnapshots"
+                ></v-checkbox>
               </template>
             </v-col>
-            <v-col>
+            <v-col v-if="!usesNativeTableSnapshots">
               <h3 class="mb-1">Target</h3>
               <v-text-field
                 label="Archive TTM"
@@ -193,6 +208,13 @@ watch(
                   type="number"
                   hint="After X days data will be deleted. Default is 0."
                   v-model="backup!.snapshot_options!.lifetime_in_days"
+                ></v-text-field>
+                <v-text-field
+                  label="Snapshot schedule (hours)s*"
+                  type="number"
+                  hint="Snapshot will be created every X hours at full hour"
+                  v-model="backup!.snapshot_options!.frequency_in_hours"
+                  :rules="[integerRequiredRule('Snapshot schedule (hours)')]"
                 ></v-text-field>
               </template>
               <template v-if="backup?.strategy == BackupStrategy.ONESHOT">

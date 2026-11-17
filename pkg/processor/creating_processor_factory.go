@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/ottogroup/penelope/pkg/service/gcs"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
+	"google.golang.org/api/googleapi"
 )
 
 const sinkSTSAccountScheme = "project-%s@storage-transfer-service.iam.gserviceaccount.com"
@@ -83,7 +85,7 @@ func (b *creatingProcessor) Process(ctxIn context.Context, args *Argument[reques
 	ctx, span := otel.Tracer("").Start(ctxIn, "(*creatingProcessor).Process")
 	defer span.End()
 
-	var request requestobjects.CreateRequest = args.Request
+	var request = args.Request
 
 	if !auth.CheckRequestIsAllowed(args.Principal, requestobjects.Creating, request.Project) {
 		return requestobjects.BackupResponse{}, fmt.Errorf("%s is not allowed for user %q on project %q", requestobjects.Creating.String(), args.Principal.User.Email, request.Project)
@@ -202,9 +204,10 @@ func (b *creatingProcessor) prepareBackupFromRequest(ctxIn context.Context, requ
 		},
 		BackupOptions: repository.BackupOptions{
 			BigQueryOptions: repository.BigQueryOptions{
-				Dataset:        request.BigQueryOptions.Dataset,
-				Table:          request.BigQueryOptions.Table,
-				ExcludedTables: request.BigQueryOptions.ExcludedTables,
+				Dataset:                 request.BigQueryOptions.Dataset,
+				Table:                   request.BigQueryOptions.Table,
+				ExcludedTables:          request.BigQueryOptions.ExcludedTables,
+				UseNativeTableSnapshots: request.BigQueryOptions.UseNativeTableSnapshots,
 			},
 			CloudStorageOptions: repository.CloudStorageOptions{
 				Bucket:      request.GCSOptions.Bucket,
@@ -324,13 +327,43 @@ func (b *bigQueryProcessorImpl) process(ctxIn context.Context, backup *repositor
 	if err != nil {
 		return nil, err
 	}
+	if backup.BigQueryOptions.UseNativeTableSnapshots && backup.Strategy != repository.Snapshot {
+		return nil, fmt.Errorf("native BigQuery table snapshots are only supported for strategy %q, got %q", repository.Snapshot, backup.Strategy)
+	}
 	backup, err = b.BackupRepository.AddBackup(ctx, backup)
 	if err != nil {
 		return nil, err
 	}
 
+	if !backup.UsesCloudStorageSink() {
+		return backup, b.ensureTargetDatasetExists(ctx, backup)
+	}
 	err = prepareSink(ctx, b.CloudStorage, backup)
 	return backup, err
+}
+
+// ensureTargetDatasetExists creates the backup's dataset in the target project if it is missing,
+// using the source dataset's location, since the destination dataset isn't auto-created by a copy job
+func (b *bigQueryProcessorImpl) ensureTargetDatasetExists(ctxIn context.Context, backup *repository.Backup) error {
+	ctx, span := otel.Tracer("").Start(ctxIn, "(*bigQueryProcessorImpl).ensureTargetDatasetExists")
+	defer span.End()
+
+	sinkDataset := repository.BuildSnapshotDatasetName(backup.Dataset, backup.ID)
+	exists, err := b.BigQuery.DoesDatasetExists(ctx, backup.TargetProject, sinkDataset)
+	var googleAPIErr *googleapi.Error
+	if err != nil && !(errors.As(err, &googleAPIErr) && googleAPIErr.Code == http.StatusNotFound) {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
+	sourceDataset, err := b.BigQuery.GetDatasetDetails(ctx, backup.SourceProject, backup.Dataset)
+	if err != nil {
+		return err
+	}
+	// table snapshots must be done in the same location as source
+	return b.BigQuery.CreateDataset(ctx, backup.TargetProject, sinkDataset, sourceDataset.Location)
 }
 
 func (b *bigQueryProcessorImpl) validateSource(ctxIn context.Context, backup *repository.Backup) error {

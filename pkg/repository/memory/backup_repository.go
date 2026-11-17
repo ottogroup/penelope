@@ -47,6 +47,9 @@ func (r *BackupRepository) UpdateBackup(ctxIn context.Context, updateFields repo
 		if repository.BigQuery == backup.Type {
 			backup.Table = updateFields.Table
 		}
+		if updateFields.SnapshotFrequency > 0 {
+			backup.FrequencyInHours = updateFields.SnapshotFrequency
+		}
 		if repository.CloudStorage == backup.Type {
 			backup.IncludePath = updateFields.IncludePath
 			backup.ExcludePath = updateFields.ExcludePath

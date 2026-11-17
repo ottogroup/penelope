@@ -54,14 +54,16 @@ type RestoreRequest struct {
 
 // UpdateRequest change backup
 type UpdateRequest struct {
-	BackupID               string `json:"backup_id"`
-	Description            string `json:"description,omitempty"`
-	Status                 string `json:"status,omitempty"`
-	MirrorTTL              uint   `json:"mirror_ttl,omitempty"`
-	SnapshotTTL            uint   `json:"snapshot_ttl,omitempty"`
-	ArchiveTTM             uint   `json:"archive_ttm"`
-	RecoveryPointObjective int    `json:"recovery_point_objective,omitempty"`
-	RecoveryTimeObjective  int    `json:"recovery_time_objective,omitempty"`
+	BackupID    string `json:"backup_id"`
+	Description string `json:"description,omitempty"`
+	Status      string `json:"status,omitempty"`
+	MirrorTTL   uint   `json:"mirror_ttl,omitempty"`
+	SnapshotTTL uint   `json:"snapshot_ttl,omitempty"`
+	// only for scheduled Snapshot backups
+	SnapshotFrequencyInHours uint `json:"snapshot_frequency_in_hours,omitempty"`
+	ArchiveTTM               uint `json:"archive_ttm"`
+	RecoveryPointObjective   int  `json:"recovery_point_objective,omitempty"`
+	RecoveryTimeObjective    int  `json:"recovery_time_objective,omitempty"`
 	// only for GCS backups
 	IncludePath []string `json:"include_path,omitempty"`
 	ExcludePath []string `json:"exclude_path,omitempty"`
@@ -86,11 +88,12 @@ type CreateRequest struct {
 	GCSOptions      GCSOptions      `json:"gcs_options,omitempty"`
 }
 
-// BigQueryOptions specify backup for a source BigQuery datast or table(s)
+// BigQueryOptions specify backup for a source BigQuery dataset or table(s)
 type BigQueryOptions struct {
-	Dataset        string   `json:"dataset,omitempty"`
-	Table          []string `json:"table,omitempty"`
-	ExcludedTables []string `json:"excluded_tables,omitempty"`
+	Dataset                 string   `json:"dataset,omitempty"`
+	Table                   []string `json:"table,omitempty"`
+	ExcludedTables          []string `json:"excluded_tables,omitempty"`
+	UseNativeTableSnapshots bool     `json:"use_native_table_snapshots,omitempty"`
 }
 
 // GCSOptions specify backup for a source bucket
