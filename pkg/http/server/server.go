@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -9,7 +10,7 @@ import (
 )
 
 type Server interface {
-	Run() error
+	Run(context.Context) error
 }
 
 func CreateServer(handler http.Handler) Server {
@@ -20,7 +21,7 @@ type defaultServer struct {
 	handler http.Handler
 }
 
-func (s *defaultServer) Run() error {
+func (s *defaultServer) Run(context.Context) error {
 	port := config.LocalPort.GetOrDefault("8080")
 	addr := fmt.Sprintf(":%s", port)
 	glog.Infoln("Starting app server on port", port)

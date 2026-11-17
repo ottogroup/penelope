@@ -18,6 +18,7 @@ jobs:
       POSTGRES_USER: backupuser
       POSTGRES_PASSWORD: backupuserpassword
       POSTGRES_PORT: 5432
+      POSTGRES_HOST: localhost
     services:
       postgres:  
         image: postgres

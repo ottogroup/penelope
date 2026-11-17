@@ -11,6 +11,10 @@ export type UpdateRequest = {
     status?: BackupStatus;
     mirror_ttl?: number;
     snapshot_ttl?: number;
+    /**
+     * Only for scheduled Snapshot backups. Must be greater than 0.
+     */
+    snapshot_frequency_in_hours?: number;
     archive_ttm?: number;
     include_path?: Array<string>;
     exclude_path?: Array<string>;

@@ -125,7 +125,7 @@ func getTestConnectOptions() sql.ConnectOptions {
 }
 
 func clearDatabase(client *service.Service) error {
-	if _, err := client.DB().Model(new(SourceMetadataJob)).Where("true").Delete(); err != nil {
+	if _, err := client.DB().Model(new(BackupMaintenanceTask)).Where("true").Delete(); err != nil {
 		return err
 	}
 	if _, err := client.DB().Model(new(SourceTrashcan)).Where("true").Delete(); err != nil {

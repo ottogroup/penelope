@@ -29,8 +29,10 @@ const (
 	CheckSinkProjectCompliance = "check_sink_project_compliance"
 	// CleanupTrashcans is handled by task that cleans up trashcan
 	CleanupTrashcans = "cleanup_trashcans"
-	// Reconcile is handled by task that make usre that backup settings are in sync
+	// Reconcile is handled by task that make user that backup settings are in sync
 	Reconcile = "reconcile"
+	// Maintenance is handling ad-hoc tasks
+	Maintenance = "maintenance"
 )
 
 // TaskRunner runs tasks
@@ -110,6 +112,16 @@ func RunTask(task string, tokenSourceProvider impersonate.TargetPrincipalForProj
 			return
 		}
 		service.Run(ctx)
+	case Maintenance:
+		service, err := newMaintenanceService(ctx, tokenSourceProvider, credentialsProvider)
+		if err != nil {
+			glog.Errorf("could not instantiate new MaintenanceWorker: %s", err)
+			return
+		}
+		err = service.Run(ctx)
+		if err != nil {
+			glog.Errorf("error running MaintenanceWorker: %s", err)
+		}
 	default:
 		glog.Warningf("no Service found for action: %s", task)
 	}

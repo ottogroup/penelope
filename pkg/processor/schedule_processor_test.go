@@ -609,6 +609,22 @@ func (*testBigQueryClient) ExtractTableToGcsAsAvro(c context.Context, dataset, t
 	panic("implement me")
 }
 
+func (*testBigQueryClient) CopyTableAsSnapshot(c context.Context, req bq.CreateTableSnapshotJobRequest) (repository.ExtractJobID, error) {
+	panic("implement me")
+}
+
+func (*testBigQueryClient) UpdateDatasetTableExpirations(c context.Context, project, dataset string, lifetimeInDays uint) error {
+	panic("implement me")
+}
+
+func (*testBigQueryClient) DeleteTable(c context.Context, project, dataset, table string) error {
+	panic("implement me")
+}
+
+func (*testBigQueryClient) CreateDataset(c context.Context, project, dataset, location string) error {
+	panic("implement me")
+}
+
 func (*testBigQueryClient) GetExtractJobStatus(c context.Context, extractJobID repository.ExtractJobID) (*bigquery.JobStatus, error) {
 	panic("implement me")
 }

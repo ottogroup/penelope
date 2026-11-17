@@ -230,6 +230,10 @@ const currentCloudStorageCommand = computed(() => {
   }
 });
 
+const usesNativeTableSnapshots = computed(
+  () => backup.value?.type === BackupType.BIG_QUERY && !!backup.value?.bigquery_options?.use_native_table_snapshots,
+);
+
 watch(
   () => viewDialog.value,
   (value) => {
@@ -304,6 +308,10 @@ watch(
                       >
                     </template>
                   </td>
+                </tr>
+                <tr v-if="backup?.type === BackupType.BIG_QUERY">
+                  <td>Native table snapshot:</td>
+                  <td>{{ usesNativeTableSnapshots ? "Yes" : "No" }}</td>
                 </tr>
                 <tr v-if="backup?.type === BackupType.BIG_QUERY && (backup?.bigquery_options?.table?.length ?? 0 > 0)">
                   <td>Tables:</td>
@@ -393,36 +401,41 @@ watch(
                 <tr>
                   <td colspan="2"><h4>Target</h4></td>
                 </tr>
-                <tr>
-                  <td>Sink Project:</td>
-                  <td>
-                    <a :href="projectLink(backup?.sink_project ?? '')" target="_blank">{{ backup?.sink_project }}</a>
-                  </td>
+                <tr v-if="usesNativeTableSnapshots">
+                  <td colspan="2">No GCS sink bucket (using native BigQuery table snapshots).</td>
                 </tr>
-                <tr>
-                  <td>Sink bucket:</td>
-                  <td>
-                    <a :href="cloudStorageLink(backup?.sink_project ?? '', backup?.sink ?? '')" target="_blank">{{
-                      backup?.sink
-                    }}</a>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Storage region:</td>
-                  <td>{{ backup?.target?.region }}</td>
-                </tr>
-                <tr v-if="backup?.target?.dual_region">
-                  <td>Secondary storage region:</td>
-                  <td>{{ backup?.target?.dual_region }}</td>
-                </tr>
-                <tr>
-                  <td>Storage class:</td>
-                  <td>{{ backup?.target?.storage_class }}</td>
-                </tr>
-                <tr>
-                  <td>Archive TTM:</td>
-                  <td>{{ backup?.target?.archive_ttm }}</td>
-                </tr>
+                <template v-if="!usesNativeTableSnapshots">
+                  <tr>
+                    <td>Sink Project:</td>
+                    <td>
+                      <a :href="projectLink(backup?.sink_project ?? '')" target="_blank">{{ backup?.sink_project }}</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Sink bucket:</td>
+                    <td>
+                      <a :href="cloudStorageLink(backup?.sink_project ?? '', backup?.sink ?? '')" target="_blank">{{
+                        backup?.sink
+                      }}</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Storage region:</td>
+                    <td>{{ backup?.target?.region }}</td>
+                  </tr>
+                  <tr v-if="backup?.target?.dual_region">
+                    <td>Secondary storage region:</td>
+                    <td>{{ backup?.target?.dual_region }}</td>
+                  </tr>
+                  <tr>
+                    <td>Storage class:</td>
+                    <td>{{ backup?.target?.storage_class }}</td>
+                  </tr>
+                  <tr>
+                    <td>Archive TTM:</td>
+                    <td>{{ backup?.target?.archive_ttm }}</td>
+                  </tr>
+                </template>
 
                 <tr>
                   <td colspan="2"><h4>Details</h4></td>

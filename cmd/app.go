@@ -86,7 +86,7 @@ func Run(args AppStartArguments) {
 
 	s := server.CreateServer(api)
 
-	err = s.Run()
+	err = s.Run(nil)
 
 	if err != nil {
 		glog.Errorf("error could not start server: %s", err)

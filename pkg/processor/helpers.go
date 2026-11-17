@@ -87,9 +87,10 @@ func mapBackupToResponse(backup *repository.Backup, jobs []*repository.Job, sour
 				LifetimeInDays: backup.MirrorOptions.LifetimeInDays,
 			},
 			BigQueryOptions: requestobjects.BigQueryOptions{
-				Dataset:        backup.Dataset,
-				Table:          backup.Table,
-				ExcludedTables: backup.ExcludedTables,
+				Dataset:                 backup.Dataset,
+				Table:                   backup.Table,
+				ExcludedTables:          backup.ExcludedTables,
+				UseNativeTableSnapshots: backup.UseNativeTableSnapshots,
 			},
 			GCSOptions: requestobjects.GCSOptions{
 				Bucket:      backup.Bucket,
@@ -108,12 +109,22 @@ func mapToRestoreResponse(backup *repository.Backup, jobs []*repository.Job) (re
 		var backupType string
 		if backup.Type == repository.BigQuery {
 			backupType = "bq"
-			action += fmt.Sprintf(`bq --location=EU load --project_id "%s" --source_format=AVRO "%s.%s" "%s"`,
-				backup.SourceProject,
-				backup.BigQueryOptions.Dataset,
-				job.Source,
-				repository.BuildFullObjectStoragePath(backup.Sink, backup.BigQueryOptions.Dataset, job.Source, job.ID),
-			)
+			if backup.BigQueryOptions.UseNativeTableSnapshots {
+				// restore copies the native table snapshot back onto the original source table, there is no GCS sink to load from
+				snapshotTable := repository.BuildSnapshotTableName(job.Source, job.ID)
+				action += fmt.Sprintf(`bq cp --restore --project_id "%s" "%s:%s.%s" "%s:%s.%s"`,
+					backup.SourceProject,
+					backup.TargetProject, backup.BigQueryOptions.Dataset, snapshotTable,
+					backup.SourceProject, backup.BigQueryOptions.Dataset, job.Source,
+				)
+			} else {
+				action += fmt.Sprintf(`bq --location=EU load --project_id "%s" --source_format=AVRO "%s.%s" "%s"`,
+					backup.SourceProject,
+					backup.BigQueryOptions.Dataset,
+					job.Source,
+					repository.BuildFullObjectStoragePath(backup.Sink, backup.BigQueryOptions.Dataset, job.Source, job.ID),
+				)
+			}
 		}
 		if backup.Type == repository.CloudStorage {
 			backupType = "gcs"
