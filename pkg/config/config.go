@@ -37,6 +37,8 @@ const (
 	DevMode                                           EnvKey = "DEV_MODE"
 	TokenHeaderKey                                    EnvKey = "TOKEN_HEADER_KEY"
 	CompanyDomains                                    EnvKey = "COMPANY_DOMAINS"
+	AllowedDomains                                    EnvKey = "ALLOWED_DOMAINS"
+	TasksAllowedDomains                               EnvKey = "TASKS_ALLOWED_DOMAINS"
 	CorsAllowedMethods                                EnvKey = "CORS_ALLOWED_METHODS"
 	CorsAllowedOrigin                                 EnvKey = "CORS_ALLOWED_ORIGIN"
 	CorsAllowedHeaders                                EnvKey = "CORS_ALLOWED_HEADERS"

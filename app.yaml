@@ -1,14 +1,6 @@
 runtime: go122
 service: penelope
 handlers:
-  -   url: /
-      static_files: static/ui/index.html
-      upload: static/ui/index.html
-
-  -   url: /static/ui/(images|js|css)/(.*)
-      static_files: static/ui/\1/\2
-      upload: static/ui/(images|js|css)/(.*)
-
   -   url: /.*
       script: auto
       secure: always
@@ -30,6 +22,8 @@ env_variables:
   PENELOPE_TRACING_METRICS_PREFIX: <PENELOPE_TRACING_METRICS_PREFIX>
   TOKEN_HEADER_KEY: <TOKEN_HEADER_KEY>
   COMPANY_DOMAINS: <COMPANY_DOMAINS>
+  ALLOWED_DOMAINS: '<PRODUCTION_HOSTNAME>;<APP_ENGINE_PRODUCTION_HOSTNAME>'
+  TASKS_ALLOWED_DOMAINS: '<APP_ENGINE_TASK_HOSTNAME>;<APP_ENGINE_HEALTHCHECK_HOSTNAME>'
   CORS_ALLOWED_METHODS: 'POST, PATCH, GET'
   CORS_ALLOWED_ORIGIN: '*'
   CORS_ALLOWED_HEADERS: 'Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization'

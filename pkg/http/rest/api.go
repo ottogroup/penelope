@@ -47,7 +47,7 @@ func createRouter(args NewAPIArgs) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, endpoint := range createEndpoints(args.ProcessorBuilder, args.TokenSourceProvider, args.CredentialsProvider) {
 		if endpoint.handler == nil {
-			msg := fmt.Sprintf("no handler defined for enpoint: %s", endpoint.pathWithoutTrailingSlash())
+			msg := fmt.Sprintf("no handler defined for endpoint: %s", endpoint.pathWithoutTrailingSlash())
 			panic(msg)
 		}
 
@@ -58,6 +58,10 @@ func createRouter(args NewAPIArgs) *mux.Router {
 		router.HandleFunc(endpoint.pathWithoutTrailingSlash(), h).Methods(endpoint.methods...)
 		glog.V(4).Infof("Handler for %s registered\n", endpoint)
 	}
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/ui/index.html")
+	}).Methods(http.MethodGet, http.MethodHead)
+	router.PathPrefix("/static/ui/{directory:images|js|css}/").Handler(http.StripPrefix("/static/ui/", http.FileServer(http.Dir("static/ui")))).Methods(http.MethodGet, http.MethodHead)
 	router.NotFoundHandler = notImplementedHandler()
 
 	router.Use(loggingMiddleware)
